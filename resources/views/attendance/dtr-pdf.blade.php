@@ -91,6 +91,7 @@
                             $note = match (true) {
                                 $day === null || $hasPunches => null,
                                 $day['holiday'] !== null => $day['holiday']->name,
+                                $day['leave'] !== null && $day['leave']->portion === \App\Enums\LeavePortion::FullDay => $day['leave']->leaveRequest->leaveType->name,
                                 $record?->status === \App\Enums\DtrStatus::Absent => 'Absent',
                                 $day['date']->isSaturday() && ! $schedule->isWorkingDay(6) => 'Saturday',
                                 $day['date']->isSunday() && ! $schedule->isWorkingDay(7) => 'Sunday',

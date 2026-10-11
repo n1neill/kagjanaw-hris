@@ -3,9 +3,12 @@
 namespace App\Services\Attendance;
 
 use App\Enums\AttendanceLogStatus;
+use App\Enums\LeavePortion;
+use App\Enums\LeaveRequestStatus;
 use App\Models\DailyTimeRecord;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\LeaveRequestDay;
 use App\Models\WorkSchedule;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -128,6 +131,8 @@ class AttendanceProcessor
             ->get()
             ->keyBy(fn (DailyTimeRecord $record): string => $record->work_date->toDateString());
 
+        $leaveByDate = $this->approvedLeavePortions($employee, $from, $to);
+
         foreach ($dates as $date) {
             $key = $date->toDateString();
             $record = $existing->get($key);
@@ -146,12 +151,37 @@ class AttendanceProcessor
                 $rules,
                 $this->dayTypeFor($date, $schedule, $holidays->get($key)),
                 $this->nowMinutesFor($date),
+                LeaveCoverage::fromPortions($leaveByDate->get($key) ?? []),
             );
 
             ($record ?? new DailyTimeRecord(['employee_id' => $employee->id, 'work_date' => $key]))
                 ->fill([...$punches->toTimes(), ...$this->resultAttributes($result)])
                 ->save();
         }
+    }
+
+    /**
+     * The sessions of a date covered by the employee's approved leave.
+     */
+    public function leaveCoverageFor(Employee $employee, CarbonInterface $date): LeaveCoverage
+    {
+        $key = $date->toDateString();
+
+        return LeaveCoverage::fromPortions($this->approvedLeavePortions($employee, $key, $key)->get($key) ?? []);
+    }
+
+    /**
+     * @return Collection<string, list<LeavePortion>> Approved leave portions keyed by Y-m-d.
+     */
+    private function approvedLeavePortions(Employee $employee, string $from, string $to): Collection
+    {
+        return LeaveRequestDay::query()
+            ->where('employee_id', $employee->id)
+            ->whereBetween('date', [$from, $to])
+            ->whereHas('leaveRequest', fn ($query) => $query->where('status', LeaveRequestStatus::Approved))
+            ->get(['date', 'portion'])
+            ->groupBy(fn (LeaveRequestDay $day): string => $day->date->toDateString())
+            ->map(fn (Collection $days): array => $days->pluck('portion')->all());
     }
 
     /**

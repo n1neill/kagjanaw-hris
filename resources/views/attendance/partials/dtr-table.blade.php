@@ -34,6 +34,8 @@
                     </td>
                     @if ($day['holiday'] && ! $record?->am_in && ! $record?->pm_in)
                         <td colspan="4" class="px-2 py-2 text-center italic">{{ $day['holiday']->name }}</td>
+                    @elseif ($day['leave'] && $day['leave']->portion === \App\Enums\LeavePortion::FullDay && ! $record?->am_in && ! $record?->pm_in)
+                        <td colspan="4" class="px-2 py-2 text-center italic text-brand-800">{{ $day['leave']->leaveRequest->leaveType->name }}</td>
                     @else
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->am_in) }}</td>
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->am_out) }}</td>
@@ -47,6 +49,9 @@
                             <x-badge :color="$record->status->badgeColor()">{{ $record->status->label() }}</x-badge>
                             @if ($record->is_adjusted)
                                 <x-badge color="brand" title="{{ __('Corrected by HR') }}">{{ __('Corrected') }}</x-badge>
+                            @endif
+                            @if ($day['leave'] && $day['leave']->portion !== \App\Enums\LeavePortion::FullDay)
+                                <span class="block text-xs text-brand-800">{{ $day['leave']->leaveRequest->leaveType->code }} · {{ mb_strtolower($day['leave']->portion->label()) }}</span>
                             @endif
                         @elseif ($day['date']->isFuture())
                             <span class="text-gray-400">—</span>

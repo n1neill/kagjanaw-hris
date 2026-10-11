@@ -9,7 +9,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | 1 | Foundation: authentication, roles and permissions, layout, role dashboards, user accounts, departments, positions, employment types | Done |
 | 2 | Employee records and 201 files, automatic employee login accounts, sign-in by employee ID, forced password change | Done |
 | 3 | Attendance: device driver interface and mock driver, scheduled sync, CSV import, DTR processing (CSC Form 48), HR corrections with audit trail, validation, summaries and DTR PDF; office hours and holidays | Done |
-| 4 | Leave management | Planned |
+| 4 | Leave: all CSC leave types, filing with rule checks, endorsement (department head or Municipal Mayor) and HR approval, leave ledger (leave card), monthly credits and tardiness deductions from validated DTRs, forced-leave forfeiture, opening balance import, Certificate of Leave Credits, utilization report, in-app notifications | Done |
 | 5 | Payroll | Planned |
 | 6 | Notifications, announcements, reports, admin tools (audit log, backup/restore, settings) | Planned |
 | 7 | Hardening, user guide | Planned |
@@ -73,7 +73,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 
    Open http://localhost:8000.
 
-6. **Run the scheduler** (attendance sync every 5 minutes, nightly DTR processing). During development:
+6. **Run the scheduler** (attendance sync every 5 minutes, nightly DTR processing, daily leave credit posting, yearly forced-leave forfeiture). During development:
 
    ```powershell
    php artisan schedule:work
@@ -99,18 +99,30 @@ attrib -R storage /S /D
 
 ## Demo accounts (development only)
 
-`DemoUserSeeder` creates one account per role and 30 sample employees when `APP_ENV` is not `production`. Sign in with the **Employee ID** (or username) below; all four use the password **`Kagjanaw@2026`**.
+`DemoUserSeeder` creates one account per role and 30 sample employees when `APP_ENV` is not `production`. Sign in with the **Employee ID** (or username) below; all five use the password **`Kagjanaw@2026`**.
 
 | Role | Employee ID / username | Employee record |
 | --- | --- | --- |
 | System Administrator | `admin` | none (system account) |
 | HR Officer | `2015-0101` | Maria L. Santos, MHRMO |
+| Municipal Mayor | `2022-0001` | Ramon T. Villanueva, Office of the Municipal Mayor (elective) |
 | Department Head | `2010-0045` | Juan G. Dela Cruz, Municipal Health Office |
 | Employee | `2021-0230` | Ana B. Reyes, Municipal Health Office |
 
 The sample employees have accounts with unknown temporary passwords; reset one under **User Accounts** to sign in as them. Never use these accounts on a production server.
 
 `DemoAttendanceSeeder` also adds a mock time clock ("Main Lobby Time Clock") and syncs it from the start of last month, so DTRs, summaries and the sync log have data.
+
+`DemoLeaveSeeder` then builds the leave data through the real services:
+- An opening balance for every employee who earns credits, as of the end of the month before last.
+- An approved sick leave last month, which shows as **On leave** on the DTR.
+- Last month's missing punches corrected, every DTR validated and the month's credits posted.
+- One application in each state of the workflow:
+  - Waiting for Juan (department head).
+  - Juan's own leave, waiting for the Mayor.
+  - The Mayor's leave, waiting for HR.
+  - A leave already endorsed to HR.
+  - A rejected leave.
 
 ## Production: first administrator
 
@@ -120,7 +132,7 @@ With `APP_ENV=production`, the demo accounts are not created. Create the first S
 php artisan app:create-administrator --name="Juan Dela Cruz" --username="admin" --email="admin@cagdianao.gov.ph"
 ```
 
-The command prompts for the password, so it never appears in shell history. Next, the administrator creates an account for an HR officer under **Administration → User Accounts**. HR then adds employees, and each employee gets a login account automatically.
+The command prompts for the password, so it never appears in shell history. Next, the administrator creates an account for an HR officer under **Administration â†’ User Accounts**. HR then adds employees, and each employee gets a login account automatically.
 
 ## Employee accounts and sign-in
 
@@ -154,10 +166,13 @@ Access is enforced on the server by permission middleware on every route group a
 
 | Role | Access so far |
 | --- | --- |
-| System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, **biometric devices** (settings, test connection, sync now, sync log), **office hours** and **holidays**. Admins cannot change their own role or deactivate themselves. They do not see employee records or attendance. |
-| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; plus departments, positions and employment types. |
-| Department Head | The basic profile (name, position, type, status, date hired, mobile number) and the attendance summary and DTRs of employees in **their own department**, read-only. No government IDs, salary, birth details, address or 201 documents. |
-| Employee | Their own full record and 201 file under **My Record**, and their own DTR under **My Attendance** (with the printable Form 48), read-only. |
+| System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, and **biometric devices** (settings, test connection, sync now, sync log). Admins cannot change their own role or deactivate themselves. They do not see employee records, attendance or leave. |
+| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; plus departments, positions and employment types. HR officers cannot approve their own leave. |
+| Municipal Mayor | Everything a Department Head can do for the Office of the Mayor, plus **endorsing department heads' leave** (and leave from offices with no department head in the system). |
+| Department Head | The basic profile (name, position, type, status, date hired, mobile number) and the attendance summary and DTRs of employees in **their own department**, read-only, and **endorsing or rejecting their leave applications**. No government IDs, salary, birth details, address or 201 documents. |
+| Employee | Their own full record and 201 file under **My Record**, their own DTR under **My Attendance** (with the printable Form 48), and **My Leave**: balances, leave card, applying for leave and withdrawing an application still waiting for a decision. |
+
+Everyone with an employee record (HR, the Mayor and department heads included) files their own leave the same way.
 
 Requests for records a user may not see return **404 Not Found**, so changing an ID in the URL does not reveal whether a record exists.
 
@@ -187,7 +202,7 @@ Each account holds exactly one role. Deactivated users cannot sign in, and if th
 
 ### CSV import
 
-For a device that cannot be reached, or punches from a paper logbook: **Attendance → Import Attendance**, with a downloadable template.
+For a device that cannot be reached, or punches from a paper logbook: **Attendance â†’ Import Attendance**, with a downloadable template.
 
 ```csv
 biometric_user_id,date,time
@@ -199,12 +214,103 @@ The header row is required, and columns may be in any order. Dates are `YYYY-MM-
 
 ### Biometric devices
 
-Add each time clock under **Administration → Biometric Devices** (IP address, port 4370, driver). The **mock** driver produces realistic punches for employees with a biometric user ID, so the whole flow can be demonstrated without hardware; a device at IP `0.0.0.0` behaves as unreachable. The real ZKTeco driver (ZKLib over TCP/IP) is added later by implementing `App\Services\Attendance\BiometricDriver` and registering it in `config/attendance.php`.
+Add each time clock under **Administration â†’ Biometric Devices** (IP address, port 4370, driver). The **mock** driver produces realistic punches for employees with a biometric user ID, so the whole flow can be demonstrated without hardware; a device at IP `0.0.0.0` behaves as unreachable. The real ZKTeco driver (ZKLib over TCP/IP) is added later by implementing `App\Services\Attendance\BiometricDriver` and registering it in `config/attendance.php`.
+
+### Office hours and holidays
+
+HR maintains these under **Work Calendar**. Adding, moving or removing a past or current holiday recomputes that day's DTRs immediately. The 2026 national holidays are seeded; check them against the presidential proclamation, and add movable holidays (Eid'l Fitr, Eid'l Adha) and Cagdianao or provincial local holidays.
+
+## Leave
+
+### Leave types
+
+All leave types on CS Form No. 6 are seeded, each with its legal basis and rules:
+- Vacation, Mandatory/Forced and Sick Leave.
+- Maternity, Paternity and Solo Parent Leave.
+- Special Privilege Leave.
+- Study Leave.
+- 10-Day VAWC Leave.
+- Rehabilitation Privilege.
+- Special Leave Benefits for Women.
+- Special Emergency (Calamity) Leave.
+- Adoption Leave.
+- Wellness Leave.
+
+HR can change every rule under **Leave â†’ Leave Types** when regulations change:
+- What the type is charged to.
+- Days per year and per application.
+- Calendar or working days.
+- Half days allowed.
+- Advance notice required.
+- Filing after the leave allowed.
+- Available to one sex only.
+- When an attachment is required.
+
+Vacation, sick and forced leave drive the leave card, so their code and charging cannot be changed. **Verify all seeded values against current CSC rules.**
+
+| Charged to | Types | Rule |
+| --- | --- | --- |
+| Vacation leave credits | Vacation, Forced (max 5 days a year) | Days beyond the balance are without pay. |
+| Sick leave credits, then vacation leave credits | Sick | Beyond both balances, without pay. |
+| Own yearly allotment | Special Privilege (3), Solo Parent (7), Calamity (5), Wellness (5) | Cannot be exceeded; not carried over. |
+| Not charged | Maternity (105 calendar days), Paternity (7), VAWC (10), Study, Rehabilitation, Special Leave Benefits for Women, Adoption | Up to the legal maximum per application. |
+
+### Workflow
+
+1. **Filing.** The employee files under **My Leave â†’ Apply for Leave**. The application is checked against its type's rules:
+   - Advance notice (e.g. vacation leave 5 days ahead).
+   - Whether it can be filed after the fact (e.g. sick leave).
+   - Half days on a single date only.
+   - Rest days and holidays are not counted.
+   - Allotments and maximums.
+   - Overlapping applications.
+   - Required attachments (e.g. a medical certificate for sick leave over 5 days).
+2. **Endorsement.**
+   - **Employees** are endorsed by their department head.
+   - **Department heads** (and offices with no department head in the system) are endorsed by the **Municipal Mayor**.
+   - **The Mayor's own leave** needs no endorsement and goes straight to HR.
+
+   The endorser endorses or rejects with remarks.
+3. **Approval.** HR approves or rejects. Approval charges the credits inside a database transaction that locks the balances, splits the days into with and without pay, and marks the days **On leave** on the DTR so they are not counted as absences.
+4. **Cancellation.**
+   - The employee may withdraw an application that is still waiting for a decision.
+   - HR may cancel approved leave, for example when the employee is recalled to work. This restores the credits and returns the days to the DTR.
+
+The employee is notified in the app (the bell at the top of every page) at each step. Endorsers are notified of new applications, and HR is notified of endorsed ones.
+
+### Leave card and monthly credits
+
+Each employee's vacation and sick leave are kept as a **ledger (leave card)**:
+- **Append-only:** every line is dated, with the balance after it, and is never edited. Mistakes are fixed with an adjustment that records the reason and who posted it.
+- **Monthly posting:** when HR validates a finished month's DTR, that month is posted automatically:
+  - **Earned:** 1.250 days of vacation and of sick leave. Partial months are prorated, and days of unexcused absence or leave without pay reduce the credits (the CSC tables).
+  - **Tardiness and undertime:** the month's total minutes are converted to days with the CSC table (1 hour = 0.125 day) and deducted from vacation leave. What vacation leave cannot cover is recorded as without pay, for payroll.
+- **Catch-up:** `php artisan leave:post-credits` also runs daily for last month, to catch DTRs validated late.
+- **Re-validation:** if a DTR is corrected and validated again, only the difference is posted.
+- **Forced leave:** in mid-January, `php artisan leave:forfeit-forced-leave` forfeits unused forced leave. This applies to employees who had 10 or more days of vacation leave and took fewer than 5 days of vacation or forced leave that year.
+- **Monitoring:** **Leave â†’ Monthly Posting** shows who is posted, ready or waiting (and why), with a button to post everyone ready.
+
+Elective officials and Job Order / Contract of Service workers do not earn credits. This is set per employment type under **Reference Data â†’ Employment Types**.
+
+### Opening balances
+
+When the system starts keeping the leave cards, HR imports each employee's balances from their paper leave card under **Leave â†’ Leave Credits â†’ Import Opening Balances**, as of the last day of a month.
+
+```csv
+employee_number,vacation_leave,sick_leave
+2021-0230,45.250,60.000
+```
+
+Employees who already have leave card entries are skipped (use an adjustment instead). Bad rows are listed by row number. Credits are posted from the month after the cut-off.
+
+### Certificate of Leave Credits
+
+On an employee's leave card, HR can print a **Certificate of Leave Credits** (PDF) as of any date. It follows the "Certification of Leave Credits" block of CS Form No. 6: total earned, less applications still pending, and balance.
 
 ## Security notes
 
 - Passwords: at least 12 characters, with mixed case, a number and a symbol. The online breached-password check is disabled because the server has no internet access.
-- Login is throttled after 5 failed attempts per email and IP address.
+- Login is throttled after 5 failed attempts per username and IP address.
 - There is no self-registration, and users cannot delete their own accounts.
 - Sessions are stored in the database and encrypted.
 
@@ -214,24 +320,37 @@ Add each time clock under **Administration → Biometric Devices** (IP address, 
 php artisan test --compact
 ```
 
-The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It covers authentication, the full role/permission matrix, the user policy, and access and validation for every Phase 1 endpoint.
+The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It covers:
+- Authentication and the full role/permission matrix.
+- The access rules for employee records, DTRs and leave, including changing IDs in the URL.
+- Unit tests of the DTR rules, the CSC leave tables (checked against published values) and leave charging.
+- End-to-end flows: biometric punches â†’ DTR â†’ validated month â†’ leave card, and leave approval â†’ balance â†’ DTR.
 
 ## Assumptions and decisions
 
 - **Laravel 13 instead of 11.** The project was already scaffolded on Laravel 13. It runs on PHP 8.4 (Herd), because XAMPP's PHP 8.2 cannot run it. Only XAMPP's database is used.
 - **MariaDB 10.4 (XAMPP) instead of MySQL 8.0.** Migrations avoid MySQL-8-only features, so switching to MySQL 8.0 later only needs `DB_CONNECTION=mysql`.
 - **Breeze stubs, not the Breeze installer.** Breeze's Blade views were copied and restyled for Tailwind v4, because the installer would have downgraded the project to Tailwind v3.
-- **No biometric device yet.** Phase 3 will build the driver interface, a mock driver and CSV/manual entry. The ZKTeco (ZKLib) driver will be added when a device is available.
+- **No biometric device yet.** Attendance runs on the mock driver and CSV import. The ZKTeco (ZKLib) driver will be added when a device is available.
 - **Department Head scoping** comes from the head's own employee record (`employees.department_id`). A Department Head account without an employee record sees no employees.
 - **Employees are never deleted.** Separation is recorded with an employment status and separation date, which keeps the 201 file and later attendance, leave and payroll history intact.
-- **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9–12, GSIS 8–15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.
+- **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9â€“12, GSIS 8â€“15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.
 - **HR cannot reset passwords.** Only the System Administrator can, which stops an HR account from taking over an administrator's or another officer's account. A lost temporary password is reset by the administrator.
 - **Salary grade and step are optional** on the employee record, because Job Order and Contract of Service workers are not paid by salary grade. Phase 5 will add their daily rates.
 - **Reference data is deactivated, not deleted**, so historical records keep their department, position and type.
 - **Seeded reference data must be verified.** Departments follow the standard municipal offices under RA 7160. Salary grades on positions follow the DBM Index of Occupational Services. Check both against the municipality's approved plantilla.
-- **One office schedule for everyone**: 8:00–12:00 and 1:00–5:00, Monday to Friday, 15-minute grace period, no flexible time. Shift work (for example, rural health unit staff on duty schedules) is not yet supported.
+- **One office schedule for everyone**: 8:00â€“12:00 and 1:00â€“5:00, Monday to Friday, 15-minute grace period, no flexible time. Shift work (for example, rural health unit staff on duty schedules) is not yet supported.
 - **The grace period applies to both sessions.** Beyond it, lateness counts from the scheduled start, not from the end of the grace period.
 - **A missing punch counts as absent for that half-day** until HR corrects it. Months cannot be validated while missing punches remain.
 - **The device's in/out key is ignored.** Punches are assigned to the four columns by time, because employees often press the wrong key.
 - **Seeded 2026 holidays must be checked** against the presidential proclamation. Movable holidays (Eid'l Fitr, Eid'l Adha) and local holidays of Cagdianao and the Province of Dinagat Islands are added by the System Administrator.
 - **Office hours and holidays are managed by the System Administrator**, as part of system configuration. Changes apply to days processed afterwards; HR can recompute earlier months from each DTR.
+- **Office hours and holidays are managed by HR**, as part of the core work calendar. The System Administrator no longer sees them.
+- **A Municipal Mayor role** endorses department heads' leave. The Mayor's own leave goes straight to HR. If no Mayor account exists, department heads' leave also goes straight to HR, so nothing gets stuck.
+- **Credits are charged on final approval only.** Applications still waiting are shown as "applied for" against the balance, but are not deducted until HR approves.
+- **Unexcused absences count as leave without pay** when computing earned credits. An absence covered by approved leave with pay does not.
+- **Tardiness and undertime are posted per month**, after the DTR is validated, as one leave card line converted with the CSC table.
+- **Forced leave** counts both vacation and forced leave taken toward the 5 days. Unused days are forfeited in mid-January, so December leave can be approved first.
+- **Half-day leave** is morning or afternoon on a single date. Two half-day applications on the same date are not allowed (file a whole day instead).
+- **Employees who do not earn credits** (elective, Job Order, Contract of Service) cannot file vacation or sick leave. They can still file leave granted by law or by yearly allotment.
+- **Leave rules are seeded and must be verified**, especially Wellness Leave, whose governing circular should be confirmed. HR can change every value under **Leave Types**.

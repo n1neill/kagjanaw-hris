@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Nature of appointment, e.g. Permanent, Casual, Job Order.
  */
-#[Fillable(['code', 'name', 'description', 'is_active'])]
+#[Fillable(['code', 'name', 'description', 'earns_leave_credits', 'is_active'])]
 class EmploymentType extends Model
 {
     /** @use HasFactory<EmploymentTypeFactory> */
@@ -22,6 +22,7 @@ class EmploymentType extends Model
     protected function casts(): array
     {
         return [
+            'earns_leave_credits' => 'boolean',
             'is_active' => 'boolean',
         ];
     }

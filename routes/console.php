@@ -27,3 +27,22 @@ Schedule::command('attendance:sync')
 Schedule::command('attendance:process')
     ->dailyAt('00:15')
     ->withoutOverlapping();
+
+/*
+|--------------------------------------------------------------------------
+| Leave
+|--------------------------------------------------------------------------
+|
+| Last month's leave credits are posted for employees whose DTR has been
+| validated (also done the moment HR validates a month). Unused forced leave
+| is forfeited in mid-January, after December leave has been approved.
+|
+*/
+
+Schedule::command('leave:post-credits')
+    ->dailyAt('01:30')
+    ->withoutOverlapping();
+
+Schedule::command('leave:forfeit-forced-leave')
+    ->yearlyOn(1, 15, '02:00')
+    ->withoutOverlapping();

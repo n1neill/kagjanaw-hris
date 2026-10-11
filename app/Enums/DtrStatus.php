@@ -12,6 +12,7 @@ enum DtrStatus: string
     case HalfDay = 'half-day';
     case Absent = 'absent';
     case Incomplete = 'incomplete';
+    case OnLeave = 'on-leave';
     case Holiday = 'holiday';
     case RestDay = 'rest-day';
 
@@ -23,6 +24,7 @@ enum DtrStatus: string
             self::HalfDay => 'Half day',
             self::Absent => 'Absent',
             self::Incomplete => 'Missing punch',
+            self::OnLeave => 'On leave',
             self::Holiday => 'Holiday',
             self::RestDay => 'Rest day',
         };
@@ -35,7 +37,7 @@ enum DtrStatus: string
             self::Pending => 'gray',
             self::HalfDay, self::Incomplete => 'yellow',
             self::Absent => 'red',
-            self::Holiday => 'brand',
+            self::Holiday, self::OnLeave => 'brand',
             self::RestDay => 'gray',
         };
     }

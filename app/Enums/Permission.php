@@ -21,15 +21,18 @@ enum Permission: string
     case ManageReferenceData = 'reference-data.manage';
     case ManageEmployees = 'employees.manage';
     case ManageAttendance = 'attendance.manage';
+    case ManageWorkCalendar = 'work-calendar.manage';
     case ApproveLeave = 'leave.approve';
+    case ManageLeaveCredits = 'leave-credits.manage';
     case ProcessPayroll = 'payroll.process';
     case GenerateReports = 'reports.generate';
     case ManageAnnouncements = 'announcements.manage';
 
-    // Department supervision
+    // Department supervision (EndorseDepartmentHeadLeave: the Municipal Mayor)
     case ViewDepartmentEmployees = 'employees.view-department';
     case ViewDepartmentAttendance = 'attendance.view-department';
     case EndorseLeave = 'leave.endorse';
+    case EndorseDepartmentHeadLeave = 'leave.endorse-department-heads';
     case ViewDepartmentReports = 'reports.view-department';
 
     // Employee self-service

@@ -58,6 +58,18 @@ class DemoUserSeeder extends Seeder
             'date_hired' => '2010-07-01',
         ]);
 
+        $this->seedEmployeeAccount(Role::MunicipalMayor, [
+            'employee_number' => '2022-0001',
+            'last_name' => 'Villanueva',
+            'first_name' => 'Ramon',
+            'middle_name' => 'Torres',
+            'sex' => Sex::Male,
+            'department' => 'OMM',
+            'position' => 'Municipal Mayor',
+            'date_hired' => '2022-06-30',
+            'employment_type' => 'elective',
+        ]);
+
         $this->seedEmployeeAccount(Role::Employee, [
             'employee_number' => '2021-0230',
             'last_name' => 'Reyes',
@@ -73,7 +85,7 @@ class DemoUserSeeder extends Seeder
     }
 
     /**
-     * @param  array{employee_number: string, last_name: string, first_name: string, middle_name: string, sex: Sex, department: string, position: string, date_hired: string}  $details
+     * @param  array{employee_number: string, last_name: string, first_name: string, middle_name: string, sex: Sex, department: string, position: string, date_hired: string, employment_type?: string}  $details
      */
     private function seedEmployeeAccount(Role $role, array $details): void
     {
@@ -98,7 +110,7 @@ class DemoUserSeeder extends Seeder
                 'civil_status' => CivilStatus::Married,
                 'department_id' => Department::where('code', $details['department'])->sole()->id,
                 'position_id' => $position->id,
-                'employment_type_id' => EmploymentType::where('code', 'permanent')->sole()->id,
+                'employment_type_id' => EmploymentType::where('code', $details['employment_type'] ?? 'permanent')->sole()->id,
                 'salary_grade' => $position->salary_grade,
                 'salary_step' => 1,
                 'date_hired' => $details['date_hired'],

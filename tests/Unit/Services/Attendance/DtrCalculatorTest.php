@@ -5,6 +5,7 @@ use App\Services\Attendance\DayPunches;
 use App\Services\Attendance\DayType;
 use App\Services\Attendance\DtrCalculator;
 use App\Services\Attendance\DtrResult;
+use App\Services\Attendance\LeaveCoverage;
 use App\Services\Attendance\ScheduleRules;
 
 /**
@@ -148,5 +149,43 @@ describe('today', function () {
         $result = calculateDay('08:00', '12:00', '13:00', '17:00', now: '17:05');
 
         expect($result->status)->toBe(DtrStatus::Present);
+    });
+});
+
+describe('approved leave', function () {
+    function calculateDayOnLeave(?string $amIn, ?string $amOut, ?string $pmIn, ?string $pmOut, LeaveCoverage $leave, ?string $now = null): DtrResult
+    {
+        return (new DtrCalculator)->calculate(
+            DayPunches::fromTimes($amIn, $amOut, $pmIn, $pmOut),
+            officeHours(),
+            DayType::Working,
+            $now === null ? null : ScheduleRules::toMinutes($now),
+            $leave,
+        );
+    }
+
+    it('marks a whole day of leave as on leave with no absence', function () {
+        $result = calculateDayOnLeave(null, null, null, null, LeaveCoverage::FullDay);
+
+        expect($result->status)->toBe(DtrStatus::OnLeave)
+            ->and($result->absentMinutes)->toBe(0);
+    });
+
+    it('excuses only the session covered by half-day leave', function (LeaveCoverage $leave, array $punches, DtrStatus $status, int $absent, int $late) {
+        $result = calculateDayOnLeave(...$punches, leave: $leave);
+
+        expect($result->status)->toBe($status)
+            ->and($result->absentMinutes)->toBe($absent)
+            ->and($result->lateMinutes)->toBe($late);
+    })->with([
+        'morning leave, worked the afternoon' => [LeaveCoverage::Morning, [null, null, '13:30', '17:00'], DtrStatus::Present, 0, 30],
+        'morning leave, absent in the afternoon' => [LeaveCoverage::Morning, [null, null, null, null], DtrStatus::HalfDay, 240, 0],
+        'afternoon leave, late in the morning' => [LeaveCoverage::Afternoon, ['08:20', '12:00', null, null], DtrStatus::Present, 0, 20],
+    ]);
+
+    it('shows today as on leave right away for a whole day of leave', function () {
+        $result = calculateDayOnLeave(null, null, null, null, LeaveCoverage::FullDay, now: '09:00');
+
+        expect($result->status)->toBe(DtrStatus::OnLeave);
     });
 });

@@ -3,13 +3,14 @@
 namespace App\Enums;
 
 /**
- * The four system roles. Case order is the precedence used to pick a
- * user's primary role when deciding which dashboard to show.
+ * The system roles. Case order is the precedence used to pick a user's
+ * primary role when deciding which dashboard to show.
  */
 enum Role: string
 {
     case SystemAdministrator = 'system-administrator';
     case HrOfficer = 'hr-officer';
+    case MunicipalMayor = 'municipal-mayor';
     case DepartmentHead = 'department-head';
     case Employee = 'employee';
 
@@ -18,6 +19,7 @@ enum Role: string
         return match ($this) {
             self::SystemAdministrator => 'System Administrator',
             self::HrOfficer => 'HR Officer',
+            self::MunicipalMayor => 'Municipal Mayor',
             self::DepartmentHead => 'Department Head',
             self::Employee => 'Employee',
         };
@@ -31,7 +33,7 @@ enum Role: string
         return match ($this) {
             self::SystemAdministrator => 'dashboard.admin',
             self::HrOfficer => 'dashboard.hr',
-            self::DepartmentHead => 'dashboard.department-head',
+            self::MunicipalMayor, self::DepartmentHead => 'dashboard.department-head',
             self::Employee => 'dashboard.employee',
         };
     }
@@ -48,6 +50,13 @@ enum Role: string
             Permission::ViewOwnPayslips,
         ];
 
+        $departmentSupervision = [
+            Permission::ViewDepartmentEmployees,
+            Permission::ViewDepartmentAttendance,
+            Permission::EndorseLeave,
+            Permission::ViewDepartmentReports,
+        ];
+
         return match ($this) {
             self::SystemAdministrator => [
                 Permission::ManageUsers,
@@ -61,19 +70,20 @@ enum Role: string
                 Permission::ManageReferenceData,
                 Permission::ManageEmployees,
                 Permission::ManageAttendance,
+                Permission::ManageWorkCalendar,
                 Permission::ApproveLeave,
+                Permission::ManageLeaveCredits,
                 Permission::ProcessPayroll,
                 Permission::GenerateReports,
                 Permission::ManageAnnouncements,
                 ...$selfService,
             ],
-            self::DepartmentHead => [
-                Permission::ViewDepartmentEmployees,
-                Permission::ViewDepartmentAttendance,
-                Permission::EndorseLeave,
-                Permission::ViewDepartmentReports,
+            self::MunicipalMayor => [
+                ...$departmentSupervision,
+                Permission::EndorseDepartmentHeadLeave,
                 ...$selfService,
             ],
+            self::DepartmentHead => [...$departmentSupervision, ...$selfService],
             self::Employee => $selfService,
         };
     }

@@ -28,7 +28,11 @@ class EmploymentTypeSeeder extends Seeder
         ];
 
         foreach ($types as $code => [$name, $description]) {
-            EmploymentType::updateOrCreate(['code' => $code], ['name' => $name, 'description' => $description]);
+            EmploymentType::updateOrCreate(['code' => $code], [
+                'name' => $name,
+                'description' => $description,
+                'earns_leave_credits' => ! in_array($code, ['elective', 'job-order', 'contract-of-service'], true),
+            ]);
         }
     }
 }

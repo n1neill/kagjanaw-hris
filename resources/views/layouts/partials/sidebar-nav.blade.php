@@ -16,6 +16,16 @@
                 {{ __('My Attendance') }}
             </x-sidebar-link>
         @endcan
+        @can(Permission::FileLeave)
+            <x-sidebar-link :href="route('leave.my')" :active="request()->routeIs('leave.my', 'leave.requests.create')" icon="calendar">
+                {{ __('My Leave') }}
+            </x-sidebar-link>
+        @endcan
+        @canany([Permission::EndorseLeave, Permission::EndorseDepartmentHeadLeave])
+            <x-sidebar-link :href="route('leave.endorsements')" :active="request()->routeIs('leave.endorsements')" icon="inbox">
+                {{ __('Leave Endorsements') }}
+            </x-sidebar-link>
+        @endcanany
     </div>
 
     @can(Permission::ManageEmployees)
@@ -52,6 +62,47 @@
         </div>
     @endcan
 
+    @canany([Permission::ApproveLeave, Permission::ManageLeaveCredits])
+        <div>
+            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Leave') }}</p>
+            <div class="mt-2 space-y-1">
+                @can(Permission::ApproveLeave)
+                    <x-sidebar-link :href="route('leave.requests.index')" :active="request()->routeIs('leave.requests.index', 'leave.requests.show')" icon="inbox">
+                        {{ __('Leave Applications') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageLeaveCredits)
+                    <x-sidebar-link :href="route('leave.credits')" :active="request()->routeIs('leave.credits', 'leave.card', 'leave.opening-balances.*')" icon="book">
+                        {{ __('Leave Credits') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('leave.posting.index')" :active="request()->routeIs('leave.posting.*')" icon="check">
+                        {{ __('Monthly Posting') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('leave.reports.utilization')" :active="request()->routeIs('leave.reports.*')" icon="chart">
+                        {{ __('Leave Utilization') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('leave.types.index')" :active="request()->routeIs('leave.types.*')" icon="tag">
+                        {{ __('Leave Types') }}
+                    </x-sidebar-link>
+                @endcan
+            </div>
+        </div>
+    @endcanany
+
+    @can(Permission::ManageWorkCalendar)
+        <div>
+            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Work Calendar') }}</p>
+            <div class="mt-2 space-y-1">
+                <x-sidebar-link :href="route('work-calendar.schedule.edit')" :active="request()->routeIs('work-calendar.schedule.*')" icon="clock">
+                    {{ __('Office Hours') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('work-calendar.holidays.index')" :active="request()->routeIs('work-calendar.holidays.*')" icon="calendar">
+                    {{ __('Holidays') }}
+                </x-sidebar-link>
+            </div>
+        </div>
+    @endcan
+
     @can(Permission::ManageReferenceData)
         <div>
             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Reference Data') }}</p>
@@ -69,7 +120,7 @@
         </div>
     @endcan
 
-    @canany([Permission::ManageUsers, Permission::ManageBiometricDevices, Permission::ManageSettings])
+    @canany([Permission::ManageUsers, Permission::ManageBiometricDevices])
         <div>
             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Administration') }}</p>
             <div class="mt-2 space-y-1">
@@ -81,14 +132,6 @@
                 @can(Permission::ManageBiometricDevices)
                     <x-sidebar-link :href="route('admin.devices.index')" :active="request()->routeIs('admin.devices.*')" icon="server">
                         {{ __('Biometric Devices') }}
-                    </x-sidebar-link>
-                @endcan
-                @can(Permission::ManageSettings)
-                    <x-sidebar-link :href="route('admin.work-schedule.edit')" :active="request()->routeIs('admin.work-schedule.*')" icon="clock">
-                        {{ __('Office Hours') }}
-                    </x-sidebar-link>
-                    <x-sidebar-link :href="route('admin.holidays.index')" :active="request()->routeIs('admin.holidays.*')" icon="calendar">
-                        {{ __('Holidays') }}
                     </x-sidebar-link>
                 @endcan
             </div>

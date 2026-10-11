@@ -47,6 +47,7 @@ class DtrCorrectionService
             $schedule->rules(),
             $this->processor->dayTypeFor($date, $schedule),
             $this->processor->nowMinutesFor($date),
+            $this->processor->leaveCoverageFor($employee, $date),
         );
 
         $after = $punches->toTimes();

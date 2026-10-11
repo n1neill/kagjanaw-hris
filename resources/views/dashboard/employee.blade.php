@@ -5,6 +5,8 @@
 
     @include('dashboard.partials.my-attendance')
 
+    @include('dashboard.partials.my-leave')
+
     @if ($employee)
         <x-card :title="__('My Record')">
             <x-slot name="actions">
@@ -18,10 +20,7 @@
         </x-card>
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-3">
-        <x-upcoming-module :title="__('Leave balance')" icon="calendar">
-            {{ __('Your vacation and sick leave credits (Phase 4).') }}
-        </x-upcoming-module>
+    <div class="grid gap-4 sm:grid-cols-2">
         <x-upcoming-module :title="__('Latest payslip')" icon="banknotes">
             {{ __('Download your most recent payslip (Phase 5).') }}
         </x-upcoming-module>

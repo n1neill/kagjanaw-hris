@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -35,5 +37,15 @@ class AppServiceProvider extends ServiceProvider
             ->mixedCase()
             ->numbers()
             ->symbols());
+
+        // The notification bell in the main layout.
+        View::composer('layouts.app', function (\Illuminate\View\View $view): void {
+            $user = Auth::user();
+
+            $view->with([
+                'unreadNotificationCount' => $user?->unreadNotifications()->count() ?? 0,
+                'recentNotifications' => $user?->notifications()->latest()->limit(8)->get() ?? collect(),
+            ]);
+        });
     }
 }

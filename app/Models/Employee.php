@@ -133,6 +133,47 @@ class Employee extends Model
     }
 
     /**
+     * @return HasMany<LeaveRequest, $this>
+     */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * @return HasMany<LeaveRequestDay, $this>
+     */
+    public function leaveRequestDays(): HasMany
+    {
+        return $this->hasMany(LeaveRequestDay::class);
+    }
+
+    /**
+     * @return HasMany<LeaveBalance, $this>
+     */
+    public function leaveBalances(): HasMany
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    /**
+     * @return HasMany<LeaveLedgerEntry, $this>
+     */
+    public function leaveLedgerEntries(): HasMany
+    {
+        return $this->hasMany(LeaveLedgerEntry::class);
+    }
+
+    /**
+     * Whether the employee earns vacation and sick leave credits (not elective
+     * officials or Job Order / Contract of Service workers).
+     */
+    public function earnsLeaveCredits(): bool
+    {
+        return (bool) $this->employmentType?->earns_leave_credits;
+    }
+
+    /**
      * Whether the employee was in service on the given date.
      */
     public function wasEmployedOn(CarbonInterface $date): bool

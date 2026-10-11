@@ -16,14 +16,18 @@
         </div>
     </x-card>
 
+    <a href="{{ route('leave.endorsements') }}" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-xs hover:border-brand-300">
+        <div class="flex items-center gap-3">
+            <x-icon name="inbox" class="size-6 text-brand-700" />
+            <div>
+                <p class="text-sm font-medium text-gray-900">{{ __('Leave applications waiting for your endorsement') }}</p>
+                <p class="text-xs text-gray-500">{{ __('Endorse or reject them with your remarks.') }}</p>
+            </div>
+        </div>
+        <span class="text-2xl font-semibold {{ $pendingEndorsements ? 'text-yellow-700' : 'text-gray-900' }}">{{ $pendingEndorsements }}</span>
+    </a>
+
     @include('dashboard.partials.my-attendance')
 
-    <div class="grid gap-4 sm:grid-cols-2">
-        <x-upcoming-module :title="__('Pending endorsements')" icon="calendar">
-            {{ __('Leave requests from your department awaiting your endorsement (Phase 4).') }}
-        </x-upcoming-module>
-        <x-upcoming-module :title="__('My leave balance')" icon="briefcase">
-            {{ __('Your vacation and sick leave credits (Phase 4).') }}
-        </x-upcoming-module>
-    </div>
+    @include('dashboard.partials.my-leave')
 </x-app-layout>

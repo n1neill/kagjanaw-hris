@@ -17,18 +17,26 @@ use App\Enums\DtrStatus;
  *    and the day is flagged "missing punch" for HR to correct.
  *  - Arriving early or leaving late earns no extra credit.
  *  - Holidays and rest days carry no deductions.
+ *  - A session covered by approved leave is excused: no tardiness,
+ *    undertime or absence is counted for it.
  *  - Today is "in progress": sessions that have not yet ended are not
  *    judged, except that a late arrival is shown as soon as it happens.
  */
 final class DtrCalculator
 {
+    private const EXCUSED = ['outcome' => 'leave', 'late' => 0, 'undertime' => 0, 'absent' => 0, 'worked' => 0];
+
     /**
      * @param  int|null  $nowMinutes  Minutes after midnight when the day is today; null for past days.
      */
-    public function calculate(DayPunches $punches, ScheduleRules $rules, DayType $dayType, ?int $nowMinutes = null): DtrResult
+    public function calculate(DayPunches $punches, ScheduleRules $rules, DayType $dayType, ?int $nowMinutes = null, LeaveCoverage $leave = LeaveCoverage::None): DtrResult
     {
-        $morning = $this->session($punches->amIn, $punches->amOut, $rules->amStart, $rules->amEnd, $rules->graceMinutes, $nowMinutes);
-        $afternoon = $this->session($punches->pmIn, $punches->pmOut, $rules->pmStart, $rules->pmEnd, $rules->graceMinutes, $nowMinutes);
+        $morning = $leave->coversMorning()
+            ? self::EXCUSED
+            : $this->session($punches->amIn, $punches->amOut, $rules->amStart, $rules->amEnd, $rules->graceMinutes, $nowMinutes);
+        $afternoon = $leave->coversAfternoon()
+            ? self::EXCUSED
+            : $this->session($punches->pmIn, $punches->pmOut, $rules->pmStart, $rules->pmEnd, $rules->graceMinutes, $nowMinutes);
 
         $workedMinutes = $morning['worked'] + $afternoon['worked'];
 
@@ -42,6 +50,7 @@ final class DtrCalculator
         $outcomes = [$morning['outcome'], $afternoon['outcome']];
 
         $status = match (true) {
+            $outcomes === ['leave', 'leave'] => DtrStatus::OnLeave,
             in_array('open', $outcomes, true) => DtrStatus::Pending,
             in_array('incomplete', $outcomes, true) => DtrStatus::Incomplete,
             $outcomes === ['absent', 'absent'] => DtrStatus::Absent,
@@ -59,7 +68,7 @@ final class DtrCalculator
     }
 
     /**
-     * @return array{outcome: 'complete'|'absent'|'incomplete'|'open', late: int, undertime: int, absent: int, worked: int}
+     * @return array{outcome: 'complete'|'absent'|'incomplete'|'open'|'leave', late: int, undertime: int, absent: int, worked: int}
      */
     private function session(?int $in, ?int $out, int $start, int $end, int $grace, ?int $nowMinutes): array
     {

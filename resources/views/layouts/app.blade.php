@@ -62,16 +62,35 @@
                         @endisset
                     </div>
 
-                    {{-- Notifications (wired to Laravel database notifications in Phase 6) --}}
-                    <x-dropdown align="right" width="w-72">
+                    {{-- Notifications (Laravel database notifications) --}}
+                    <x-dropdown align="right" width="w-80">
                         <x-slot name="trigger">
                             <button type="button" class="relative rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
-                                <span class="sr-only">{{ __('View notifications') }}</span>
+                                <span class="sr-only">{{ trans_choice('View notifications (:count unread)|View notifications (:count unread)', $unreadNotificationCount, ['count' => $unreadNotificationCount]) }}</span>
                                 <x-icon name="bell" class="size-6" />
+                                @if ($unreadNotificationCount > 0)
+                                    <span class="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[0.625rem] font-semibold leading-4 text-white" aria-hidden="true">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
+                                @endif
                             </button>
                         </x-slot>
                         <x-slot name="content">
-                            <p class="px-4 py-3 text-sm text-gray-500">{{ __('You have no notifications.') }}</p>
+                            <div class="flex items-center justify-between border-b border-gray-100 px-4 py-2">
+                                <p class="text-sm font-semibold text-gray-900">{{ __('Notifications') }}</p>
+                                @if ($unreadNotificationCount > 0)
+                                    <form method="POST" action="{{ route('notifications.read-all') }}">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-medium text-brand-700 hover:text-brand-900">{{ __('Mark all as read') }}</button>
+                                    </form>
+                                @endif
+                            </div>
+                            @forelse ($recentNotifications as $notification)
+                                <a href="{{ route('notifications.open', $notification->id) }}" @class(['block border-b border-gray-50 px-4 py-2.5 text-sm hover:bg-gray-50', 'bg-brand-50/50' => $notification->unread()])>
+                                    <span @class(['block', 'font-medium text-gray-900' => $notification->unread(), 'text-gray-600' => ! $notification->unread()])>{{ $notification->data['message'] ?? __('Notification') }}</span>
+                                    <span class="mt-0.5 block text-xs text-gray-500">{{ $notification->created_at->diffForHumans() }}</span>
+                                </a>
+                            @empty
+                                <p class="px-4 py-3 text-sm text-gray-500">{{ __('You have no notifications.') }}</p>
+                            @endforelse
                         </x-slot>
                     </x-dropdown>
 

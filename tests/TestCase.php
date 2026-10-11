@@ -2,16 +2,16 @@
 
 namespace Tests;
 
-use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\CoreReferenceDataSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * Roles and permissions are reference data every feature depends on,
-     * so they are seeded once when the test database is refreshed.
+     * Roles, permissions and leave types are reference data every feature
+     * depends on, so they are seeded once when the test database is refreshed.
      */
     protected bool $seed = true;
 
-    protected string $seeder = RolesAndPermissionsSeeder::class;
+    protected string $seeder = CoreReferenceDataSeeder::class;
 }

@@ -25,6 +25,7 @@ class EmploymentTypeRequest extends FormRequest
     {
         $this->merge([
             'code' => mb_strtolower(trim((string) $this->input('code'))),
+            'earns_leave_credits' => $this->boolean('earns_leave_credits'),
             'is_active' => $this->boolean('is_active'),
         ]);
     }
@@ -43,6 +44,7 @@ class EmploymentTypeRequest extends FormRequest
             'code' => ['required', 'string', 'max:30', 'alpha_dash', Rule::unique(EmploymentType::class)->ignore($employmentType)],
             'name' => ['required', 'string', 'max:255', Rule::unique(EmploymentType::class)->ignore($employmentType)],
             'description' => ['nullable', 'string', 'max:1000'],
+            'earns_leave_credits' => ['required', 'boolean'],
             'is_active' => ['required', 'boolean'],
         ];
     }

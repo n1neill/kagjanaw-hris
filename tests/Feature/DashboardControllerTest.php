@@ -37,6 +37,7 @@ it('shows account counts on the administrator dashboard', function () {
         ->assertViewHas('usersPerRole', [
             'System Administrator' => 1,
             'HR Officer' => 0,
+            'Municipal Mayor' => 0,
             'Department Head' => 0,
             'Employee' => 3,
         ]);

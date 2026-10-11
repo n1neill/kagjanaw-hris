@@ -36,6 +36,7 @@ test('each role is granted exactly its permissions', function (Role $role, array
         'attendance.manage',
         'attendance.view-own',
         'employees.manage',
+        'leave-credits.manage',
         'leave.approve',
         'leave.file',
         'payroll.process',
@@ -43,6 +44,18 @@ test('each role is granted exactly its permissions', function (Role $role, array
         'records.view-own',
         'reference-data.manage',
         'reports.generate',
+        'work-calendar.manage',
+    ]],
+    'municipal mayor' => [Role::MunicipalMayor, [
+        'attendance.view-department',
+        'attendance.view-own',
+        'employees.view-department',
+        'leave.endorse',
+        'leave.endorse-department-heads',
+        'leave.file',
+        'payslips.view-own',
+        'records.view-own',
+        'reports.view-department',
     ]],
     'department head' => [Role::DepartmentHead, [
         'attendance.view-department',
@@ -65,6 +78,6 @@ test('each role is granted exactly its permissions', function (Role $role, array
 test('re-running the seeder does not duplicate roles or permissions', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $this->assertDatabaseCount('roles', 4);
+    $this->assertDatabaseCount('roles', 5);
     $this->assertDatabaseCount('permissions', count(Permission::cases()));
 });

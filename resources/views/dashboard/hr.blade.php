@@ -45,12 +45,30 @@
         </div>
     </x-card>
 
+    <x-card :title="__('Leave')">
+        <x-slot name="actions">
+            <x-button-link :href="route('leave.credits')" variant="secondary">{{ __('Leave Credits') }}</x-button-link>
+        </x-slot>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <a href="{{ route('leave.requests.index') }}" class="block rounded-lg border border-gray-200 p-4 hover:border-brand-300">
+                <p class="text-sm font-medium text-gray-500">{{ __('Applications awaiting approval') }}</p>
+                <p class="mt-2 text-2xl font-semibold {{ $pendingApprovals ? 'text-yellow-700' : 'text-gray-900' }}">{{ $pendingApprovals }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Endorsed by the department head or the Mayor') }}</p>
+            </a>
+            <a href="{{ route('leave.posting.index') }}" class="block rounded-lg border border-gray-200 p-4 hover:border-brand-300">
+                <p class="text-sm font-medium text-gray-500">{{ __('Leave credits not yet posted for :month', ['month' => now()->subMonthNoOverflow()->format('F')]) }}</p>
+                <p class="mt-2 text-2xl font-semibold {{ $unpostedLastMonth ? 'text-yellow-700' : 'text-gray-900' }}">{{ $unpostedLastMonth }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Validate their DTRs to post the credits') }}</p>
+            </a>
+        </div>
+    </x-card>
+
     @include('dashboard.partials.my-attendance')
 
-    <div class="grid gap-4 sm:grid-cols-3">
-        <x-upcoming-module :title="__('Pending leave approvals')" icon="calendar">
-            {{ __('Leave requests endorsed by department heads (Phase 4).') }}
-        </x-upcoming-module>
+    @include('dashboard.partials.my-leave')
+
+    <div class="grid gap-4 sm:grid-cols-2">
         <x-upcoming-module :title="__('Payroll status')" icon="banknotes">
             {{ __('Current payroll run and its status (Phase 5).') }}
         </x-upcoming-module>

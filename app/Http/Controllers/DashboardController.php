@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\AttendanceLogStatus;
 use App\Enums\DtrStatus;
 use App\Enums\EmploymentStatus;
+use App\Enums\LeaveLedgerEntryType;
+use App\Enums\LeaveRequestStatus;
 use App\Enums\Role;
 use App\Models\AttendanceLog;
 use App\Models\BiometricDevice;
@@ -12,8 +14,13 @@ use App\Models\DailyTimeRecord;
 use App\Models\Department;
 use App\Models\DeviceSyncRun;
 use App\Models\Employee;
+use App\Models\LeaveLedgerEntry;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Models\WorkSchedule;
+use App\Services\Leave\LeaveBalanceService;
+use App\Services\Leave\LeaveCreditPostingService;
+use App\Services\Leave\LeaveEndorsementRouter;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role as RoleModel;
@@ -23,6 +30,12 @@ use Spatie\Permission\Models\Role as RoleModel;
  */
 class DashboardController extends Controller
 {
+    public function __construct(
+        private LeaveBalanceService $leaveBalances,
+        private LeaveEndorsementRouter $endorsements,
+        private LeaveCreditPostingService $leavePosting,
+    ) {}
+
     /**
      * Handle the incoming request.
      */
@@ -35,10 +48,32 @@ class DashboardController extends Controller
 
         return view($role->dashboardView(), match ($role) {
             Role::SystemAdministrator => $this->administratorData(),
-            Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user)],
-            Role::DepartmentHead => [...$this->departmentHeadData($user), ...$this->ownAttendanceData($user)],
-            Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user)],
+            Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user)],
+            Role::MunicipalMayor, Role::DepartmentHead => [
+                ...$this->departmentHeadData($user),
+                ...$this->ownAttendanceData($user),
+                ...$this->ownLeaveData($user),
+                'pendingEndorsements' => $this->endorsements->awaitingEndorsementBy($user)->count(),
+            ],
+            Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user)],
         });
+    }
+
+    /**
+     * The signed-in employee's leave balances and open applications.
+     *
+     * @return array{myLeave: ?array<string, mixed>, myOpenLeaveRequests: int}
+     */
+    private function ownLeaveData(User $user): array
+    {
+        $employee = $user->employee;
+
+        return [
+            'myLeave' => $employee === null ? null : $this->leaveBalances->summary($employee),
+            'myOpenLeaveRequests' => $employee === null ? 0 : $employee->leaveRequests()
+                ->whereIn('status', [LeaveRequestStatus::Pending, LeaveRequestStatus::Endorsed])
+                ->count(),
+        ];
     }
 
     /**
@@ -116,7 +151,26 @@ class DashboardController extends Controller
                 ->where('status', DtrStatus::Incomplete)
                 ->whereBetween('work_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])
                 ->count(),
+            'pendingApprovals' => LeaveRequest::query()->where('status', LeaveRequestStatus::Endorsed)->count(),
+            'unpostedLastMonth' => $this->unpostedLeaveCredits(),
         ];
+    }
+
+    /**
+     * Employees whose leave credits for last month are not yet posted.
+     */
+    private function unpostedLeaveCredits(): int
+    {
+        $month = now()->subMonthNoOverflow()->startOfMonth()->toImmutable();
+        $employees = $this->leavePosting->employeesFor($month);
+
+        $posted = LeaveLedgerEntry::query()
+            ->where('entry_type', LeaveLedgerEntryType::Accrual)
+            ->whereDate('period', $month->toDateString())
+            ->distinct()
+            ->count('employee_id');
+
+        return max(0, $employees->count() - $posted);
     }
 
     /**

@@ -86,6 +86,18 @@ class EmployeePolicy
         return $user->can(Permission::ManageAttendance);
     }
 
+    /**
+     * The leave card (ledger) and balances: HR and the employee.
+     */
+    public function viewLeaveCard(User $user, Employee $employee): Response
+    {
+        $allowed = $user->can(Permission::ManageLeaveCredits)
+            || $user->can(Permission::ApproveLeave)
+            || ($user->can(Permission::FileLeave) && $employee->user_id !== null && $employee->user_id === $user->id);
+
+        return $allowed ? Response::allow() : Response::denyAsNotFound();
+    }
+
     private function isOwnRecord(User $user, Employee $employee): bool
     {
         return $employee->user_id !== null

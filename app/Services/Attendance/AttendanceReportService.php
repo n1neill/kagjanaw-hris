@@ -3,9 +3,11 @@
 namespace App\Services\Attendance;
 
 use App\Enums\DtrStatus;
+use App\Enums\LeaveRequestStatus;
 use App\Models\DailyTimeRecord;
 use App\Models\Employee;
 use App\Models\Holiday;
+use App\Models\LeaveRequestDay;
 use App\Models\WorkSchedule;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
@@ -70,7 +72,7 @@ class AttendanceReportService
      * plus weekly (Monday-Sunday) subtotals and month totals.
      *
      * @return array{
-     *     days: Collection<int, array{date: CarbonImmutable, record: ?DailyTimeRecord, holiday: ?Holiday, endsWeek: bool, week: int}>,
+     *     days: Collection<int, array{date: CarbonImmutable, record: ?DailyTimeRecord, holiday: ?Holiday, leave: ?LeaveRequestDay, endsWeek: bool, week: int}>,
      *     weeks: array<int, array<string, int|float>>,
      *     totals: array<string, int|float>,
      * }
@@ -90,13 +92,22 @@ class AttendanceReportService
             ->get()
             ->keyBy(fn (Holiday $holiday): string => $holiday->date->toDateString());
 
-        $days = collect(CarbonPeriod::create($start, $end))->map(function ($date) use ($records, $holidays, $end): array {
+        $leave = LeaveRequestDay::query()
+            ->where('employee_id', $employee->id)
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereHas('leaveRequest', fn ($query) => $query->where('status', LeaveRequestStatus::Approved))
+            ->with('leaveRequest.leaveType')
+            ->get()
+            ->keyBy(fn (LeaveRequestDay $day): string => $day->date->toDateString());
+
+        $days = collect(CarbonPeriod::create($start, $end))->map(function ($date) use ($records, $holidays, $leave, $end): array {
             $date = CarbonImmutable::parse($date);
 
             return [
                 'date' => $date,
                 'record' => $records->get($date->toDateString()),
                 'holiday' => $holidays->get($date->toDateString()),
+                'leave' => $leave->get($date->toDateString()),
                 'endsWeek' => $date->isSunday() || $date->isSameDay($end),
                 'week' => $date->isoWeek(),
             ];

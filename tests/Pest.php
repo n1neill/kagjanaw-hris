@@ -1,5 +1,14 @@
 <?php
 
+use App\Enums\DtrStatus;
+use App\Enums\LeaveLedgerEntryType;
+use App\Models\DailyTimeRecord;
+use App\Models\Employee;
+use App\Models\LeaveType;
+use App\Services\Leave\LeaveDays;
+use App\Services\Leave\LeaveLedger;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +56,46 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| Leave helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Give an employee an opening vacation and sick leave balance (in days).
+ */
+function grantLeaveCredits(Employee $employee, string $vacation = '10.000', string $sick = '10.000', string $asOf = '2026-08-31'): void
+{
+    $ledger = app(LeaveLedger::class);
+    $date = CarbonImmutable::parse($asOf);
+
+    $ledger->post($employee, LeaveType::vacation(), LeaveLedgerEntryType::OpeningBalance, LeaveDays::toThousandths($vacation), 'Opening balance', $date);
+    $ledger->post($employee, LeaveType::sick(), LeaveLedgerEntryType::OpeningBalance, LeaveDays::toThousandths($sick), 'Opening balance', $date);
+}
+
+/**
+ * A validated DTR for every day of a month: weekdays present (or as the
+ * callback returns), weekends rest days.
+ *
+ * @param  (callable(CarbonImmutable): array<string, mixed>)|null  $weekday  Attribute overrides per weekday.
+ */
+function validatedMonthOfDtr(Employee $employee, string $month, ?callable $weekday = null): void
+{
+    $start = CarbonImmutable::parse($month)->startOfMonth();
+
+    foreach (CarbonPeriod::create($start, $start->endOfMonth()->startOfDay()) as $date) {
+        $date = CarbonImmutable::parse($date);
+        $attributes = $date->isWeekend()
+            ? ['am_in' => null, 'am_out' => null, 'pm_in' => null, 'pm_out' => null, 'worked_minutes' => 0, 'status' => DtrStatus::RestDay]
+            : ($weekday === null ? [] : $weekday($date));
+
+        DailyTimeRecord::factory()->for($employee)->create([
+            'work_date' => $date->toDateString(),
+            'validated_at' => now(),
+            ...$attributes,
+        ]);
+    }
 }

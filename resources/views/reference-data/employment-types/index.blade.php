@@ -15,6 +15,7 @@
                     <th>{{ __('Name') }}</th>
                     <th>{{ __('Code') }}</th>
                     <th>{{ __('Description') }}</th>
+                    <th>{{ __('Leave credits') }}</th>
                     <th>{{ __('Status') }}</th>
                     <th data-orderable="false" class="text-right"><span class="sr-only">{{ __('Actions') }}</span></th>
                 </tr>
@@ -25,6 +26,7 @@
                         <td class="font-medium text-gray-900">{{ $employmentType->name }}</td>
                         <td class="font-mono text-xs text-gray-700">{{ $employmentType->code }}</td>
                         <td class="text-gray-600">{{ $employmentType->description }}</td>
+                        <td>{{ $employmentType->earns_leave_credits ? __('Earns') : __('None') }}</td>
                         <td><x-status-badge :active="$employmentType->is_active" /></td>
                         <td class="text-right">
                             <a href="{{ route('reference-data.employment-types.edit', $employmentType) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
