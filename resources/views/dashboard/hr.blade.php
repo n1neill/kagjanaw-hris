@@ -3,6 +3,17 @@
 
     <p class="text-sm text-gray-600">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
 
+    <div class="grid gap-4 sm:grid-cols-3">
+        <x-stat-card :label="__('Employees in service')" :value="$employeesInService" icon="users" />
+        <x-stat-card :label="__('Separated employees')" :value="$separatedEmployees" />
+        <div class="flex items-center justify-center rounded-lg border border-gray-200 bg-white p-4 shadow-xs">
+            <x-button-link :href="route('employees.create')">
+                <x-icon name="plus" class="size-4" />
+                {{ __('New Employee') }}
+            </x-button-link>
+        </div>
+    </div>
+
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-upcoming-module :title="__('Pending leave approvals')" icon="calendar">
             {{ __('Leave requests endorsed by department heads (Phase 4).') }}

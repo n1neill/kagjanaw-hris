@@ -12,14 +12,21 @@ class ProfileUpdateRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
+     * The name of an employee's account comes from their HR record, so only
+     * accounts without an employee record may change it here.
+     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
+        $isEmployeeAccount = $this->user()->employee()->exists();
+
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => $isEmployeeAccount
+                ? ['prohibited']
+                : ['required', 'string', 'max:255'],
             'email' => [
-                'required',
+                'nullable',
                 'string',
                 'lowercase',
                 'email',

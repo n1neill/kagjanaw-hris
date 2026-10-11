@@ -7,7 +7,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Foundation: authentication, roles and permissions, layout, role dashboards, user accounts, departments, positions, employment types | Done |
-| 2 | Employee records and 201 files | Planned |
+| 2 | Employee records and 201 files, automatic employee login accounts, sign-in by employee ID, forced password change | Done |
 | 3 | Attendance: device driver interface, mock driver, CSV import, DTR processing, HR review, reports | Planned |
 | 4 | Leave management | Planned |
 | 5 | Payroll | Planned |
@@ -27,6 +27,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | Tool | Notes |
 | --- | --- |
 | PHP 8.3+ | Laravel 13 needs PHP 8.3 or later. XAMPP's bundled PHP 8.2 is **too old**; use [Laravel Herd](https://herd.laravel.com/windows) or another PHP 8.3+ build. Required extensions: `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `intl`, `zip`, `gd`. |
+| PHP upload limits | 201-file uploads can be up to 10 MB. In `php.ini` set `upload_max_filesize = 12M` and `post_max_size = 16M` (the defaults are 2M and 8M). |
 | Composer 2 | |
 | Node.js 20+ and npm | Only needed to build front-end assets. |
 | XAMPP | Only its **MariaDB/MySQL** service is used. Start it from the XAMPP Control Panel. |
@@ -83,26 +84,35 @@ attrib -R storage /S /D
 
 ## Demo accounts (development only)
 
-`DemoUserSeeder` creates one account per role when `APP_ENV` is not `production`. All use the password **`Kagjanaw@2026`**.
+`DemoUserSeeder` creates one account per role and 30 sample employees when `APP_ENV` is not `production`. Sign in with the **Employee ID** (or username) below; all four use the password **`Kagjanaw@2026`**.
 
-| Role | Email |
-| --- | --- |
-| System Administrator | admin@cagdianao.local |
-| HR Officer | hr@cagdianao.local |
-| Department Head | depthead@cagdianao.local |
-| Employee | employee@cagdianao.local |
+| Role | Employee ID / username | Employee record |
+| --- | --- | --- |
+| System Administrator | `admin` | none (system account) |
+| HR Officer | `2015-0101` | Maria L. Santos, MHRMO |
+| Department Head | `2010-0045` | Juan G. Dela Cruz, Municipal Health Office |
+| Employee | `2021-0230` | Ana B. Reyes, Municipal Health Office |
 
-Never use these accounts on a production server.
+The sample employees have accounts with unknown temporary passwords; reset one under **User Accounts** to sign in as them. Never use these accounts on a production server.
 
 ## Production: first administrator
 
 With `APP_ENV=production`, the demo accounts are not created. Create the first System Administrator with:
 
 ```powershell
-php artisan app:create-administrator --name="Juan Dela Cruz" --email="admin@cagdianao.gov.ph"
+php artisan app:create-administrator --name="Juan Dela Cruz" --username="admin" --email="admin@cagdianao.gov.ph"
 ```
 
-The command prompts for the password, so it never appears in shell history. The administrator then creates every other account under **Administration → User Accounts**.
+The command prompts for the password, so it never appears in shell history. Next, the administrator creates an account for an HR officer under **Administration → User Accounts**. HR then adds employees, and each employee gets a login account automatically.
+
+## Employee accounts and sign-in
+
+- Employees sign in with their **Employee ID** (for example `2021-0230`). System accounts that are not employees, such as `admin`, use a username instead.
+- When HR adds an employee, the system creates an **Employee**-role account. Its username is the employee ID, and it gets a random 12-character temporary password. The password is shown once on the employee's record for HR to hand over in person.
+- Anyone signing in with a password set by someone else (a new account, or an administrator reset) must choose their own password before they can do anything else.
+- The account name and username follow the employee record. Separating an employee (resigned, retired, and so on) deactivates the account; returning them to Active restores it.
+- To make an employee a Department Head or HR Officer, the System Administrator changes the role of their account.
+- Email is optional. It is only used for "forgot password" links; otherwise the System Administrator resets passwords.
 
 ## Environment keys
 
@@ -123,12 +133,20 @@ The command prompts for the password, so it never appears in shell history. The 
 
 Access is enforced on the server by permission middleware on every route group and by policies. Hiding a menu item is never the only protection. Roles and their permissions are defined in [app/Enums/Role.php](app/Enums/Role.php) and [app/Enums/Permission.php](app/Enums/Permission.php), and are seeded by `RolesAndPermissionsSeeder`. Re-running it is safe.
 
-| Role | Phase 1 access |
+| Role | Access so far |
 | --- | --- |
-| System Administrator | User accounts (create, assign role, activate or deactivate) and reference data. Admins cannot change their own role or deactivate themselves. |
-| HR Officer | Departments, positions and employment types. |
-| Department Head | Own dashboard and account. |
-| Employee | Own dashboard and account. |
+| System Administrator | User accounts (create, assign role, reset password, activate or deactivate) and reference data. Admins cannot change their own role or deactivate themselves. They do not see employee records. |
+| HR Officer | All employee records and 201 files (add, edit, upload and delete documents), plus departments, positions and employment types. |
+| Department Head | The basic profile (name, position, type, status, date hired, mobile number) of employees in **their own department**. No government IDs, salary, birth details, address or 201 documents. |
+| Employee | Their own full record and 201 file under **My Record**, read-only. |
+
+Requests for records a user may not see return **404 Not Found**, so changing an ID in the URL does not reveal whether a record exists.
+
+### 201 files
+
+- Accepted files: PDF, JPG and PNG up to 10 MB. The type is checked from the file contents, not just the extension.
+- Files are stored on the private disk under `storage/app/private/employees/{employee_id}/` with random names. They are only served through authorized routes, with `nosniff` and `no-store` headers, never by a public URL.
+- Government ID numbers (GSIS, PhilHealth, Pag-IBIG, TIN) are encrypted at rest with the `APP_KEY`, and masked on screen until the viewer clicks **Show**. **Back up the `APP_KEY`**: without it, encrypted values cannot be read.
 
 Each account holds exactly one role. Deactivated users cannot sign in, and if they are already signed in they are logged out on their next request.
 
@@ -153,6 +171,10 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - **MariaDB 10.4 (XAMPP) instead of MySQL 8.0.** Migrations avoid MySQL-8-only features, so switching to MySQL 8.0 later only needs `DB_CONNECTION=mysql`.
 - **Breeze stubs, not the Breeze installer.** Breeze's Blade views were copied and restyled for Tailwind v4, because the installer would have downgraded the project to Tailwind v3.
 - **No biometric device yet.** Phase 3 will build the driver interface, a mock driver and CSV/manual entry. The ZKTeco (ZKLib) driver will be added when a device is available.
-- **Department Head scoping** will come from the employee record in Phase 2 (`employees.department_id`), not from the user account.
+- **Department Head scoping** comes from the head's own employee record (`employees.department_id`). A Department Head account without an employee record sees no employees.
+- **Employees are never deleted.** Separation is recorded with an employment status and separation date, which keeps the 201 file and later attendance, leave and payroll history intact.
+- **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9–12, GSIS 8–15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.
+- **HR cannot reset passwords.** Only the System Administrator can, which stops an HR account from taking over an administrator's or another officer's account. A lost temporary password is reset by the administrator.
+- **Salary grade and step are optional** on the employee record, because Job Order and Contract of Service workers are not paid by salary grade. Phase 5 will add their daily rates.
 - **Reference data is deactivated, not deleted**, so historical records keep their department, position and type.
 - **Seeded reference data must be verified.** Departments follow the standard municipal offices under RA 7160. Salary grades on positions follow the DBM Index of Occupational Services. Check both against the municipality's approved plantilla.

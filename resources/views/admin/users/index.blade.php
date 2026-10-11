@@ -1,7 +1,7 @@
 <x-app-layout :title="__('User Accounts')">
     <x-slot name="header">{{ __('User Accounts') }}</x-slot>
 
-    <x-card :title="__('All accounts')" :description="__('Each account holds one role. Deactivated accounts cannot sign in.')">
+    <x-card :title="__('All accounts')" :description="__('Each account holds one role. Employee accounts are created automatically when HR adds an employee. Deactivated accounts cannot sign in.')">
         <x-slot name="actions">
             <x-button-link :href="route('admin.users.create')">
                 <x-icon name="plus" class="size-4" />
@@ -13,6 +13,7 @@
             <thead>
                 <tr>
                     <th>{{ __('Name') }}</th>
+                    <th>{{ __('Username') }}</th>
                     <th>{{ __('Email') }}</th>
                     <th>{{ __('Role') }}</th>
                     <th>{{ __('Status') }}</th>
@@ -24,7 +25,8 @@
                 @foreach ($users as $user)
                     <tr>
                         <td class="font-medium text-gray-900">{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
+                        <td class="font-mono text-xs">{{ $user->username }}</td>
+                        <td>{{ $user->email ?? '—' }}</td>
                         <td>
                             @if ($role = $user->primaryRole())
                                 <x-badge color="brand">{{ $role->label() }}</x-badge>

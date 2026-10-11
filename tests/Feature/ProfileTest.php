@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Employee;
 use App\Models\User;
 
 test('profile page is displayed', function () {
@@ -48,6 +49,37 @@ test('email verification status is unchanged when the email address is unchanged
         ->assertRedirect('/profile');
 
     $this->assertNotNull($user->refresh()->email_verified_at);
+});
+
+test('an employee can update their email but not the name from their HR record', function () {
+    $employee = Employee::factory()->withAccount()->create();
+    $user = $employee->user;
+    $originalName = $user->name;
+
+    $this->actingAs($user)
+        ->patch('/profile', ['email' => 'new@cagdianao.local'])
+        ->assertSessionHasNoErrors();
+
+    $response = $this->actingAs($user)->patch('/profile', [
+        'name' => 'Different Name',
+        'email' => 'new@cagdianao.local',
+    ]);
+
+    $response->assertSessionHasErrors(['name' => 'The name field is prohibited.']);
+    $user->refresh();
+    expect($user->email)->toBe('new@cagdianao.local')
+        ->and($user->name)->toBe($originalName);
+});
+
+test('the email address can be removed', function () {
+    $user = User::factory()->employee()->create();
+
+    $this->actingAs($user)->patch('/profile', [
+        'name' => $user->name,
+        'email' => '',
+    ])->assertSessionHasNoErrors();
+
+    expect($user->refresh()->email)->toBeNull();
 });
 
 test('users can not delete their own account', function () {

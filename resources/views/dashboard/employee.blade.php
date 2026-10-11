@@ -3,6 +3,19 @@
 
     <p class="text-sm text-gray-600">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
 
+    @if ($employee)
+        <x-card :title="__('My Record')">
+            <x-slot name="actions">
+                <x-button-link :href="route('my-record')" variant="secondary">{{ __('View my record') }}</x-button-link>
+            </x-slot>
+            <dl class="grid gap-4 sm:grid-cols-3">
+                <x-detail :label="__('Employee ID')"><span class="font-mono">{{ $employee->employee_number }}</span></x-detail>
+                <x-detail :label="__('Position')">{{ $employee->position->title }}</x-detail>
+                <x-detail :label="__('Department')">{{ $employee->department->name }}</x-detail>
+            </dl>
+        </x-card>
+    @endif
+
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-upcoming-module :title="__('Today\'s attendance')" icon="clock">
             {{ __('Your time in and time out for today (Phase 3).') }}

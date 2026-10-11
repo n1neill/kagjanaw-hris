@@ -24,20 +24,39 @@ class UpdateUserRequest extends FormRequest
      *
      * The role is required when editing someone else and prohibited when
      * editing your own account, which prevents accidental self-demotion.
+     * The name and username of an employee's account follow the employee
+     * record, so they are prohibited here for linked accounts.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $canChangeRole = $this->user()->can('changeRole', $this->account());
+        $account = $this->account();
+        $canChangeRole = $this->user()->can('changeRole', $account);
+        $isEmployeeAccount = $account->employee()->exists();
 
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->account())],
+            'name' => $isEmployeeAccount
+                ? ['prohibited']
+                : ['required', 'string', 'max:255'],
+            'username' => $isEmployeeAccount
+                ? ['prohibited']
+                : ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique(User::class)->ignore($account)],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($account)],
             'role' => $canChangeRole
                 ? ['required', Rule::enum(Role::class)]
                 : ['prohibited'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'username.regex' => __('The username may only contain letters, numbers, dots, dashes and underscores.'),
         ];
     }
 

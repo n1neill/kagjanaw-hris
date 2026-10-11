@@ -6,7 +6,32 @@
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="home">
             {{ __('Dashboard') }}
         </x-sidebar-link>
+        @can(Permission::ViewOwnRecords)
+            <x-sidebar-link :href="route('my-record')" :active="request()->routeIs('my-record')" icon="identification">
+                {{ __('My Record') }}
+            </x-sidebar-link>
+        @endcan
     </div>
+
+    @can(Permission::ManageEmployees)
+        <div>
+            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Human Resources') }}</p>
+            <div class="mt-2 space-y-1">
+                <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
+                    {{ __('Employees') }}
+                </x-sidebar-link>
+            </div>
+        </div>
+    @elsecan(Permission::ViewDepartmentEmployees)
+        <div>
+            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Department') }}</p>
+            <div class="mt-2 space-y-1">
+                <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
+                    {{ __('My Department') }}
+                </x-sidebar-link>
+            </div>
+        </div>
+    @endcan
 
     @can(Permission::ManageReferenceData)
         <div>

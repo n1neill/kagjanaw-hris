@@ -1,7 +1,7 @@
 <x-app-layout :title="__('New Account')">
     <x-slot name="header">{{ __('New Account') }}</x-slot>
 
-    <x-card class="max-w-2xl" :title="__('Account details')" :description="__('Give the initial password to the user in person and ask them to change it after signing in.')">
+    <x-card class="max-w-2xl" :title="__('Account details')" :description="__('Use this for accounts that are not employees, such as system accounts. Employee accounts are created by HR from the employee record. Give the temporary password to the user in person; they must change it when they first sign in.')">
         <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-5">
             @csrf
 

@@ -1,7 +1,7 @@
 <x-guest-layout>
     <h2 class="text-lg font-semibold text-gray-900">{{ __('Reset your password') }}</h2>
     <p class="mt-1 text-sm text-gray-600">
-        {{ __('Enter your email address and we will send you a password reset link. If you no longer have access to your email, ask the System Administrator to reset your password.') }}
+        {{ __('If you saved an email address in My Account, enter it and we will send you a password reset link. Otherwise, ask the System Administrator to reset your password.') }}
     </p>
 
     <x-auth-session-status class="mt-4" :status="session('status')" />

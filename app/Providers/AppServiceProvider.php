@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -12,7 +13,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // On Windows, PHP needs TEMP/TMP to find a writable folder for uploads.
+        // `artisan serve` strips them from its workers, which breaks 201-file uploads.
+        ServeCommand::$passthroughVariables = array_values(array_unique([
+            ...ServeCommand::$passthroughVariables,
+            'TEMP',
+            'TMP',
+        ]));
     }
 
     /**

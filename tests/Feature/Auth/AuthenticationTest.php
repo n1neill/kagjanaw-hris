@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 
@@ -13,11 +14,23 @@ test('users can authenticate using the login screen', function () {
     $user = User::factory()->employee()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'password',
     ]);
 
     $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
+});
+
+test('employees sign in with their employee ID', function () {
+    $employee = Employee::factory()->withAccount()->create(['employee_number' => '2021-0230']);
+
+    $response = $this->post('/login', [
+        'username' => '2021-0230',
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticatedAs($employee->user);
     $response->assertRedirect(route('dashboard', absolute: false));
 });
 
@@ -26,7 +39,7 @@ test('a successful login records the login time', function () {
     $user = User::factory()->employee()->create();
 
     $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'password',
     ]);
 
@@ -37,25 +50,25 @@ test('users can not authenticate with invalid password', function () {
     $user = User::factory()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'wrong-password',
     ]);
 
     $this->assertGuest();
-    $response->assertSessionHasErrors(['email' => trans('auth.failed')]);
+    $response->assertSessionHasErrors(['username' => trans('auth.failed')]);
 });
 
 test('deactivated users can not authenticate', function () {
     $user = User::factory()->employee()->inactive()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'password',
     ]);
 
     $this->assertGuest();
     $response->assertSessionHasErrors([
-        'email' => 'Your account has been deactivated. Please contact the System Administrator.',
+        'username' => 'Your account has been deactivated. Please contact the System Administrator.',
     ]);
 });
 
@@ -63,28 +76,28 @@ test('a deactivated account does not reveal its status without the correct passw
     $user = User::factory()->inactive()->create();
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'wrong-password',
     ]);
 
-    $response->assertSessionHasErrors(['email' => trans('auth.failed')]);
+    $response->assertSessionHasErrors(['username' => trans('auth.failed')]);
 });
 
 test('login is throttled after five failed attempts', function () {
     $user = User::factory()->create();
 
     foreach (range(1, 5) as $attempt) {
-        $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);
+        $this->post('/login', ['username' => $user->username, 'password' => 'wrong-password']);
     }
 
     $response = $this->post('/login', [
-        'email' => $user->email,
+        'username' => $user->username,
         'password' => 'password',
     ]);
 
     $this->assertGuest();
-    $response->assertSessionHasErrors('email');
-    expect(session('errors')->first('email'))->toStartWith('Too many login attempts.');
+    $response->assertSessionHasErrors('username');
+    expect(session('errors')->first('username'))->toStartWith('Too many login attempts.');
 });
 
 test('a user deactivated during a session is logged out on the next request', function () {

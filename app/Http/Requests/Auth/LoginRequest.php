@@ -29,7 +29,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'username' => ['required', 'string', 'max:50'],
             'password' => ['required', 'string'],
         ];
     }
@@ -46,7 +46,7 @@ class LoginRequest extends FormRequest
         $isInactive = false;
 
         $authenticated = Auth::attemptWhen(
-            $this->only('email', 'password'),
+            $this->only('username', 'password'),
             function (User $user) use (&$isInactive): bool {
                 $isInactive = ! $user->is_active;
 
@@ -59,7 +59,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => $isInactive
+                'username' => $isInactive
                     ? __('Your account has been deactivated. Please contact the System Administrator.')
                     : trans('auth.failed'),
             ]);
@@ -86,7 +86,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
+            'username' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -98,6 +98,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('username')).'|'.$this->ip());
     }
 }

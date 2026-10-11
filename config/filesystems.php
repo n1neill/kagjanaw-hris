@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // 201 files are served only through authorized controllers, never by URL.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

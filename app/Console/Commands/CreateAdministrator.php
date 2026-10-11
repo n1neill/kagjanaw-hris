@@ -17,7 +17,7 @@ use Illuminate\Validation\Rules\Password;
  * where the demo accounts are not seeded. The password is always prompted
  * so it never appears in shell history.
  */
-#[Signature('app:create-administrator {--name= : Full name of the administrator} {--email= : Sign-in email address}')]
+#[Signature('app:create-administrator {--name= : Full name of the administrator} {--username= : Username used to sign in} {--email= : Optional email address for password resets}')]
 #[Description('Create a System Administrator account')]
 class CreateAdministrator extends Command
 {
@@ -28,14 +28,16 @@ class CreateAdministrator extends Command
     {
         $data = [
             'name' => $this->option('name') ?? $this->ask('Full name'),
-            'email' => $this->option('email') ?? $this->ask('Email address'),
+            'username' => $this->option('username') ?? $this->ask('Username'),
+            'email' => $this->option('email'),
             'password' => $this->secret('Password (at least 12 characters with upper and lower case letters, a number and a symbol)'),
         ];
         $data['password_confirmation'] = $this->secret('Confirm password');
 
         $validator = Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9._-]+$/', Rule::unique(User::class)],
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
@@ -48,11 +50,11 @@ class CreateAdministrator extends Command
         }
 
         $user = $users->create([
-            ...$validator->safe()->only(['name', 'email', 'password']),
+            ...$validator->safe()->only(['name', 'username', 'email', 'password']),
             'role' => Role::SystemAdministrator->value,
-        ]);
+        ], mustChangePassword: false);
 
-        $this->info("System Administrator account created for {$user->email}.");
+        $this->info("System Administrator account \"{$user->username}\" created.");
 
         return self::SUCCESS;
     }

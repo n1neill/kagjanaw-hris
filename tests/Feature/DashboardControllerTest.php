@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\Role;
+use App\Models\Department;
+use App\Models\Employee;
 use App\Models\User;
 
 it('redirects guests to the login page', function () {
@@ -58,8 +60,30 @@ it('shows only the menu items the role is permitted to use', function (Role $rol
         $response->assertDontSee($label);
     }
 })->with([
-    'system administrator' => [Role::SystemAdministrator, ['Reference Data', 'User Accounts'], []],
-    'hr officer' => [Role::HrOfficer, ['Reference Data'], ['User Accounts']],
-    'department head' => [Role::DepartmentHead, ['Dashboard'], ['Reference Data', 'User Accounts']],
-    'employee' => [Role::Employee, ['Dashboard'], ['Reference Data', 'User Accounts']],
+    'system administrator' => [Role::SystemAdministrator, ['Reference Data', 'User Accounts'], ['My Record', 'Employees']],
+    'hr officer' => [Role::HrOfficer, ['My Record', 'Employees', 'Reference Data'], ['User Accounts']],
+    'department head' => [Role::DepartmentHead, ['My Record', 'My Department'], ['Reference Data', 'User Accounts']],
+    'employee' => [Role::Employee, ['My Record'], ['Reference Data', 'User Accounts', 'My Department']],
 ]);
+
+it('shows HR officers the employee headcount', function () {
+    $hrOfficer = User::factory()->hrOfficer()->create();
+    Employee::factory()->count(3)->create();
+    Employee::factory()->separated()->create();
+
+    $response = $this->actingAs($hrOfficer)->get('/dashboard');
+
+    $response->assertViewHas('employeesInService', 3)->assertViewHas('separatedEmployees', 1);
+});
+
+it('shows department heads the size of their team in service', function () {
+    $department = Department::factory()->create();
+    $head = Employee::factory()->withAccount(Role::DepartmentHead)->create(['department_id' => $department->id]);
+    Employee::factory()->count(2)->create(['department_id' => $department->id]);
+    Employee::factory()->separated()->create(['department_id' => $department->id]);
+    Employee::factory()->create();
+
+    $response = $this->actingAs($head->user)->get('/dashboard');
+
+    $response->assertViewHas('teamSize', 3)->assertSee($department->name);
+});
