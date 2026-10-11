@@ -25,10 +25,29 @@
             </dl>
         </x-card>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-            <x-upcoming-module :title="__('Biometric device status')" icon="clock">
-                {{ __('Device configuration, last sync and sync errors will appear here (Phase 3).') }}
-            </x-upcoming-module>
+        <div class="grid gap-4 lg:col-span-2">
+            <x-card :title="__('Biometric devices')">
+                <x-slot name="actions">
+                    <x-button-link :href="route('admin.devices.index')" variant="secondary">{{ __('Manage') }}</x-button-link>
+                </x-slot>
+
+                @forelse ($devices as $device)
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 py-2 text-sm last:border-0">
+                        <a href="{{ route('admin.devices.show', $device) }}" class="font-medium text-gray-900 hover:text-brand-700">{{ $device->name }}</a>
+                        <span class="text-gray-600">
+                            {{ $device->last_synced_at ? __('Synced :time', ['time' => $device->last_synced_at->diffForHumans()]) : __('Never synced') }}
+                            @if ($device->last_sync_status)
+                                <x-badge :color="$device->last_sync_status->badgeColor()">{{ $device->last_sync_status->label() }}</x-badge>
+                            @endif
+                            @unless ($device->is_active)
+                                <x-badge>{{ __('Inactive') }}</x-badge>
+                            @endunless
+                        </span>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500">{{ __('No devices configured yet.') }}</p>
+                @endforelse
+            </x-card>
             <x-upcoming-module :title="__('Database backups')" icon="server">
                 {{ __('Latest backup and restore tools will appear here (Phase 6).') }}
             </x-upcoming-module>

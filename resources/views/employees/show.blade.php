@@ -47,6 +47,12 @@
             @if ($canBrowseEmployees && ! $isOwnRecord)
                 <x-button-link :href="route('employees.index')" variant="secondary">{{ __('Back to list') }}</x-button-link>
             @endif
+            @can('viewAttendance', $employee)
+                <x-button-link :href="$isOwnRecord ? route('attendance.my') : route('attendance.dtr.show', $employee)" variant="secondary">
+                    <x-icon name="clock" class="size-4" />
+                    {{ __('Attendance') }}
+                </x-button-link>
+            @endcan
             @if ($canManage)
                 <x-button-link :href="route('employees.edit', $employee)">
                     <x-icon name="pencil" class="size-4" />

@@ -66,6 +66,26 @@ class EmployeePolicy
         return $user->can(Permission::ManageEmployees);
     }
 
+    /**
+     * The Daily Time Record: HR, the employee's department head, and the employee.
+     */
+    public function viewAttendance(User $user, Employee $employee): Response
+    {
+        $allowed = $user->can(Permission::ManageAttendance)
+            || ($user->can(Permission::ViewOwnAttendance) && $employee->user_id !== null && $employee->user_id === $user->id)
+            || ($user->can(Permission::ViewDepartmentAttendance) && $this->isInUsersDepartment($user, $employee));
+
+        return $allowed ? Response::allow() : Response::denyAsNotFound();
+    }
+
+    /**
+     * Correcting, validating and recomputing a Daily Time Record.
+     */
+    public function manageAttendance(User $user, Employee $employee): bool
+    {
+        return $user->can(Permission::ManageAttendance);
+    }
+
     private function isOwnRecord(User $user, Employee $employee): bool
     {
         return $employee->user_id !== null

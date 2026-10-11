@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EmploymentStatus;
 use App\Enums\Role;
 use App\Models\Employee;
+use App\Services\Attendance\AttendanceSyncService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -13,11 +14,16 @@ use Illuminate\Support\Facades\DB;
  *
  * Every employee gets an Employee-role account whose username is the employee
  * number. The account's name and username follow the employee record, and the
- * account is deactivated when the employee separates from service.
+ * account is deactivated when the employee separates from service. When an
+ * employee is given a biometric user ID, earlier punches from that unknown
+ * ID are attached to them.
  */
 class EmployeeService
 {
-    public function __construct(private UserService $users) {}
+    public function __construct(
+        private UserService $users,
+        private AttendanceSyncService $attendance,
+    ) {}
 
     /**
      * Create the employee and their login account.
@@ -44,6 +50,7 @@ class EmployeeService
             $employee->save();
 
             $this->syncAccountStatus($employee);
+            $this->attendance->linkUnknownLogs($employee);
 
             return ['employee' => $employee, 'temporaryPassword' => $temporaryPassword];
         });
@@ -59,6 +66,10 @@ class EmployeeService
                 && EmploymentStatus::from($data['employment_status']) !== $employee->employment_status;
 
             $employee->update(Arr::except($data, ['email']));
+
+            if ($employee->wasChanged('biometric_user_id')) {
+                $this->attendance->linkUnknownLogs($employee);
+            }
 
             if ($employee->user !== null) {
                 $employee->user->update([

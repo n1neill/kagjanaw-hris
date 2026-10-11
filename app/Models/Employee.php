@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\Sex;
+use Carbon\CarbonInterface;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -113,6 +114,31 @@ class Employee extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(EmployeeDocument::class);
+    }
+
+    /**
+     * @return HasMany<DailyTimeRecord, $this>
+     */
+    public function dailyTimeRecords(): HasMany
+    {
+        return $this->hasMany(DailyTimeRecord::class);
+    }
+
+    /**
+     * @return HasMany<AttendanceLog, $this>
+     */
+    public function attendanceLogs(): HasMany
+    {
+        return $this->hasMany(AttendanceLog::class);
+    }
+
+    /**
+     * Whether the employee was in service on the given date.
+     */
+    public function wasEmployedOn(CarbonInterface $date): bool
+    {
+        return $date->greaterThanOrEqualTo($this->date_hired)
+            && ($this->separation_date === null || $date->lessThanOrEqualTo($this->separation_date));
     }
 
     /**

@@ -11,6 +11,11 @@
                 {{ __('My Record') }}
             </x-sidebar-link>
         @endcan
+        @can(Permission::ViewOwnAttendance)
+            <x-sidebar-link :href="route('attendance.my')" :active="request()->routeIs('attendance.my')" icon="clock">
+                {{ __('My Attendance') }}
+            </x-sidebar-link>
+        @endcan
     </div>
 
     @can(Permission::ManageEmployees)
@@ -19,6 +24,15 @@
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('Employees') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('attendance.summary')" :active="request()->routeIs('attendance.summary', 'attendance.dtr.*')" icon="calendar">
+                    {{ __('Attendance Summary') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('attendance.logs')" :active="request()->routeIs('attendance.logs')" icon="clock">
+                    {{ __('Attendance Logs') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('attendance.import.create')" :active="request()->routeIs('attendance.import.*')" icon="document">
+                    {{ __('Import Attendance') }}
                 </x-sidebar-link>
             </div>
         </div>
@@ -29,6 +43,11 @@
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('My Department') }}
                 </x-sidebar-link>
+                @can(Permission::ViewDepartmentAttendance)
+                    <x-sidebar-link :href="route('attendance.summary')" :active="request()->routeIs('attendance.summary', 'attendance.dtr.*')" icon="calendar">
+                        {{ __('Department Attendance') }}
+                    </x-sidebar-link>
+                @endcan
             </div>
         </div>
     @endcan
@@ -50,16 +69,31 @@
         </div>
     @endcan
 
-    @can(Permission::ManageUsers)
+    @canany([Permission::ManageUsers, Permission::ManageBiometricDevices, Permission::ManageSettings])
         <div>
             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Administration') }}</p>
             <div class="mt-2 space-y-1">
-                <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" icon="users">
-                    {{ __('User Accounts') }}
-                </x-sidebar-link>
+                @can(Permission::ManageUsers)
+                    <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" icon="users">
+                        {{ __('User Accounts') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageBiometricDevices)
+                    <x-sidebar-link :href="route('admin.devices.index')" :active="request()->routeIs('admin.devices.*')" icon="server">
+                        {{ __('Biometric Devices') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageSettings)
+                    <x-sidebar-link :href="route('admin.work-schedule.edit')" :active="request()->routeIs('admin.work-schedule.*')" icon="clock">
+                        {{ __('Office Hours') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('admin.holidays.index')" :active="request()->routeIs('admin.holidays.*')" icon="calendar">
+                        {{ __('Holidays') }}
+                    </x-sidebar-link>
+                @endcan
             </div>
         </div>
-    @endcan
+    @endcanany
 
     <div class="mt-auto space-y-1 border-t border-brand-800 pt-4">
         <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')" icon="user">

@@ -2,11 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AttendanceLogStatus;
+use App\Enums\DtrStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\Role;
+use App\Models\AttendanceLog;
+use App\Models\BiometricDevice;
+use App\Models\DailyTimeRecord;
 use App\Models\Department;
+use App\Models\DeviceSyncRun;
 use App\Models\Employee;
 use App\Models\User;
+use App\Models\WorkSchedule;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role as RoleModel;
@@ -28,10 +35,39 @@ class DashboardController extends Controller
 
         return view($role->dashboardView(), match ($role) {
             Role::SystemAdministrator => $this->administratorData(),
-            Role::HrOfficer => $this->hrData(),
-            Role::DepartmentHead => $this->departmentHeadData($user),
-            Role::Employee => $this->employeeData($user),
+            Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user)],
+            Role::DepartmentHead => [...$this->departmentHeadData($user), ...$this->ownAttendanceData($user)],
+            Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user)],
         });
+    }
+
+    /**
+     * Today's punches and this month's tardiness and absences for the signed-in employee.
+     *
+     * @return array{myToday: ?DailyTimeRecord, myMonth: ?array{late_count: int, late_minutes: int, absent_days: float}}
+     */
+    private function ownAttendanceData(User $user): array
+    {
+        $employee = $user->employee;
+
+        if ($employee === null) {
+            return ['myToday' => null, 'myMonth' => null];
+        }
+
+        $monthRecords = $employee->dailyTimeRecords()
+            ->whereBetween('work_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])
+            ->get();
+
+        $rules = WorkSchedule::current()->rules();
+
+        return [
+            'myToday' => $monthRecords->first(fn (DailyTimeRecord $record): bool => $record->work_date->isToday()),
+            'myMonth' => [
+                'late_count' => $monthRecords->filter(fn (DailyTimeRecord $record): bool => $record->late_minutes > 0)->count(),
+                'late_minutes' => (int) $monthRecords->sum('late_minutes'),
+                'absent_days' => round($monthRecords->sum('absent_minutes') / ($rules->amLength() + $rules->pmLength()), 1),
+            ],
+        ];
     }
 
     /**
@@ -55,11 +91,12 @@ class DashboardController extends Controller
             'activeUsers' => $activeUsers,
             'inactiveUsers' => $totalUsers - $activeUsers,
             'usersPerRole' => $usersPerRole,
+            'devices' => BiometricDevice::query()->orderBy('name')->get(),
         ];
     }
 
     /**
-     * @return array{employeesInService: int, separatedEmployees: int}
+     * @return array{employeesInService: int, separatedEmployees: int, latestSync: ?DeviceSyncRun, flaggedLogs: int, missingPunchDays: int}
      */
     private function hrData(): array
     {
@@ -73,21 +110,36 @@ class DashboardController extends Controller
         return [
             'employeesInService' => $employeesInService,
             'separatedEmployees' => (int) $countsByStatus->sum() - $employeesInService,
+            'latestSync' => DeviceSyncRun::query()->with('device')->latest('started_at')->latest('id')->first(),
+            'flaggedLogs' => AttendanceLog::query()->where('status', '!=', AttendanceLogStatus::Valid)->count(),
+            'missingPunchDays' => DailyTimeRecord::query()
+                ->where('status', DtrStatus::Incomplete)
+                ->whereBetween('work_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])
+                ->count(),
         ];
     }
 
     /**
-     * @return array{department: ?Department, teamSize: int}
+     * @return array{department: ?Department, teamSize: int, reportedToday: int, lateToday: int}
      */
     private function departmentHeadData(User $user): array
     {
         $department = $user->employee?->department;
 
+        if ($department === null) {
+            return ['department' => null, 'teamSize' => 0, 'reportedToday' => 0, 'lateToday' => 0];
+        }
+
+        $today = DailyTimeRecord::query()
+            ->whereDate('work_date', now()->toDateString())
+            ->whereHas('employee', fn ($query) => $query->where('department_id', $department->id))
+            ->get();
+
         return [
             'department' => $department,
-            'teamSize' => $department === null
-                ? 0
-                : Employee::query()->inService()->where('department_id', $department->id)->count(),
+            'teamSize' => Employee::query()->inService()->where('department_id', $department->id)->count(),
+            'reportedToday' => $today->filter(fn (DailyTimeRecord $record): bool => $record->am_in !== null || $record->pm_in !== null)->count(),
+            'lateToday' => $today->filter(fn (DailyTimeRecord $record): bool => $record->late_minutes > 0)->count(),
         ];
     }
 

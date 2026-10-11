@@ -1,8 +1,19 @@
 <?php
 
 use App\Enums\Permission;
+use App\Http\Controllers\Admin\BiometricDeviceActionController;
+use App\Http\Controllers\Admin\BiometricDeviceController;
+use App\Http\Controllers\Admin\HolidayController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserStatusController;
+use App\Http\Controllers\Admin\WorkScheduleController;
+use App\Http\Controllers\Attendance\AttendanceImportController;
+use App\Http\Controllers\Attendance\AttendanceLogController;
+use App\Http\Controllers\Attendance\AttendanceSummaryController;
+use App\Http\Controllers\Attendance\DtrController;
+use App\Http\Controllers\Attendance\DtrCorrectionController;
+use App\Http\Controllers\Attendance\DtrMonthController;
+use App\Http\Controllers\Attendance\MyAttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\EmployeeDocumentController;
@@ -47,12 +58,63 @@ Route::middleware('auth')->group(function () {
         ->scopeBindings()
         ->name('employees.documents.download');
 
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('my', MyAttendanceController::class)
+            ->middleware(PermissionMiddleware::using(Permission::ViewOwnAttendance))
+            ->name('my');
+
+        Route::middleware(PermissionMiddleware::using([Permission::ManageAttendance, Permission::ViewDepartmentAttendance]))->group(function () {
+            Route::get('summary', [AttendanceSummaryController::class, 'index'])->name('summary');
+            Route::get('summary/export', [AttendanceSummaryController::class, 'export'])->name('summary.export');
+        });
+
+        // Reachable by HR, the employee's department head and the employee; the policy decides.
+        Route::get('employees/{employee}/dtr', [DtrController::class, 'show'])->name('dtr.show');
+        Route::get('employees/{employee}/dtr/pdf', [DtrController::class, 'pdf'])->name('dtr.pdf');
+
+        Route::middleware(PermissionMiddleware::using(Permission::ManageAttendance))->group(function () {
+            Route::get('employees/{employee}/dtr/{date}/edit', [DtrCorrectionController::class, 'edit'])
+                ->where('date', '\d{4}-\d{2}-\d{2}')
+                ->name('dtr.edit');
+            Route::put('employees/{employee}/dtr/{date}', [DtrCorrectionController::class, 'update'])
+                ->where('date', '\d{4}-\d{2}-\d{2}')
+                ->name('dtr.update');
+            Route::post('employees/{employee}/dtr/validate', [DtrMonthController::class, 'validateMonth'])->name('dtr.validate');
+            Route::post('employees/{employee}/dtr/reprocess', [DtrMonthController::class, 'reprocess'])->name('dtr.reprocess');
+
+            Route::get('logs', [AttendanceLogController::class, 'index'])->name('logs');
+            Route::get('import', [AttendanceImportController::class, 'create'])->name('import.create');
+            Route::post('import', [AttendanceImportController::class, 'store'])->name('import.store');
+            Route::get('import/template', [AttendanceImportController::class, 'template'])->name('import.template');
+        });
+    });
+
     Route::prefix('admin')
         ->name('admin.')
         ->middleware(PermissionMiddleware::using(Permission::ManageUsers))
         ->group(function () {
             Route::resource('users', UserController::class)->except(['show', 'destroy']);
             Route::patch('users/{user}/status', [UserStatusController::class, 'update'])->name('users.status');
+        });
+
+    Route::prefix('admin')
+        ->name('admin.')
+        ->middleware(PermissionMiddleware::using(Permission::ManageBiometricDevices))
+        ->group(function () {
+            Route::resource('devices', BiometricDeviceController::class)->except(['destroy']);
+            Route::post('devices/{device}/test', [BiometricDeviceActionController::class, 'testConnection'])->name('devices.test');
+            Route::post('devices/{device}/sync', [BiometricDeviceActionController::class, 'sync'])
+                ->middleware('throttle:10,1')
+                ->name('devices.sync');
+        });
+
+    Route::prefix('admin')
+        ->name('admin.')
+        ->middleware(PermissionMiddleware::using(Permission::ManageSettings))
+        ->group(function () {
+            Route::get('work-schedule', [WorkScheduleController::class, 'edit'])->name('work-schedule.edit');
+            Route::put('work-schedule', [WorkScheduleController::class, 'update'])->name('work-schedule.update');
+            Route::resource('holidays', HolidayController::class)->except(['show']);
         });
 
     Route::prefix('reference-data')

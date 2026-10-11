@@ -19,10 +19,15 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             PositionSeeder::class,
             EmploymentTypeSeeder::class,
+            WorkScheduleSeeder::class,
+            HolidaySeeder::class,
         ]);
 
         if (! app()->isProduction()) {
-            $this->call(DemoUserSeeder::class);
+            $this->call([
+                DemoUserSeeder::class,
+                DemoAttendanceSeeder::class,
+            ]);
         }
     }
 }

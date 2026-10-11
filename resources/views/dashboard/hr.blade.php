@@ -14,15 +14,45 @@
         </div>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <x-card :title="__('Attendance')">
+        <x-slot name="actions">
+            <x-button-link :href="route('attendance.summary')" variant="secondary">{{ __('Attendance Summary') }}</x-button-link>
+        </x-slot>
+
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-lg border border-gray-200 p-4">
+                <p class="text-sm font-medium text-gray-500">{{ __('Last device sync') }}</p>
+                @if ($latestSync)
+                    <p class="mt-2 text-sm text-gray-900">{{ $latestSync->device->name }}</p>
+                    <p class="mt-1 text-sm text-gray-600">
+                        {{ $latestSync->started_at->diffForHumans() }}
+                        <x-badge :color="$latestSync->status->badgeColor()">{{ $latestSync->status->label() }}</x-badge>
+                    </p>
+                @else
+                    <p class="mt-2 text-sm text-gray-500">{{ __('No device has been synchronized yet.') }}</p>
+                @endif
+            </div>
+            <a href="{{ route('attendance.logs', ['status' => 'unknown-user']) }}" class="block rounded-lg border border-gray-200 p-4 hover:border-brand-300">
+                <p class="text-sm font-medium text-gray-500">{{ __('Flagged punches') }}</p>
+                <p class="mt-2 text-2xl font-semibold {{ $flaggedLogs ? 'text-yellow-700' : 'text-gray-900' }}">{{ $flaggedLogs }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Unknown biometric IDs or wrong device time') }}</p>
+            </a>
+            <a href="{{ route('attendance.summary') }}" class="block rounded-lg border border-gray-200 p-4 hover:border-brand-300">
+                <p class="text-sm font-medium text-gray-500">{{ __('Missing punches this month') }}</p>
+                <p class="mt-2 text-2xl font-semibold {{ $missingPunchDays ? 'text-yellow-700' : 'text-gray-900' }}">{{ $missingPunchDays }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Correct these before validating DTRs') }}</p>
+            </a>
+        </div>
+    </x-card>
+
+    @include('dashboard.partials.my-attendance')
+
+    <div class="grid gap-4 sm:grid-cols-3">
         <x-upcoming-module :title="__('Pending leave approvals')" icon="calendar">
             {{ __('Leave requests endorsed by department heads (Phase 4).') }}
         </x-upcoming-module>
         <x-upcoming-module :title="__('Payroll status')" icon="banknotes">
             {{ __('Current payroll run and its status (Phase 5).') }}
-        </x-upcoming-module>
-        <x-upcoming-module :title="__('Biometric sync')" icon="clock">
-            {{ __('Last attendance sync and flagged logs (Phase 3).') }}
         </x-upcoming-module>
         <x-upcoming-module :title="__('Announcements')" icon="megaphone">
             {{ __('Post announcements to all employees (Phase 6).') }}
