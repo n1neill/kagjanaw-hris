@@ -99,6 +99,7 @@ class EmployeeRequest extends FormRequest
             'employment_type_id' => ['required', 'integer', Rule::exists(EmploymentType::class, 'id')],
             'salary_grade' => ['nullable', 'integer', 'between:1,33', 'required_with:salary_step'],
             'salary_step' => ['nullable', 'integer', 'between:1,8', 'required_with:salary_grade'],
+            'daily_rate' => ['nullable', 'decimal:0,2', 'min:0', 'max:100000'],
             'date_hired' => ['required', 'date', 'after:birth_date'],
             'employment_status' => ['required', Rule::enum(EmploymentStatus::class)],
             'separation_date' => [

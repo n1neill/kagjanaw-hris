@@ -290,6 +290,19 @@ describe('show', function () {
 });
 
 describe('update', function () {
+    it('records a Job Order worker\'s daily rate', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $employee = Employee::factory()->create();
+
+        $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
+            'salary_grade' => '',
+            'salary_step' => '',
+            'daily_rate' => '550.50',
+        ]));
+
+        expect($employee->fresh()->only(['salary_grade', 'daily_rate']))->toBe(['salary_grade' => null, 'daily_rate' => '550.50']);
+    });
+
     it('keeps the login account name, username and email in step with the record', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
         $employee = Employee::factory()->withAccount()->create();

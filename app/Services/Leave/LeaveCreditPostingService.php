@@ -133,6 +133,30 @@ class LeaveCreditPostingService
      */
     public function blockingReason(Employee $employee, CarbonImmutable $month): ?string
     {
+        if (($reason = $this->reasonOtherThanDtr($employee, $month)) !== null) {
+            return $reason;
+        }
+
+        if (! $this->isDtrValidated($employee, $month)) {
+            return __('The DTR for the month is not fully validated.');
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether the month is ready to post except that its DTR is not yet validated.
+     */
+    public function isAwaitingDtrValidation(Employee $employee, CarbonImmutable $month): bool
+    {
+        return $this->reasonOtherThanDtr($employee, $month) === null && ! $this->isDtrValidated($employee, $month);
+    }
+
+    /**
+     * Why the month cannot be posted, apart from its DTR, or null.
+     */
+    private function reasonOtherThanDtr(Employee $employee, CarbonImmutable $month): ?string
+    {
         $month = $month->startOfMonth();
 
         if (! $month->endOfMonth()->lessThan(CarbonImmutable::today())) {
@@ -159,14 +183,19 @@ class LeaveCreditPostingService
             return __('No opening balance has been imported.');
         }
 
-        $records = $this->dtr($employee, $month);
-        $expectedDays = $this->daysInServiceDuring($employee, $month);
-
-        if ($records->count() < $expectedDays || $records->contains(fn ($record): bool => $record->validated_at === null)) {
-            return __('The DTR for the month is not fully validated.');
-        }
-
         return null;
+    }
+
+    /**
+     * Whether every day of the month in service has a validated DTR.
+     */
+    public function isDtrValidated(Employee $employee, CarbonImmutable $month): bool
+    {
+        $month = $month->startOfMonth();
+        $records = $this->dtr($employee, $month);
+
+        return $records->count() >= $this->daysInServiceDuring($employee, $month)
+            && ! $records->contains(fn ($record): bool => $record->validated_at === null);
     }
 
     /**

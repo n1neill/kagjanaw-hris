@@ -1,3 +1,4 @@
+@use('App\Enums\PayBasis')
 @php($isNew = ! $employmentType->exists)
 
 <x-app-layout :title="$isNew ? __('New Employment Type') : __('Edit Employment Type')">
@@ -28,6 +29,13 @@
                 <x-input-label for="description" :value="__('Description (optional)')" />
                 <x-textarea-input id="description" name="description" class="mt-1">{{ old('description', $employmentType->description) }}</x-textarea-input>
                 <x-input-error :messages="$errors->get('description')" class="mt-2" />
+            </div>
+
+            <div class="max-w-md">
+                <x-input-label for="pay_basis" :value="__('Paid by')" />
+                <x-select-input id="pay_basis" name="pay_basis" class="mt-1" :options="PayBasis::options()" :selected="old('pay_basis', $employmentType->pay_basis?->value ?? PayBasis::SalaryGrade->value)" />
+                <p class="mt-1 text-xs text-gray-500">{{ __('Also decides the payroll: regular, or Job Order / COS.') }}</p>
+                <x-input-error :messages="$errors->get('pay_basis')" class="mt-2" />
             </div>
 
             <div>

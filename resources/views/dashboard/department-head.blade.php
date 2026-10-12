@@ -30,4 +30,8 @@
     @include('dashboard.partials.my-attendance')
 
     @include('dashboard.partials.my-leave')
+
+    <div class="grid gap-4 sm:grid-cols-2">
+        @include('dashboard.partials.my-payslip')
+    </div>
 </x-app-layout>

@@ -7,6 +7,7 @@ use App\Enums\DtrStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\LeaveLedgerEntryType;
 use App\Enums\LeaveRequestStatus;
+use App\Enums\PayrollRunStatus;
 use App\Enums\Role;
 use App\Models\AttendanceLog;
 use App\Models\BiometricDevice;
@@ -16,6 +17,8 @@ use App\Models\DeviceSyncRun;
 use App\Models\Employee;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveRequest;
+use App\Models\PayrollItem;
+use App\Models\PayrollRun;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Services\Leave\LeaveBalanceService;
@@ -48,14 +51,15 @@ class DashboardController extends Controller
 
         return view($role->dashboardView(), match ($role) {
             Role::SystemAdministrator => $this->administratorData(),
-            Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user)],
+            Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user), ...$this->ownPayslipData($user)],
             Role::MunicipalMayor, Role::DepartmentHead => [
                 ...$this->departmentHeadData($user),
                 ...$this->ownAttendanceData($user),
                 ...$this->ownLeaveData($user),
+                ...$this->ownPayslipData($user),
                 'pendingEndorsements' => $this->endorsements->awaitingEndorsementBy($user)->count(),
             ],
-            Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user)],
+            Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user), ...$this->ownPayslipData($user)],
         });
     }
 
@@ -73,6 +77,26 @@ class DashboardController extends Controller
             'myOpenLeaveRequests' => $employee === null ? 0 : $employee->leaveRequests()
                 ->whereIn('status', [LeaveRequestStatus::Pending, LeaveRequestStatus::Endorsed])
                 ->count(),
+        ];
+    }
+
+    /**
+     * The signed-in employee's latest released payslip.
+     *
+     * @return array{myLatestPayslip: ?PayrollItem}
+     */
+    private function ownPayslipData(User $user): array
+    {
+        return [
+            'myLatestPayslip' => $user->employee?->payrollItems()
+                ->with('run.period')
+                ->join('payroll_runs', 'payroll_runs.id', '=', 'payroll_items.payroll_run_id')
+                ->join('payroll_periods', 'payroll_periods.id', '=', 'payroll_runs.payroll_period_id')
+                ->where('payroll_runs.status', PayrollRunStatus::Released)
+                ->orderByDesc('payroll_periods.start_date')
+                ->orderByDesc('payroll_items.id')
+                ->select('payroll_items.*')
+                ->first(),
         ];
     }
 
@@ -153,6 +177,14 @@ class DashboardController extends Controller
                 ->count(),
             'pendingApprovals' => LeaveRequest::query()->where('status', LeaveRequestStatus::Endorsed)->count(),
             'unpostedLastMonth' => $this->unpostedLeaveCredits(),
+            'recentPayrollRuns' => PayrollRun::query()
+                ->with('period')
+                ->join('payroll_periods', 'payroll_periods.id', '=', 'payroll_runs.payroll_period_id')
+                ->orderByDesc('payroll_periods.start_date')
+                ->orderBy('payroll_runs.pay_basis')
+                ->select('payroll_runs.*')
+                ->limit(4)
+                ->get(),
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PayBasis;
 use App\Models\EmploymentType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,6 +26,17 @@ class EmploymentTypeFactory extends Factory
             'description' => fake()->optional()->sentence(),
             'is_active' => true,
         ];
+    }
+
+    /**
+     * Job Order / Contract of Service: paid by daily rate, no leave credits.
+     */
+    public function dailyRate(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'pay_basis' => PayBasis::DailyRate,
+            'earns_leave_credits' => false,
+        ]);
     }
 
     public function inactive(): static

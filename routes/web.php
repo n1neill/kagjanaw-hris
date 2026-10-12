@@ -29,6 +29,19 @@ use App\Http\Controllers\Leave\LeaveUtilizationController;
 use App\Http\Controllers\Leave\MyLeaveController;
 use App\Http\Controllers\Leave\OpeningBalanceImportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Payroll\AllowanceTypeController;
+use App\Http\Controllers\Payroll\DeductionRateController;
+use App\Http\Controllers\Payroll\EmployeeAllowanceController;
+use App\Http\Controllers\Payroll\EmployeeDeductionController;
+use App\Http\Controllers\Payroll\EmployeePayController;
+use App\Http\Controllers\Payroll\MyPayslipController;
+use App\Http\Controllers\Payroll\PayrollRegisterController;
+use App\Http\Controllers\Payroll\PayrollRunActionController;
+use App\Http\Controllers\Payroll\PayrollRunController;
+use App\Http\Controllers\Payroll\PayrollSettingsController;
+use App\Http\Controllers\Payroll\PayslipController;
+use App\Http\Controllers\Payroll\SalaryScheduleController;
+use App\Http\Controllers\Payroll\TaxTableController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReferenceData\DepartmentController;
 use App\Http\Controllers\ReferenceData\EmploymentTypeController;
@@ -119,6 +132,69 @@ Route::middleware('auth')->group(function () {
         Route::middleware(PermissionMiddleware::using([Permission::ManageLeaveCredits, Permission::GenerateReports]))->group(function () {
             Route::get('reports/utilization', [LeaveUtilizationController::class, 'index'])->name('reports.utilization');
             Route::get('reports/utilization/export', [LeaveUtilizationController::class, 'export'])->name('reports.utilization.export');
+        });
+    });
+
+    Route::prefix('payroll')->name('payroll.')->group(function () {
+        Route::get('my-payslips', MyPayslipController::class)
+            ->middleware(PermissionMiddleware::using(Permission::ViewOwnPayslips))
+            ->name('payslips.my');
+
+        // HR and the employee themselves (released payslips only); the policy decides.
+        Route::get('payslips/{payrollItem}', PayslipController::class)->name('payslips.show');
+
+        Route::middleware(PermissionMiddleware::using(Permission::ProcessPayroll))->group(function () {
+            Route::get('runs', [PayrollRunController::class, 'index'])->name('runs.index');
+            Route::post('runs', [PayrollRunController::class, 'store'])->name('runs.store');
+            Route::get('runs/{payrollRun}', [PayrollRunController::class, 'show'])->name('runs.show');
+            Route::delete('runs/{payrollRun}', [PayrollRunController::class, 'destroy'])->name('runs.destroy');
+            Route::post('runs/{payrollRun}/compute', [PayrollRunActionController::class, 'compute'])->name('runs.compute');
+            Route::post('runs/{payrollRun}/approve', [PayrollRunActionController::class, 'approve'])->name('runs.approve');
+            Route::post('runs/{payrollRun}/reopen', [PayrollRunActionController::class, 'reopen'])->name('runs.reopen');
+            Route::post('runs/{payrollRun}/release', [PayrollRunActionController::class, 'release'])->name('runs.release');
+            Route::get('runs/{payrollRun}/register.{format}', PayrollRegisterController::class)
+                ->whereIn('format', ['xlsx', 'csv', 'pdf'])
+                ->name('runs.register');
+
+            Route::get('employees/{employee}', [EmployeePayController::class, 'show'])->name('employees.show');
+            Route::post('employees/{employee}/allowances', [EmployeeAllowanceController::class, 'store'])->name('employees.allowances.store');
+            Route::delete('employees/{employee}/allowances/{allowance}', [EmployeeAllowanceController::class, 'destroy'])
+                ->scopeBindings()
+                ->name('employees.allowances.destroy');
+            Route::post('employees/{employee}/deductions', [EmployeeDeductionController::class, 'store'])->name('employees.deductions.store');
+            Route::get('employees/{employee}/deductions/{payrollDeduction}/edit', [EmployeeDeductionController::class, 'edit'])
+                ->scopeBindings()
+                ->name('employees.deductions.edit');
+            Route::put('employees/{employee}/deductions/{payrollDeduction}', [EmployeeDeductionController::class, 'update'])
+                ->scopeBindings()
+                ->name('employees.deductions.update');
+
+            Route::resource('allowances', AllowanceTypeController::class)->except(['show', 'destroy'])->parameters(['allowances' => 'allowanceType']);
+
+            Route::get('settings', [PayrollSettingsController::class, 'edit'])->name('settings.edit');
+            Route::put('settings', [PayrollSettingsController::class, 'update'])->name('settings.update');
+
+            Route::get('salary-schedule', [SalaryScheduleController::class, 'index'])->name('salary-schedule.index');
+            Route::post('salary-schedule', [SalaryScheduleController::class, 'store'])->name('salary-schedule.store');
+            Route::get('salary-schedule/{effectiveFrom}/edit', [SalaryScheduleController::class, 'edit'])
+                ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
+                ->name('salary-schedule.edit');
+            Route::put('salary-schedule/{effectiveFrom}', [SalaryScheduleController::class, 'update'])
+                ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
+                ->name('salary-schedule.update');
+
+            Route::get('rates', [DeductionRateController::class, 'index'])->name('rates.index');
+            Route::get('rates/contributions/create', [DeductionRateController::class, 'create'])->name('rates.contributions.create');
+            Route::post('rates/contributions', [DeductionRateController::class, 'store'])->name('rates.contributions.store');
+            Route::get('rates/contributions/{deductionRate}/edit', [DeductionRateController::class, 'edit'])->name('rates.contributions.edit');
+            Route::put('rates/contributions/{deductionRate}', [DeductionRateController::class, 'update'])->name('rates.contributions.update');
+            Route::get('rates/tax/{effectiveFrom}/edit', [TaxTableController::class, 'edit'])
+                ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
+                ->name('rates.tax.edit');
+            Route::put('rates/tax/{effectiveFrom}', [TaxTableController::class, 'update'])
+                ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
+                ->name('rates.tax.update');
+            Route::post('rates/tax', [TaxTableController::class, 'store'])->name('rates.tax.store');
         });
     });
 

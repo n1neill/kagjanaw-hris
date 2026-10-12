@@ -1,3 +1,6 @@
+@use('App\Enums\Permission')
+@use('App\Services\Payroll\Money')
+
 {{--
     An employee record. Sensitive sections (personal details, government IDs,
     salary, address and the 201 file) render only when $canViewSensitive.
@@ -53,6 +56,12 @@
                     {{ __('Attendance') }}
                 </x-button-link>
             @endcan
+            @can(Permission::ProcessPayroll)
+                <x-button-link :href="route('payroll.employees.show', $employee)" variant="secondary">
+                    <x-icon name="banknotes" class="size-4" />
+                    {{ __('Pay Setup') }}
+                </x-button-link>
+            @endcan
             @if ($canManage)
                 <x-button-link :href="route('employees.edit', $employee)">
                     <x-icon name="pencil" class="size-4" />
@@ -75,6 +84,9 @@
                             SG {{ $employee->salary_grade }}, {{ __('Step') }} {{ $employee->salary_step }}
                         @endif
                     </x-detail>
+                    @if ($employee->daily_rate !== null)
+                        <x-detail :label="__('Daily rate')">{{ Money::format($employee->daily_rate) }}</x-detail>
+                    @endif
                     <x-detail :label="__('Biometric user ID')">{{ $employee->biometric_user_id }}</x-detail>
                 @endif
                 @unless ($employee->employment_status->isInService())

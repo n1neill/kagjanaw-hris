@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * Reference data the application cannot run without: roles, permissions and
- * leave types. Also seeded for every feature test.
+ * leave types and payroll tables. Also seeded for every feature test.
  */
 class CoreReferenceDataSeeder extends Seeder
 {
@@ -18,6 +18,7 @@ class CoreReferenceDataSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             LeaveTypeSeeder::class,
+            PayrollReferenceDataSeeder::class,
         ]);
     }
 }

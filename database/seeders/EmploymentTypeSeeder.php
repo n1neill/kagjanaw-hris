@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\PayBasis;
 use App\Models\EmploymentType;
 use Illuminate\Database\Seeder;
 
@@ -32,6 +33,7 @@ class EmploymentTypeSeeder extends Seeder
                 'name' => $name,
                 'description' => $description,
                 'earns_leave_credits' => ! in_array($code, ['elective', 'job-order', 'contract-of-service'], true),
+                'pay_basis' => in_array($code, ['job-order', 'contract-of-service'], true) ? PayBasis::DailyRate : PayBasis::SalaryGrade,
             ]);
         }
     }

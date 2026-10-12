@@ -2,11 +2,15 @@
 
 use App\Enums\DtrStatus;
 use App\Enums\LeaveLedgerEntryType;
+use App\Enums\PayBasis;
 use App\Models\DailyTimeRecord;
 use App\Models\Employee;
 use App\Models\LeaveType;
+use App\Models\PayrollRun;
+use App\Models\User;
 use App\Services\Leave\LeaveDays;
 use App\Services\Leave\LeaveLedger;
+use App\Services\Payroll\PayrollRunService;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +78,26 @@ function grantLeaveCredits(Employee $employee, string $vacation = '10.000', stri
 
     $ledger->post($employee, LeaveType::vacation(), LeaveLedgerEntryType::OpeningBalance, LeaveDays::toThousandths($vacation), 'Opening balance', $date);
     $ledger->post($employee, LeaveType::sick(), LeaveLedgerEntryType::OpeningBalance, LeaveDays::toThousandths($sick), 'Opening balance', $date);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Payroll helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Create and compute a payroll run (the queue runs synchronously in tests).
+ */
+function computePayroll(int $year, int $month, int $half, PayBasis $payBasis = PayBasis::SalaryGrade, ?User $hrOfficer = null): PayrollRun
+{
+    $hrOfficer ??= User::factory()->hrOfficer()->create();
+    $service = app(PayrollRunService::class);
+
+    $run = $service->create($year, $month, $half, $payBasis, $hrOfficer);
+    $service->requestComputation($run, $hrOfficer);
+
+    return $run->fresh(['period']);
 }
 
 /**

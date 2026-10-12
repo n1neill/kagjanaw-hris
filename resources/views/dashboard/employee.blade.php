@@ -21,9 +21,7 @@
     @endif
 
     <div class="grid gap-4 sm:grid-cols-2">
-        <x-upcoming-module :title="__('Latest payslip')" icon="banknotes">
-            {{ __('Download your most recent payslip (Phase 5).') }}
-        </x-upcoming-module>
+        @include('dashboard.partials.my-payslip')
         <x-upcoming-module :title="__('Announcements')" icon="megaphone">
             {{ __('News and memos from the HR office (Phase 6).') }}
         </x-upcoming-module>

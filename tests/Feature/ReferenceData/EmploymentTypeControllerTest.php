@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PayBasis;
 use App\Enums\Role;
 use App\Models\EmploymentType;
 use App\Models\User;
@@ -47,6 +48,31 @@ it('updates an employment type', function () {
     $employmentType->refresh();
     expect($employmentType->name)->toBe('Casual (Plantilla)')
         ->and($employmentType->is_active)->toBeFalse();
+});
+
+it('sets how employees of a type are paid', function () {
+    $hrOfficer = User::factory()->hrOfficer()->create();
+    $employmentType = EmploymentType::factory()->create(['code' => 'job-order', 'name' => 'Job Order']);
+
+    $this->actingAs($hrOfficer)->put(route('reference-data.employment-types.update', $employmentType), [
+        'code' => 'job-order',
+        'name' => 'Job Order',
+        'pay_basis' => 'daily-rate',
+    ]);
+
+    expect($employmentType->fresh()->pay_basis)->toBe(PayBasis::DailyRate);
+});
+
+it('keeps the pay basis when none is sent', function () {
+    $hrOfficer = User::factory()->hrOfficer()->create();
+    $employmentType = EmploymentType::factory()->dailyRate()->create(['code' => 'job-order', 'name' => 'Job Order']);
+
+    $this->actingAs($hrOfficer)->put(route('reference-data.employment-types.update', $employmentType), [
+        'code' => 'job-order',
+        'name' => 'Job Order Worker',
+    ]);
+
+    expect($employmentType->fresh()->pay_basis)->toBe(PayBasis::DailyRate);
 });
 
 it('forbids department heads and employees', function (Role $role) {

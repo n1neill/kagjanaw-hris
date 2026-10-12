@@ -10,7 +10,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | 2 | Employee records and 201 files, automatic employee login accounts, sign-in by employee ID, forced password change | Done |
 | 3 | Attendance: device driver interface and mock driver, scheduled sync, CSV import, DTR processing (CSC Form 48), HR corrections with audit trail, validation, summaries and DTR PDF; office hours and holidays | Done |
 | 4 | Leave: all CSC leave types, filing with rule checks, endorsement (department head or Municipal Mayor) and HR approval, leave ledger (leave card), monthly credits and tardiness deductions from validated DTRs, forced-leave forfeiture, opening balance import, Certificate of Leave Credits, utilization report, in-app notifications | Done |
-| 5 | Payroll | Planned |
+| 5 | Payroll: semi-monthly regular and Job Order / COS payrolls, SSL VI Salary Schedule at the LGU income-class rate, allowances (PERA), absences and tardiness without pay from validated DTRs, GSIS / PhilHealth / Pag-IBIG and withholding tax from dated tables, loans with a minimum net pay, queued computation, approve and release with locking, payslip PDFs, payroll register (Excel, CSV, PDF) | Done |
 | 6 | Notifications, announcements, reports, admin tools (audit log, backup/restore, settings) | Planned |
 | 7 | Hardening, user guide | Planned |
 
@@ -73,6 +73,14 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 
    Open http://localhost:8000.
 
+   Payrolls are computed by the **queue worker**. `composer run dev` starts one; on the server, keep one running (for example as a Windows service or scheduled task):
+
+   ```powershell
+   php artisan queue:work --timeout=80
+   ```
+
+   Without a worker, a payroll stays at "Computing…".
+
 6. **Run the scheduler** (attendance sync every 5 minutes, nightly DTR processing, daily leave credit posting, yearly forced-leave forfeiture). During development:
 
    ```powershell
@@ -123,6 +131,12 @@ The sample employees have accounts with unknown temporary passwords; reset one u
   - The Mayor's leave, waiting for HR.
   - A leave already endorsed to HR.
   - A rejected leave.
+  - A leave the employee withdrew.
+
+`DemoPayrollSeeder` finally builds the payroll data through the real services:
+- Daily rates for the Job Order workers, a few loans and cooperative deductions, and RATA for Juan (at a demo amount).
+- Last month's regular and Job Order / COS payrolls for both halves, approved and released, so employees see payslips.
+- This month's first regular payroll, computed and waiting for review.
 
 ## Production: first administrator
 
@@ -132,7 +146,7 @@ With `APP_ENV=production`, the demo accounts are not created. Create the first S
 php artisan app:create-administrator --name="Juan Dela Cruz" --username="admin" --email="admin@cagdianao.gov.ph"
 ```
 
-The command prompts for the password, so it never appears in shell history. Next, the administrator creates an account for an HR officer under **Administration â†’ User Accounts**. HR then adds employees, and each employee gets a login account automatically.
+The command prompts for the password, so it never appears in shell history. Next, the administrator creates an account for an HR officer under **Administration → User Accounts**. HR then adds employees, and each employee gets a login account automatically.
 
 ## Employee accounts and sign-in
 
@@ -155,7 +169,7 @@ The command prompts for the password, so it never appears in shell history. Next
 | `SESSION_ENCRYPT` | `true`: session payloads are encrypted at rest. |
 | `SESSION_SECURE_COOKIE` | Set to `true` once the server is served over HTTPS. |
 | `SESSION_LIFETIME` | Idle minutes before users are signed out (default 120). |
-| `QUEUE_CONNECTION` | `database`. Payroll runs are queued from Phase 5. |
+| `QUEUE_CONNECTION` | `database`. Payroll computations are queued; run `php artisan queue:work`. |
 | `ATTENDANCE_DRIVER` | Default driver for new biometric devices: `mock` (no hardware). |
 | `ATTENDANCE_SYNC_INTERVAL` | Minutes between automatic device syncs (default 5). |
 | `MAIL_*` | Password-reset emails. With no mail server on the LAN, keep `MAIL_MAILER=log`; the System Administrator resets passwords instead. |
@@ -167,12 +181,12 @@ Access is enforced on the server by permission middleware on every route group a
 | Role | Access so far |
 | --- | --- |
 | System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, and **biometric devices** (settings, test connection, sync now, sync log). Admins cannot change their own role or deactivate themselves. They do not see employee records, attendance or leave. |
-| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; plus departments, positions and employment types. HR officers cannot approve their own leave. |
+| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; **payroll**: create, compute, approve and release payrolls, pay setup (allowances, loans), Salary Schedule, contribution and tax tables, payroll settings, every payslip and the payroll register; plus departments, positions and employment types. HR officers cannot approve their own leave. |
 | Municipal Mayor | Everything a Department Head can do for the Office of the Mayor, plus **endorsing department heads' leave** (and leave from offices with no department head in the system). |
 | Department Head | The basic profile (name, position, type, status, date hired, mobile number) and the attendance summary and DTRs of employees in **their own department**, read-only, and **endorsing or rejecting their leave applications**. No government IDs, salary, birth details, address or 201 documents. |
-| Employee | Their own full record and 201 file under **My Record**, their own DTR under **My Attendance** (with the printable Form 48), and **My Leave**: balances, leave card, applying for leave and withdrawing an application still waiting for a decision. |
+| Employee | Their own full record and 201 file under **My Record**, their own DTR under **My Attendance** (with the printable Form 48), and **My Leave**: balances, leave card, applying for leave and withdrawing an application still waiting for a decision, and **My Payslips**: their own payslips once a payroll is released. |
 
-Everyone with an employee record (HR, the Mayor and department heads included) files their own leave the same way.
+Everyone with an employee record (HR, the Mayor and department heads included) files their own leave and sees their own payslips the same way. Department heads and the Mayor see no one else's pay.
 
 Requests for records a user may not see return **404 Not Found**, so changing an ID in the URL does not reveal whether a record exists.
 
@@ -202,7 +216,7 @@ Each account holds exactly one role. Deactivated users cannot sign in, and if th
 
 ### CSV import
 
-For a device that cannot be reached, or punches from a paper logbook: **Attendance â†’ Import Attendance**, with a downloadable template.
+For a device that cannot be reached, or punches from a paper logbook: **Attendance → Import Attendance**, with a downloadable template.
 
 ```csv
 biometric_user_id,date,time
@@ -214,7 +228,7 @@ The header row is required, and columns may be in any order. Dates are `YYYY-MM-
 
 ### Biometric devices
 
-Add each time clock under **Administration â†’ Biometric Devices** (IP address, port 4370, driver). The **mock** driver produces realistic punches for employees with a biometric user ID, so the whole flow can be demonstrated without hardware; a device at IP `0.0.0.0` behaves as unreachable. The real ZKTeco driver (ZKLib over TCP/IP) is added later by implementing `App\Services\Attendance\BiometricDriver` and registering it in `config/attendance.php`.
+Add each time clock under **Administration → Biometric Devices** (IP address, port 4370, driver). The **mock** driver produces realistic punches for employees with a biometric user ID, so the whole flow can be demonstrated without hardware; a device at IP `0.0.0.0` behaves as unreachable. The real ZKTeco driver (ZKLib over TCP/IP) is added later by implementing `App\Services\Attendance\BiometricDriver` and registering it in `config/attendance.php`.
 
 ### Office hours and holidays
 
@@ -236,7 +250,7 @@ All leave types on CS Form No. 6 are seeded, each with its legal basis and rules
 - Adoption Leave.
 - Wellness Leave.
 
-HR can change every rule under **Leave â†’ Leave Types** when regulations change:
+HR can change every rule under **Leave → Leave Types** when regulations change:
 - What the type is charged to.
 - Days per year and per application.
 - Calendar or working days.
@@ -257,7 +271,7 @@ Vacation, sick and forced leave drive the leave card, so their code and charging
 
 ### Workflow
 
-1. **Filing.** The employee files under **My Leave â†’ Apply for Leave**. The application is checked against its type's rules:
+1. **Filing.** The employee files under **My Leave → Apply for Leave**. The application is checked against its type's rules:
    - Advance notice (e.g. vacation leave 5 days ahead).
    - Whether it can be filed after the fact (e.g. sick leave).
    - Half days on a single date only.
@@ -288,13 +302,13 @@ Each employee's vacation and sick leave are kept as a **ledger (leave card)**:
 - **Catch-up:** `php artisan leave:post-credits` also runs daily for last month, to catch DTRs validated late.
 - **Re-validation:** if a DTR is corrected and validated again, only the difference is posted.
 - **Forced leave:** in mid-January, `php artisan leave:forfeit-forced-leave` forfeits unused forced leave. This applies to employees who had 10 or more days of vacation leave and took fewer than 5 days of vacation or forced leave that year.
-- **Monitoring:** **Leave â†’ Monthly Posting** shows who is posted, ready or waiting (and why), with a button to post everyone ready.
+- **Monitoring:** **Leave → Monthly Posting** shows who is posted, ready or waiting (and why), with a button to post everyone ready.
 
-Elective officials and Job Order / Contract of Service workers do not earn credits. This is set per employment type under **Reference Data â†’ Employment Types**.
+Elective officials and Job Order / Contract of Service workers do not earn credits. This is set per employment type under **Reference Data → Employment Types**.
 
 ### Opening balances
 
-When the system starts keeping the leave cards, HR imports each employee's balances from their paper leave card under **Leave â†’ Leave Credits â†’ Import Opening Balances**, as of the last day of a month.
+When the system starts keeping the leave cards, HR imports each employee's balances from their paper leave card under **Leave → Leave Credits → Import Opening Balances**, as of the last day of a month.
 
 ```csv
 employee_number,vacation_leave,sick_leave
@@ -306,6 +320,82 @@ Employees who already have leave card entries are skipped (use an adjustment ins
 ### Certificate of Leave Credits
 
 On an employee's leave card, HR can print a **Certificate of Leave Credits** (PDF) as of any date. It follows the "Certification of Leave Credits" block of CS Form No. 6: total earned, less applications still pending, and balance.
+
+## Payroll
+
+### Payrolls and pay periods
+
+Pay is **semi-monthly**: the 1st to the 15th, and the 16th to the end of the month. Each period has two separate payrolls, both run by HR under **Payroll Runs**:
+- **Regular payroll:** everyone whose employment type is paid by salary grade (permanent, temporary, coterminous, casual, contractual, elective).
+- **Job Order / COS payroll:** everyone whose employment type is paid by daily rate.
+
+The pay basis is set per employment type under **Reference Data → Employment Types**. A Job Order worker's daily rate is entered on their 201 record.
+
+### Workflow
+
+1. **Create** a payroll for a month, half and pay basis. It is queued for computation right away. The page shows "Computing…" and refreshes until the queue worker is done.
+2. **Review** the employees, their payslips and the **Needs attention** list:
+   - "Must fix" items block approval. Examples: an employee with no salary grade or daily rate, a Job Order DTR not yet validated, or deductions larger than pay.
+   - Notes are information only. Example: a month's DTR not yet validated, so its absences will be deducted later.
+   - Fix the records and **Recompute** as often as needed; each computation replaces the previous one.
+3. **Approve.** An approved payroll can be **reopened** for corrections.
+4. **Release.** The payroll is locked for good, each employee gets an in-app notification, and their payslip appears under **My Payslips**. Corrections after release go in a later payroll.
+
+A payroll that is not yet approved can be deleted.
+
+### Regular pay
+
+Every amount is computed in whole centavos and stored as a decimal (never floats). Rounding is half up.
+
+- **Basic pay:** half the monthly salary. The first half gets the lower half of an odd centavo, the second half the rest, so the month always adds up.
+- **Monthly salary:** the national Salary Schedule amount for the employee's grade and step on the first day of the period, times the percentage for the LGU's income class, rounded to the peso.
+  - The seeded schedule is **SSL VI, third tranche, effective January 1, 2026** (EO No. 64, s. 2024; DBM NBC No. 601, Annex A).
+  - Municipalities pay 1st class 90%, 2nd 85%, 3rd 80%, 4th 75%, 5th 70% of the schedule (DBM Local Budget Circulars).
+  - Set the class under **Payroll Settings**. Until HR ticks "Confirmed", payroll uses the 5th class (70%) and shows a reminder.
+- **Partial periods:** new hires and separations are paid for the scheduled working days in service out of the period's working days. Holidays on working days count as paid.
+- **Allowances:** half the monthly amount per payroll, prorated like basic pay.
+  - An allowance covers either every salary-grade employee or only those it is assigned to.
+  - An assignment can give one employee a different amount or period.
+  - **PERA** (₱2,000 a month, not taxable, reduced for days without pay) is seeded.
+- **Absences and tardiness without pay** are deducted in the first payroll after the month's DTR is validated:
+  - Unexcused absences on the DTR.
+  - Approved leave without pay.
+  - Tardiness and undertime that vacation leave could not cover (see the leave card).
+  - A day is the monthly salary ÷ 22 and a minute is a day ÷ 480. Allowances "reduced for days without pay" are reduced the same way.
+  - If more is owed than one payroll can bear, the rest is deducted in the next one.
+  - If a deducted month is corrected later, the next payroll deducts or refunds only the difference.
+  - Months covered by the opening leave balance, and months before **Deduct absences from** in Payroll Settings, are never deducted.
+- **GSIS, PhilHealth and Pag-IBIG:** half of the monthly contribution on the monthly salary, using the rate in force on the first day of the period. The employer shares are kept for remittance.
+
+  | Contribution | Employee | Employer | Salary used |
+  | --- | --- | --- | --- |
+  | GSIS (RA 8291) | 9% | 12% | full monthly salary |
+  | PhilHealth (RA 11223) | 2.5% | 2.5% | ₱10,000 to ₱100,000 |
+  | Pag-IBIG (HDMF) | 2% | 2% | up to ₱10,000 |
+
+- **Withholding tax:** from the BIR monthly table in force (TRAIN, effective 2023). Taxable pay is basic pay plus taxable allowances, less absences and the employee's contributions. Each half withholds half the monthly-table tax on twice its taxable pay.
+- **Loans and other deductions** (GSIS and Pag-IBIG loans, cooperative, dues) are set up per employee under **Pay Setup**:
+  - Half the monthly amount is deducted per payroll, in priority order.
+  - A deduction stops at its end date or once its total has been deducted.
+  - Loans stop where net pay would fall below half the **minimum monthly net take-home pay** (₱5,000 by default). The shortfall is noted on the payslip. Contributions and tax are always deducted.
+
+### Job Order / COS pay
+
+- **Pay:** daily rate × time worked in the period, from the validated DTR (8 hours = 1 day; holidays and absences are unpaid).
+- **Tax:** the rate HR sets under Payroll Settings (5% by default) is withheld.
+- **Other deductions:** loans and other deductions apply. There is no GSIS, PhilHealth or Pag-IBIG, and no minimum net pay.
+- **Before approval:** the period's DTR must be validated.
+
+### Rates and tables
+
+Rates and tables are versioned with effectivity dates. Enter a new version ahead of time and payrolls switch to it on that date.
+- **Salary Schedule:** shows the national and LGU rate for every grade and step. **Add tranche** copies the schedule in force for editing.
+- **Contributions & Tax:** add a new GSIS, PhilHealth or Pag-IBIG rate, or a new tax table (copied from the one in force).
+
+### Payslips and register
+
+- **Payslip (PDF, A5):** earnings, deductions, net pay and notes. Employees see their own once released; HR sees all, marked "for review only" before release.
+- **Payroll register:** one row per employee, by office then name, with totals and employer shares. Exported as Excel (.xlsx), CSV or PDF (legal, landscape, with signature lines).
 
 ## Security notes
 
@@ -323,8 +413,10 @@ php artisan test --compact
 The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It covers:
 - Authentication and the full role/permission matrix.
 - The access rules for employee records, DTRs and leave, including changing IDs in the URL.
-- Unit tests of the DTR rules, the CSC leave tables (checked against published values) and leave charging.
-- End-to-end flows: biometric punches â†’ DTR â†’ validated month â†’ leave card, and leave approval â†’ balance â†’ DTR.
+- Unit tests of the DTR rules, the CSC leave tables (checked against published values), leave charging and centavo arithmetic.
+- Payroll computation against amounts worked out by hand from the seeded tables: halves, income-class rates, proration, allowances, contributions, tax, absences without pay (including partial and corrected months), loans and the minimum net pay, and Job Order pay.
+- The payroll workflow, locking after release, payslip access and the register exports.
+- End-to-end flows: biometric punches → DTR → validated month → leave card; leave approval → balance → DTR; and biometric punches with leave without pay → validated month → payroll deduction.
 
 ## Assumptions and decisions
 
@@ -334,18 +426,17 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - **No biometric device yet.** Attendance runs on the mock driver and CSV import. The ZKTeco (ZKLib) driver will be added when a device is available.
 - **Department Head scoping** comes from the head's own employee record (`employees.department_id`). A Department Head account without an employee record sees no employees.
 - **Employees are never deleted.** Separation is recorded with an employment status and separation date, which keeps the 201 file and later attendance, leave and payroll history intact.
-- **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9â€“12, GSIS 8â€“15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.
+- **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9–12, GSIS 8–15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.
 - **HR cannot reset passwords.** Only the System Administrator can, which stops an HR account from taking over an administrator's or another officer's account. A lost temporary password is reset by the administrator.
-- **Salary grade and step are optional** on the employee record, because Job Order and Contract of Service workers are not paid by salary grade. Phase 5 will add their daily rates.
+- **Salary grade and step are optional** on the employee record, because Job Order and Contract of Service workers are paid by a daily rate instead.
 - **Reference data is deactivated, not deleted**, so historical records keep their department, position and type.
 - **Seeded reference data must be verified.** Departments follow the standard municipal offices under RA 7160. Salary grades on positions follow the DBM Index of Occupational Services. Check both against the municipality's approved plantilla.
-- **One office schedule for everyone**: 8:00â€“12:00 and 1:00â€“5:00, Monday to Friday, 15-minute grace period, no flexible time. Shift work (for example, rural health unit staff on duty schedules) is not yet supported.
+- **One office schedule for everyone**: 8:00–12:00 and 1:00–5:00, Monday to Friday, 15-minute grace period, no flexible time. Shift work (for example, rural health unit staff on duty schedules) is not yet supported.
 - **The grace period applies to both sessions.** Beyond it, lateness counts from the scheduled start, not from the end of the grace period.
 - **A missing punch counts as absent for that half-day** until HR corrects it. Months cannot be validated while missing punches remain.
 - **The device's in/out key is ignored.** Punches are assigned to the four columns by time, because employees often press the wrong key.
 - **Seeded 2026 holidays must be checked** against the presidential proclamation. Movable holidays (Eid'l Fitr, Eid'l Adha) and local holidays of Cagdianao and the Province of Dinagat Islands are added by the System Administrator.
-- **Office hours and holidays are managed by the System Administrator**, as part of system configuration. Changes apply to days processed afterwards; HR can recompute earlier months from each DTR.
-- **Office hours and holidays are managed by HR**, as part of the core work calendar. The System Administrator no longer sees them.
+- **Office hours and holidays are managed by HR**, as part of the core work calendar. The System Administrator no longer sees them. Changes apply to days processed afterwards; HR can recompute earlier months from each DTR.
 - **A Municipal Mayor role** endorses department heads' leave. The Mayor's own leave goes straight to HR. If no Mayor account exists, department heads' leave also goes straight to HR, so nothing gets stuck.
 - **Credits are charged on final approval only.** Applications still waiting are shown as "applied for" against the balance, but are not deducted until HR approves.
 - **Unexcused absences count as leave without pay** when computing earned credits. An absence covered by approved leave with pay does not.
@@ -354,3 +445,11 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - **Half-day leave** is morning or afternoon on a single date. Two half-day applications on the same date are not allowed (file a whole day instead).
 - **Employees who do not earn credits** (elective, Job Order, Contract of Service) cannot file vacation or sick leave. They can still file leave granted by law or by yearly allotment.
 - **Leave rules are seeded and must be verified**, especially Wellness Leave, whose governing circular should be confirmed. HR can change every value under **Leave Types**.
+- **SSL VI instead of SSL V.** The spec named SSL V, but the EO No. 64, s. 2024 schedule is in force in 2026. The seeded amounts are the national third-tranche rates (DBM NBC No. 601, Annex A). LGUs may adopt tranches on their own timetable, so HR adds tranches under **Salary Schedule** when the Sanggunian approves them.
+- **Income class not yet known.** Payroll uses the 5th-class rate (70%) until HR sets and confirms the municipality's class under **Payroll Settings**. The percentage for each class is editable, for an LGU that adopted a lower rate within its Personal Services limit.
+- **Seeded rates must be verified** before production use: contribution rates and ceilings, the TRAIN tax table, PERA, the ₱5,000 minimum net pay and the 5% Job Order tax rate. All are editable, with effectivity dates.
+- **Equal halves.** Salary, allowances, contributions and tax are split evenly between the two halves of the month. Absences are deducted whole, in the first payroll after the DTR is validated.
+- **Tax is not annualized.** Each payroll uses the monthly table. Year-end adjustment (BIR Form 2316) is done outside the system.
+- **HR alone computes, approves and releases payroll.** There is no separate Accountant or Mayor approval in the system; the printed register has signature lines for them.
+- **Only elective and Job Order / COS employees are exempt from absence deductions**: deductions follow the leave card, which those employees do not have. Job Order workers are paid only for time worked instead.
+- **Contributions are not reduced for absences.** GSIS, PhilHealth and Pag-IBIG are computed on the full monthly salary (prorated only for partial months of service).

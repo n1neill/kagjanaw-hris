@@ -1,3 +1,5 @@
+@use('App\Enums\PayBasis')
+
 <x-app-layout :title="__('Employment Types')">
     <x-slot name="header">{{ __('Employment Types') }}</x-slot>
 
@@ -16,6 +18,7 @@
                     <th>{{ __('Code') }}</th>
                     <th>{{ __('Description') }}</th>
                     <th>{{ __('Leave credits') }}</th>
+                    <th>{{ __('Paid by') }}</th>
                     <th>{{ __('Status') }}</th>
                     <th data-orderable="false" class="text-right"><span class="sr-only">{{ __('Actions') }}</span></th>
                 </tr>
@@ -27,6 +30,7 @@
                         <td class="font-mono text-xs text-gray-700">{{ $employmentType->code }}</td>
                         <td class="text-gray-600">{{ $employmentType->description }}</td>
                         <td>{{ $employmentType->earns_leave_credits ? __('Earns') : __('None') }}</td>
+                        <td>{{ $employmentType->pay_basis === PayBasis::DailyRate ? __('Daily rate') : __('Salary grade') }}</td>
                         <td><x-status-badge :active="$employmentType->is_active" /></td>
                         <td class="text-right">
                             <a href="{{ route('reference-data.employment-types.edit', $employmentType) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>

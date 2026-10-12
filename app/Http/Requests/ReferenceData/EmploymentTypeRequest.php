@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\ReferenceData;
 
+use App\Enums\PayBasis;
 use App\Enums\Permission;
 use App\Models\EmploymentType;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -19,13 +20,15 @@ class EmploymentTypeRequest extends FormRequest
     }
 
     /**
-     * Normalize the code and treat an unchecked (unsubmitted) checkbox as false.
+     * Normalize the code, treat an unchecked (unsubmitted) checkbox as false
+     * and keep the current pay basis (or salary grade) when none is sent.
      */
     protected function prepareForValidation(): void
     {
         $this->merge([
             'code' => mb_strtolower(trim((string) $this->input('code'))),
             'earns_leave_credits' => $this->boolean('earns_leave_credits'),
+            'pay_basis' => $this->input('pay_basis', $this->route('employment_type')?->pay_basis?->value ?? PayBasis::SalaryGrade->value),
             'is_active' => $this->boolean('is_active'),
         ]);
     }
@@ -45,6 +48,7 @@ class EmploymentTypeRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', Rule::unique(EmploymentType::class)->ignore($employmentType)],
             'description' => ['nullable', 'string', 'max:1000'],
             'earns_leave_credits' => ['required', 'boolean'],
+            'pay_basis' => ['required', Rule::enum(PayBasis::class)],
             'is_active' => ['required', 'boolean'],
         ];
     }

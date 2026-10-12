@@ -139,6 +139,12 @@
                     </div>
                 </div>
                 <div>
+                    <x-input-label for="daily_rate" :value="__('Daily rate (Job Order / COS)')" />
+                    <x-text-input id="daily_rate" name="daily_rate" inputmode="decimal" class="mt-1" :value="old('daily_rate', $employee->daily_rate)" aria-describedby="daily-rate-hint" />
+                    <p id="daily-rate-hint" class="mt-1 text-xs text-gray-500">{{ __('Only for workers paid by the day.') }}</p>
+                    <x-input-error :messages="$errors->get('daily_rate')" class="mt-2" />
+                </div>
+                <div>
                     <x-input-label for="date_hired" :value="__('Date hired')" />
                     <x-text-input id="date_hired" name="date_hired" type="date" class="mt-1" :value="old('date_hired', $employee->date_hired?->toDateString())" required />
                     <x-input-error :messages="$errors->get('date_hired')" class="mt-2" />

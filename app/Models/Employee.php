@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
+use App\Enums\PayBasis;
 use App\Enums\Sex;
 use Carbon\CarbonInterface;
 use Database\Factories\EmployeeFactory;
@@ -40,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'employment_type_id',
     'salary_grade',
     'salary_step',
+    'daily_rate',
     'date_hired',
     'employment_status',
     'separation_date',
@@ -66,6 +68,7 @@ class Employee extends Model
             'birth_date' => 'date',
             'salary_grade' => 'integer',
             'salary_step' => 'integer',
+            'daily_rate' => 'decimal:2',
             'date_hired' => 'date',
             'employment_status' => EmploymentStatus::class,
             'separation_date' => 'date',
@@ -162,6 +165,38 @@ class Employee extends Model
     public function leaveLedgerEntries(): HasMany
     {
         return $this->hasMany(LeaveLedgerEntry::class);
+    }
+
+    /**
+     * @return HasMany<EmployeeAllowance, $this>
+     */
+    public function allowances(): HasMany
+    {
+        return $this->hasMany(EmployeeAllowance::class);
+    }
+
+    /**
+     * @return HasMany<EmployeeDeduction, $this>
+     */
+    public function payrollDeductions(): HasMany
+    {
+        return $this->hasMany(EmployeeDeduction::class);
+    }
+
+    /**
+     * @return HasMany<PayrollItem, $this>
+     */
+    public function payrollItems(): HasMany
+    {
+        return $this->hasMany(PayrollItem::class);
+    }
+
+    /**
+     * How the employee is paid, from their employment type.
+     */
+    public function payBasis(): PayBasis
+    {
+        return $this->employmentType?->pay_basis ?? PayBasis::SalaryGrade;
     }
 
     /**

@@ -68,10 +68,30 @@
 
     @include('dashboard.partials.my-leave')
 
+    <x-card :title="__('Payroll status')">
+        <x-slot name="actions">
+            <x-button-link :href="route('payroll.runs.index')" variant="secondary">{{ __('Payroll Runs') }}</x-button-link>
+        </x-slot>
+
+        @if ($recentPayrollRuns->isEmpty())
+            <p class="text-sm text-gray-500">{{ __('No payroll has been created yet.') }}</p>
+        @else
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach ($recentPayrollRuns as $run)
+                    <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <a href="{{ route('payroll.runs.show', $run) }}" class="font-medium text-brand-700 hover:text-brand-900">{{ $run->title() }}</a>
+                        <span class="flex items-center gap-3">
+                            <span class="tabular-nums text-gray-600">{{ trans_choice('{0} no employees|{1} :count employee|[2,*] :count employees', $run->employee_count, ['count' => $run->employee_count]) }}</span>
+                            <x-badge :color="$run->status->badgeColor()">{{ $run->status->label() }}</x-badge>
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-card>
+
     <div class="grid gap-4 sm:grid-cols-2">
-        <x-upcoming-module :title="__('Payroll status')" icon="banknotes">
-            {{ __('Current payroll run and its status (Phase 5).') }}
-        </x-upcoming-module>
+        @include('dashboard.partials.my-payslip')
         <x-upcoming-module :title="__('Announcements')" icon="megaphone">
             {{ __('Post announcements to all employees (Phase 6).') }}
         </x-upcoming-module>

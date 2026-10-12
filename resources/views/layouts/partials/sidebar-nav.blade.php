@@ -21,6 +21,11 @@
                 {{ __('My Leave') }}
             </x-sidebar-link>
         @endcan
+        @can(Permission::ViewOwnPayslips)
+            <x-sidebar-link :href="route('payroll.payslips.my')" :active="request()->routeIs('payroll.payslips.my')" icon="banknotes">
+                {{ __('My Payslips') }}
+            </x-sidebar-link>
+        @endcan
         @canany([Permission::EndorseLeave, Permission::EndorseDepartmentHeadLeave])
             <x-sidebar-link :href="route('leave.endorsements')" :active="request()->routeIs('leave.endorsements')" icon="inbox">
                 {{ __('Leave Endorsements') }}
@@ -88,6 +93,29 @@
             </div>
         </div>
     @endcanany
+
+    @can(Permission::ProcessPayroll)
+        <div>
+            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Payroll') }}</p>
+            <div class="mt-2 space-y-1">
+                <x-sidebar-link :href="route('payroll.runs.index')" :active="request()->routeIs('payroll.runs.*', 'payroll.employees.*')" icon="banknotes">
+                    {{ __('Payroll Runs') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('payroll.allowances.index')" :active="request()->routeIs('payroll.allowances.*')" icon="tag">
+                    {{ __('Allowances') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('payroll.salary-schedule.index')" :active="request()->routeIs('payroll.salary-schedule.*')" icon="chart">
+                    {{ __('Salary Schedule') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('payroll.rates.index')" :active="request()->routeIs('payroll.rates.*')" icon="book">
+                    {{ __('Contributions & Tax') }}
+                </x-sidebar-link>
+                <x-sidebar-link :href="route('payroll.settings.edit')" :active="request()->routeIs('payroll.settings.*')" icon="key">
+                    {{ __('Payroll Settings') }}
+                </x-sidebar-link>
+            </div>
+        </div>
+    @endcan
 
     @can(Permission::ManageWorkCalendar)
         <div>
