@@ -71,6 +71,10 @@ class DemoLeaveSeeder extends Seeder
         // Waiting for the department head.
         $leave->file($employee, $this->type('VL'), $nextWeek, $this->addWorkingDays($nextWeek, 2), LeavePortion::FullDay, 'Family vacation within the Philippines.', null, $employee->user);
 
+        // Withdrawn by the employee before the department head acted.
+        $withdrawn = $leave->file($employee, $this->type('VL'), $this->addWorkingDays($nextWeek, 8), $this->addWorkingDays($nextWeek, 8), LeavePortion::FullDay, 'Attend a wedding in Butuan City.', null, $employee->user);
+        $leave->cancel($withdrawn, $employee->user, 'The wedding was moved to next year.');
+
         // A department head's own leave, waiting for the Mayor.
         $leave->file($head, $this->type('VL'), $this->addWorkingDays($nextWeek, 5), $this->addWorkingDays($nextWeek, 6), LeavePortion::FullDay, 'Personal matters in Surigao City.', null, $head->user);
 

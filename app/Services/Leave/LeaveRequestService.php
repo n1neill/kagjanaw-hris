@@ -138,17 +138,21 @@ class LeaveRequestService
 
     /**
      * Reject at the endorsement stage (department head or Mayor) or at HR.
+     * Only the stage the application was at when the user was authorized is
+     * accepted, so an endorser cannot reject one that was endorsed meanwhile.
      */
     public function reject(LeaveRequest $request, User $user, string $remarks): LeaveRequest
     {
-        $atEndorsement = $request->status === LeaveRequestStatus::Pending;
+        if (! in_array($request->status, [LeaveRequestStatus::Pending, LeaveRequestStatus::Endorsed], true)) {
+            throw $this->alreadyActedOn($request);
+        }
 
-        $request = $this->transition($request, $request->status, function (LeaveRequest $request) use ($user, $remarks, $atEndorsement): void {
-            $request->forceFill($atEndorsement
+        $request = $this->transition($request, $request->status, function (LeaveRequest $request) use ($user, $remarks): void {
+            $request->forceFill($request->status === LeaveRequestStatus::Pending
                 ? ['endorsed_by' => $user->id, 'endorsed_at' => now(), 'endorsement_remarks' => $remarks]
                 : ['decided_by' => $user->id, 'decided_at' => now(), 'decision_remarks' => $remarks]);
             $request->forceFill(['status' => LeaveRequestStatus::Rejected])->save();
-        }, allowed: [LeaveRequestStatus::Pending, LeaveRequestStatus::Endorsed]);
+        });
 
         $this->notifyEmployee($request, LeaveRequestEvent::Rejected);
 
@@ -294,7 +298,7 @@ class LeaveRequestService
             $locked = LeaveRequest::query()->whereKey($request->id)->lockForUpdate()->sole();
 
             if (! in_array($locked->status, $allowed, true)) {
-                throw ValidationException::withMessages(['status' => __('This application is already :status.', ['status' => mb_strtolower($locked->status->label())])]);
+                throw $this->alreadyActedOn($locked);
             }
 
             $locked->load(['employee.user', 'leaveType']);
@@ -302,6 +306,11 @@ class LeaveRequestService
 
             return $locked;
         });
+    }
+
+    private function alreadyActedOn(LeaveRequest $request): ValidationException
+    {
+        return ValidationException::withMessages(['status' => __('This application is already :status.', ['status' => lcfirst($request->status->label())])]);
     }
 
     /**

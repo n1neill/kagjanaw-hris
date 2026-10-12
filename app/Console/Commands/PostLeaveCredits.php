@@ -38,9 +38,10 @@ class PostLeaveCredits extends Command
         $results = $posting->postMonthForAll($month);
 
         $posted = $results->filter(fn (array $row): bool => $row['result']->wasPosted())->count();
+        $upToDate = $results->filter(fn (array $row): bool => $row['result']->status === LeavePostingResult::UP_TO_DATE)->count();
         $waiting = $results->filter(fn (array $row): bool => $row['result']->status === LeavePostingResult::SKIPPED)->count();
 
-        $this->info("{$month->format('F Y')}: {$posted} employees posted, {$waiting} not ready.");
+        $this->info("{$month->format('F Y')}: {$posted} employees posted, {$upToDate} already up to date, {$waiting} not ready.");
 
         return self::SUCCESS;
     }

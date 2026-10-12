@@ -267,6 +267,30 @@ describe('endorsement and approval', function () {
             ->and($record->absent_minutes)->toBe(0);
     });
 
+    it('excuses leave on a day that HR corrected, keeping the corrected punches', function () {
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        grantLeaveCredits($employee);
+        DailyTimeRecord::factory()->for($employee)->create([
+            'work_date' => '2026-10-05',
+            'pm_in' => null,
+            'pm_out' => null,
+            'absent_minutes' => 240,
+            'worked_minutes' => 240,
+            'is_adjusted' => true,
+        ]);
+        $service = app(LeaveRequestService::class);
+        $request = $service->endorse(fileLeave($employee, 'SL', '2026-10-05', '2026-10-05', LeavePortion::Afternoon), $head->user, null);
+
+        $service->approve($request, $hrOfficer, null);
+
+        $record = $employee->dailyTimeRecords()->sole();
+        expect($record->absent_minutes)->toBe(0)
+            ->and($record->am_in)->toBe('07:55:00')
+            ->and($record->pm_in)->toBeNull()
+            ->and($record->is_adjusted)->toBeTrue();
+    });
+
     it('restores the credits and the DTR when HR cancels an approved leave', function () {
         ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
         $hrOfficer = User::factory()->hrOfficer()->create();
@@ -297,6 +321,20 @@ describe('endorsement and approval', function () {
 
         expect($errors['status'])->toBe(['This application is already approved.'])
             ->and(app(LeaveLedger::class)->balance($employee, LeaveType::vacation()))->toBe(9000);
+    });
+
+    it('does not let an endorser reject an application that was endorsed meanwhile', function () {
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        $request = fileLeave($employee, 'VL', '2026-10-19', '2026-10-19');
+        $staleCopy = $request->fresh();
+        $service = app(LeaveRequestService::class);
+        $service->endorse($request, $head->user, null);
+
+        $errors = leaveErrors(fn () => $service->reject($staleCopy, $head->user, 'Office audit that week.'));
+
+        expect($errors['status'])->toBe(['This application is already endorsed to HR.'])
+            ->and($request->fresh()->status)->toBe(LeaveRequestStatus::Endorsed)
+            ->and($request->fresh()->decided_by)->toBeNull();
     });
 
     it('records the endorser\'s remarks when the application is rejected at endorsement', function () {

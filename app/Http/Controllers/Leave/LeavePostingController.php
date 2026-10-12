@@ -51,12 +51,14 @@ class LeavePostingController extends Controller
 
         $posted = $results->filter(fn (array $row): bool => $row['result']->wasPosted())->count();
         $waiting = $results->filter(fn (array $row): bool => $row['result']->status === LeavePostingResult::SKIPPED)->count();
+        $upToDate = $results->filter(fn (array $row): bool => $row['result']->status === LeavePostingResult::UP_TO_DATE)->count();
 
         return redirect()
             ->route('leave.posting.index', ['month' => $month->format('Y-m')])
-            ->with('status', __('Leave credits for :month: :posted employees posted, :waiting not ready.', [
+            ->with('status', __('Leave credits for :month: :posted employees posted, :upToDate already up to date, :waiting not ready.', [
                 'month' => $month->format('F Y'),
                 'posted' => $posted,
+                'upToDate' => $upToDate,
                 'waiting' => $waiting,
             ]));
     }

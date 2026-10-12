@@ -19,8 +19,9 @@ use Illuminate\Support\Collection;
  * Turns valid raw punches into Daily Time Records.
  *
  * Processing is idempotent and may be repeated at any time. It never touches
- * future dates, dates outside the employee's service, or records that HR has
- * corrected by hand.
+ * future dates or dates outside the employee's service. Days that HR has
+ * corrected by hand keep their corrected punches and are only recomputed
+ * from them (e.g. when approved leave now covers the day).
  */
 class AttendanceProcessor
 {
@@ -138,14 +139,15 @@ class AttendanceProcessor
             $record = $existing->get($key);
 
             if ($record?->is_adjusted) {
-                continue;
+                $punches = DayPunches::fromTimes($record->am_in, $record->am_out, $record->pm_in, $record->pm_out);
+            } else {
+                $minutes = ($punchesByDate->get($key) ?? collect())
+                    ->map(fn (CarbonInterface $loggedAt): int => $loggedAt->hour * 60 + $loggedAt->minute)
+                    ->all();
+
+                $punches = $this->assigner->assign($minutes, $rules, $duplicateTapMinutes);
             }
 
-            $minutes = ($punchesByDate->get($key) ?? collect())
-                ->map(fn (CarbonInterface $loggedAt): int => $loggedAt->hour * 60 + $loggedAt->minute)
-                ->all();
-
-            $punches = $this->assigner->assign($minutes, $rules, $duplicateTapMinutes);
             $result = $this->calculator->calculate(
                 $punches,
                 $rules,

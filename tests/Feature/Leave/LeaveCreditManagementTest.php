@@ -164,7 +164,7 @@ describe('monthly posting', function () {
 
         $response = $this->actingAs($hrOfficer)->post(route('leave.posting.store', ['month' => '2026-09']));
 
-        $response->assertSessionHas('status', 'Leave credits for September 2026: 1 employees posted, 1 not ready.');
+        $response->assertSessionHas('status', 'Leave credits for September 2026: 1 employees posted, 0 already up to date, 1 not ready.');
     });
 
     it('runs from the scheduler command', function () {
@@ -173,7 +173,7 @@ describe('monthly posting', function () {
         validatedMonthOfDtr($employee, '2026-09');
 
         $this->artisan('leave:post-credits')
-            ->expectsOutput('September 2026: 1 employees posted, 0 not ready.')
+            ->expectsOutput('September 2026: 1 employees posted, 0 already up to date, 0 not ready.')
             ->assertSuccessful();
     });
 });
