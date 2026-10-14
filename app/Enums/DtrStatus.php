@@ -37,7 +37,7 @@ enum DtrStatus: string
             self::Pending => 'gray',
             self::HalfDay, self::Incomplete => 'yellow',
             self::Absent => 'red',
-            self::Holiday, self::OnLeave => 'brand',
+            self::Holiday, self::OnLeave => 'blue',
             self::RestDay => 'gray',
         };
     }

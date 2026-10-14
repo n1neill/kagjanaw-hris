@@ -1,14 +1,14 @@
 @props(['title' => null, 'description' => null])
 
-<section {{ $attributes->merge(['class' => 'rounded-lg border border-gray-200 bg-white shadow-xs']) }}>
+<section {{ $attributes->merge(['class' => 'rounded-xl border border-line bg-surface shadow-xs']) }}>
     @if ($title || isset($actions))
-        <header class="flex flex-wrap items-start justify-between gap-3 border-b border-gray-200 px-4 py-3 sm:px-6">
-            <div>
+        <header class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-4 sm:px-6">
+            <div class="min-w-0">
                 @if ($title)
-                    <h2 class="text-base font-semibold text-gray-900">{{ $title }}</h2>
+                    <h2 class="text-base font-semibold text-ink">{{ $title }}</h2>
                 @endif
                 @if ($description)
-                    <p class="mt-0.5 text-sm text-gray-500">{{ $description }}</p>
+                    <p class="mt-0.5 text-sm text-ink-muted">{{ $description }}</p>
                 @endif
             </div>
             @isset($actions)

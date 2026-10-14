@@ -89,7 +89,7 @@ enum AuditEvent: string
     {
         return match (true) {
             $this->isSecurityWarning(), $this === self::Deleted, $this === self::BackupRestored => 'red',
-            $this->category() === 'changes' => 'brand',
+            $this->category() === 'changes' => 'blue',
             $this->category() === 'access' => 'yellow',
             default => 'gray',
         };

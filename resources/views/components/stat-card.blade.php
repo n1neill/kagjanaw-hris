@@ -1,14 +1,16 @@
 @props(['label', 'value', 'icon' => null, 'hint' => null])
 
-<div {{ $attributes->merge(['class' => 'rounded-lg border border-gray-200 bg-white p-4 shadow-xs']) }}>
-    <div class="flex items-center justify-between gap-3">
-        <p class="text-sm font-medium text-gray-500">{{ $label }}</p>
+<div {{ $attributes->merge(['class' => 'rounded-xl border border-line bg-surface p-5 shadow-xs']) }}>
+    <div class="flex items-start justify-between gap-3">
+        <p class="text-sm font-medium text-ink-muted">{{ $label }}</p>
         @if ($icon)
-            <x-icon :name="$icon" class="size-5 text-brand-600" />
+            <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400" aria-hidden="true">
+                <x-icon :name="$icon" class="size-5" />
+            </span>
         @endif
     </div>
-    <p class="mt-2 text-2xl font-semibold text-gray-900">{{ $value }}</p>
+    <p class="mt-1 text-3xl font-semibold tracking-tight text-ink tabular-nums">{{ $value }}</p>
     @if ($hint)
-        <p class="mt-1 text-xs text-gray-500">{{ $hint }}</p>
+        <p class="mt-1 text-xs text-ink-muted">{{ $hint }}</p>
     @endif
 </div>

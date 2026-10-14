@@ -29,7 +29,7 @@ enum LeaveRequestStatus: string
     {
         return match ($this) {
             self::Pending => 'yellow',
-            self::Endorsed => 'brand',
+            self::Endorsed => 'blue',
             self::Approved => 'green',
             self::Rejected => 'red',
             self::Cancelled => 'gray',

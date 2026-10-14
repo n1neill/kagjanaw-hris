@@ -31,7 +31,7 @@ enum PayrollRunStatus: string
         return match ($this) {
             self::Draft => 'gray',
             self::Computing => 'yellow',
-            self::Computed => 'brand',
+            self::Computed => 'blue',
             self::Approved => 'green',
             self::Released => 'green',
         };

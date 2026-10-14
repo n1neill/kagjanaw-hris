@@ -43,7 +43,7 @@
                             @if ($row['posted'])
                                 <x-badge color="green">{{ __('Posted') }}</x-badge>
                             @elseif ($row['reason'] === null)
-                                <x-badge color="brand">{{ __('Ready') }}</x-badge>
+                                <x-badge color="blue">{{ __('Ready') }}</x-badge>
                             @else
                                 <x-badge color="yellow">{{ __('Waiting') }}</x-badge>
                                 <span class="ml-1 text-xs text-gray-600">{{ $row['reason'] }}</span>
