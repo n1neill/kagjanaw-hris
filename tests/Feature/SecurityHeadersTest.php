@@ -2,7 +2,19 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Str;
 use Symfony\Component\Finder\SplFileInfo;
+
+beforeEach(function () {
+    // Independent of whether `npm run dev` happens to be running on this computer.
+    $this->hotFile = storage_path('framework/testing/vite-'.Str::random(8).'.hot');
+    Vite::useHotFile($this->hotFile);
+});
+
+afterEach(function () {
+    File::delete($this->hotFile);
+});
 
 it('sends the security headers and a content security policy with pages', function () {
     $response = $this->get(route('login'));
@@ -26,6 +38,17 @@ it('leaves the content security policy off downloads, which open in the browser\
 
     $response->assertOk()
         ->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeaderMissing('Content-Security-Policy');
+});
+
+it('leaves the content security policy off while the Vite dev server runs, whose IPv6 address a policy cannot name', function () {
+    File::ensureDirectoryExists(dirname($this->hotFile));
+    File::put($this->hotFile, 'http://[::1]:5173');
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertSee('http://[::1]:5173/resources/css/app.css', false)
+        ->assertHeader('X-Frame-Options', 'DENY')
         ->assertHeaderMissing('Content-Security-Policy');
 });
 

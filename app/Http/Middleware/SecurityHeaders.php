@@ -34,7 +34,9 @@ class SecurityHeaders
         }
 
         // PDFs and downloads open in the browser's own viewer, which a page policy can break.
-        if (str_starts_with((string) $response->headers->get('Content-Type'), 'text/html')) {
+        // While `npm run dev` runs, assets come from Vite's server, often at an IPv6
+        // address ([::1]) that a policy cannot name, so development pages go without.
+        if (str_starts_with((string) $response->headers->get('Content-Type'), 'text/html') && ! Vite::isRunningHot()) {
             $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy());
         }
 
@@ -48,35 +50,17 @@ class SecurityHeaders
      */
     private function contentSecurityPolicy(): string
     {
-        $devServer = $this->viteDevServer();
-
         return implode('; ', [
             "default-src 'self'",
-            trim("script-src 'self' 'unsafe-eval' {$devServer['http']}"),
-            trim("style-src 'self' 'unsafe-inline' {$devServer['http']}"),
+            "script-src 'self' 'unsafe-eval'",
+            "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data:",
             "font-src 'self' data:",
-            trim("connect-src 'self' {$devServer['http']} {$devServer['ws']}"),
+            "connect-src 'self'",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'none'",
         ]);
-    }
-
-    /**
-     * While `npm run dev` runs, assets and hot reloads come from Vite's server.
-     *
-     * @return array{http: string, ws: string}
-     */
-    private function viteDevServer(): array
-    {
-        if (! Vite::isRunningHot()) {
-            return ['http' => '', 'ws' => ''];
-        }
-
-        $origin = rtrim(trim((string) file_get_contents(Vite::hotFile())), '/');
-
-        return ['http' => $origin, 'ws' => preg_replace('/^http/', 'ws', $origin)];
     }
 }
