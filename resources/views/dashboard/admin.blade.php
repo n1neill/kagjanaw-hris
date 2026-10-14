@@ -1,15 +1,20 @@
 <x-app-layout :title="__('Dashboard')">
     <x-slot name="header">{{ __('System Administration') }}</x-slot>
 
-    <p class="text-sm text-ink-muted">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
+    <x-page-header :title="__('Welcome back, :name.', ['name' => Auth::user()->name])" :description="now()->format('l, F j, Y')">
+        <x-slot name="actions">
+            <x-button-link :href="route('admin.users.create')">
+                <x-icon name="plus" class="size-4" />
+                {{ __('New Account') }}
+            </x-button-link>
+        </x-slot>
+    </x-page-header>
 
     <div class="grid gap-4 sm:grid-cols-3">
         <x-stat-card :label="__('User accounts')" :value="$totalUsers" icon="users" />
-        <x-stat-card :label="__('Active')" :value="$activeUsers" />
-        <x-stat-card :label="__('Deactivated')" :value="$inactiveUsers" />
+        <x-stat-card :label="__('Active')" :value="$activeUsers" icon="check-circle" />
+        <x-stat-card :label="__('Deactivated')" :value="$inactiveUsers" icon="key" />
     </div>
-
-    @include('dashboard.partials.announcements')
 
     <div class="grid gap-6 lg:grid-cols-3">
         <x-card :title="__('Accounts by role')" class="lg:col-span-1">
@@ -17,14 +22,7 @@
                 <x-button-link :href="route('admin.users.index')" variant="secondary">{{ __('Manage') }}</x-button-link>
             </x-slot>
 
-            <dl class="divide-y divide-line">
-                @foreach ($usersPerRole as $roleLabel => $count)
-                    <div class="flex items-center justify-between py-2 text-sm">
-                        <dt class="text-ink-muted">{{ $roleLabel }}</dt>
-                        <dd class="font-semibold text-ink">{{ $count }}</dd>
-                    </div>
-                @endforeach
-            </dl>
+            <x-chart :data="$rolesChart" :label="__('User accounts by role')" height="h-56" />
         </x-card>
 
         <div class="grid gap-4 lg:col-span-2">
@@ -86,4 +84,6 @@
             </div>
         </div>
     </div>
+
+    @include('dashboard.partials.announcements')
 </x-app-layout>

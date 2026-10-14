@@ -1,6 +1,6 @@
 {{--
     The signed-in employee's attendance today and this month.
-    Expects: $myToday (?DailyTimeRecord), $myMonth (?array)
+    Expects: $myToday (?DailyTimeRecord), $myMonth (?array), $myAttendanceChart (?array)
 --}}
 @use('App\Models\DailyTimeRecord')
 @use('App\Services\Attendance\AttendanceReportService', 'Report')
@@ -36,6 +36,13 @@
             </p>
         @else
             <p class="mt-4 text-sm text-ink-muted">{{ __('No punches recorded yet today.') }}</p>
+        @endif
+
+        @if ($myAttendanceChart)
+            <div class="mt-6 border-t border-line pt-5">
+                <p class="text-sm font-medium text-ink">{{ __('My working days this month') }}</p>
+                <x-chart class="mt-3" :data="$myAttendanceChart" :label="__('My working days this month')" height="h-10" :empty="__('Your days appear here once your DTR for this month is processed.')" />
+            </div>
         @endif
     </x-card>
 @endif

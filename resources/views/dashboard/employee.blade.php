@@ -1,7 +1,16 @@
 <x-app-layout :title="__('Dashboard')">
     <x-slot name="header">{{ __('My Dashboard') }}</x-slot>
 
-    <p class="text-sm text-ink-muted">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
+    <x-page-header :title="__('Welcome back, :name.', ['name' => Auth::user()->name])" :description="now()->format('l, F j, Y')">
+        @if ($employee && Auth::user()->can(\App\Enums\Permission::FileLeave))
+            <x-slot name="actions">
+                <x-button-link :href="route('leave.requests.create')">
+                    <x-icon name="plus" class="size-4" />
+                    {{ __('File Leave') }}
+                </x-button-link>
+            </x-slot>
+        @endif
+    </x-page-header>
 
     @include('dashboard.partials.my-attendance')
 
@@ -20,7 +29,7 @@
         </x-card>
     @endif
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    <div class="grid gap-6 lg:grid-cols-2">
         @include('dashboard.partials.my-payslip')
         @include('dashboard.partials.announcements')
     </div>

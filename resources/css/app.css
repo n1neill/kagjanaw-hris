@@ -66,6 +66,14 @@
         --app-ink: #1f2a24;
         --app-ink-muted: #5b6b62;
         --app-ink-subtle: #6b7a72;
+
+        /* Chart series, validated for colour-blind separation in stacking order. */
+        --chart-ontime: #059669;
+        --chart-late: #ca8a04;
+        --chart-leave: #2a78d6;
+        --chart-absent: #dc2626;
+        --chart-primary: #059669;
+        --chart-secondary: #2a78d6;
     }
 
     [data-theme='dark'] {
@@ -78,6 +86,10 @@
         --app-ink: #e6efe9;
         --app-ink-muted: #9fb0a7;
         --app-ink-subtle: #7f9188;
+        --chart-late: #c98500;
+        --chart-leave: #3987e5;
+        --chart-absent: #e66767;
+        --chart-secondary: #3987e5;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -91,6 +103,10 @@
             --app-ink: #e6efe9;
             --app-ink-muted: #9fb0a7;
             --app-ink-subtle: #7f9188;
+            --chart-late: #c98500;
+            --chart-leave: #3987e5;
+            --chart-absent: #e66767;
+            --chart-secondary: #3987e5;
         }
     }
 }

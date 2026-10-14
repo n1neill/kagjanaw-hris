@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Role;
+use App\Models\DailyTimeRecord;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
@@ -87,4 +88,55 @@ it('shows department heads the size of their team in service', function () {
     $response = $this->actingAs($head->user)->get('/dashboard');
 
     $response->assertViewHas('teamSize', 3)->assertSee($department->name);
+});
+
+it('gives HR officers the attendance, leave, headcount and payroll charts', function () {
+    $hrOfficer = User::factory()->hrOfficer()->create();
+
+    $response = $this->actingAs($hrOfficer)->get('/dashboard');
+
+    $response->assertOk()
+        ->assertViewHas('attendanceChart', fn (array $chart): bool => $chart['type'] === 'column-stacked')
+        ->assertViewHas('leaveChart')
+        ->assertViewHas('headcountChart')
+        ->assertViewHas('payrollChart', fn (array $chart): bool => $chart['unit'] === 'peso');
+});
+
+it('shows department heads the attendance of their own department only', function () {
+    $this->travelTo('2026-10-15 09:00');
+    $department = Department::factory()->create();
+    $head = Employee::factory()->withAccount(Role::DepartmentHead)->create(['department_id' => $department->id]);
+    DailyTimeRecord::factory()->create([
+        'work_date' => '2026-10-01',
+        'employee_id' => Employee::factory()->create(['department_id' => $department->id]),
+    ]);
+    DailyTimeRecord::factory()->count(4)->create(['work_date' => '2026-10-01']);
+
+    $response = $this->actingAs($head->user)->get('/dashboard');
+
+    $response->assertViewHas('attendanceChart', fn (array $chart): bool => $chart['series'][0]['values'] === [1])
+        ->assertViewMissing('payrollChart')
+        ->assertViewMissing('headcountChart');
+});
+
+it('shows employees a chart of their own month', function () {
+    $this->travelTo('2026-10-15 09:00');
+    $employee = Employee::factory()->withAccount()->create();
+    DailyTimeRecord::factory()->for($employee)->late()->create(['work_date' => '2026-10-01']);
+    DailyTimeRecord::factory()->count(3)->create(['work_date' => '2026-10-01']);
+
+    $response = $this->actingAs($employee->user)->get('/dashboard');
+
+    $response->assertViewHas('myAttendanceChart', fn (array $chart): bool => array_sum(array_merge(...array_column($chart['series'], 'values'))) === 1)
+        ->assertViewMissing('attendanceChart')
+        ->assertSee('data-chart=', false);
+});
+
+it('charts the administrator\'s accounts by role', function () {
+    $admin = User::factory()->systemAdministrator()->create();
+
+    $response = $this->actingAs($admin)->get('/dashboard');
+
+    $response->assertViewHas('rolesChart', fn (array $chart): bool => array_sum($chart['series'][0]['values']) === 1)
+        ->assertViewMissing('payrollChart');
 });

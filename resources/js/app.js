@@ -18,6 +18,13 @@ document.addEventListener('submit', (event) => {
 });
 
 /**
+ * Chart.js is loaded only on pages that have a chart (the dashboards).
+ */
+if (document.querySelector('canvas[data-chart]')) {
+    import('./charts');
+}
+
+/**
  * Enhance every <table data-datatable> with search, sorting and paging.
  * Columns opt out of sorting with data-orderable="false" on their <th>.
  */

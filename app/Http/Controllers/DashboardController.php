@@ -25,6 +25,7 @@ use App\Models\PayrollRun;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Services\Backup\BackupService;
+use App\Services\DashboardChartService;
 use App\Services\Leave\LeaveBalanceService;
 use App\Services\Leave\LeaveCreditPostingService;
 use App\Services\Leave\LeaveEndorsementRouter;
@@ -44,6 +45,7 @@ class DashboardController extends Controller
         private LeaveCreditPostingService $leavePosting,
         private BackupService $backups,
         private SystemSettings $settings,
+        private DashboardChartService $charts,
     ) {}
 
     /**
@@ -112,14 +114,14 @@ class DashboardController extends Controller
     /**
      * Today's punches and this month's tardiness and absences for the signed-in employee.
      *
-     * @return array{myToday: ?DailyTimeRecord, myMonth: ?array{late_count: int, late_minutes: int, absent_days: float}}
+     * @return array{myToday: ?DailyTimeRecord, myMonth: ?array{late_count: int, late_minutes: int, absent_days: float}, myAttendanceChart: ?array<string, mixed>}
      */
     private function ownAttendanceData(User $user): array
     {
         $employee = $user->employee;
 
         if ($employee === null) {
-            return ['myToday' => null, 'myMonth' => null];
+            return ['myToday' => null, 'myMonth' => null, 'myAttendanceChart' => null];
         }
 
         $monthRecords = $employee->dailyTimeRecords()
@@ -135,6 +137,7 @@ class DashboardController extends Controller
                 'late_minutes' => (int) $monthRecords->sum('late_minutes'),
                 'absent_days' => round($monthRecords->sum('absent_minutes') / ($rules->amLength() + $rules->pmLength()), 1),
             ],
+            'myAttendanceChart' => $this->charts->myAttendanceMonth($employee),
         ];
     }
 
@@ -171,6 +174,7 @@ class DashboardController extends Controller
                 ->where('event', AuditEvent::AccessDenied)
                 ->where('created_at', '>=', now()->subDay())
                 ->count(),
+            'rolesChart' => $this->charts->singleSeries($usersPerRole, __('Accounts'), 'accounts'),
         ];
     }
 
@@ -205,6 +209,10 @@ class DashboardController extends Controller
                 ->select('payroll_runs.*')
                 ->limit(4)
                 ->get(),
+            'attendanceChart' => $this->charts->attendanceTrend(),
+            'leaveChart' => $this->charts->leaveDaysByType(),
+            'headcountChart' => $this->charts->headcountByDepartment(),
+            'payrollChart' => $this->charts->payrollTotals(),
         ];
     }
 
@@ -233,7 +241,7 @@ class DashboardController extends Controller
         $department = $user->employee?->department;
 
         if ($department === null) {
-            return ['department' => null, 'teamSize' => 0, 'reportedToday' => 0, 'lateToday' => 0];
+            return ['department' => null, 'teamSize' => 0, 'reportedToday' => 0, 'lateToday' => 0, 'attendanceChart' => null, 'leaveChart' => null];
         }
 
         $today = DailyTimeRecord::query()
@@ -246,6 +254,8 @@ class DashboardController extends Controller
             'teamSize' => Employee::query()->inService()->where('department_id', $department->id)->count(),
             'reportedToday' => $today->filter(fn (DailyTimeRecord $record): bool => $record->am_in !== null || $record->pm_in !== null)->count(),
             'lateToday' => $today->filter(fn (DailyTimeRecord $record): bool => $record->late_minutes > 0)->count(),
+            'attendanceChart' => $this->charts->attendanceTrend($department->id),
+            'leaveChart' => $this->charts->leaveDaysByType($department->id),
         ];
     }
 
