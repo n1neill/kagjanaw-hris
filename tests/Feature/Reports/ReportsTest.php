@@ -11,6 +11,7 @@ use App\Models\PayrollItem;
 use App\Models\PayrollPeriod;
 use App\Models\PayrollRun;
 use App\Models\User;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 /**
@@ -123,6 +124,22 @@ describe('employee list', function () {
         $this->actingAs($hrOfficer)->get(route('reports.employees.export', ['format' => 'pdf']))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    });
+
+    it('exports text that looks like a formula as plain text', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        Employee::factory()->create(['last_name' => '=HYPERLINK("http://evil.test")', 'first_name' => 'Juan']);
+
+        $csv = $this->actingAs($hrOfficer)->get(route('reports.employees.export', ['format' => 'csv']));
+        $xlsx = $this->actingAs($hrOfficer)->get(route('reports.employees.export', ['format' => 'xlsx']));
+
+        expect(csvRows($csv->streamedContent())[3][2])->toStartWith('\'=HYPERLINK');
+        $path = tempnam(sys_get_temp_dir(), 'report');
+        file_put_contents($path, $xlsx->streamedContent());
+        $cell = IOFactory::load($path)->getActiveSheet()->getCell('C5');
+        unlink($path);
+        expect($cell->getDataType())->toBe(DataType::TYPE_STRING)
+            ->and($cell->getValue())->toStartWith('=HYPERLINK');
     });
 
     it('rejects unknown export formats', function () {

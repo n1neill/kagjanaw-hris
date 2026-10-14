@@ -6,6 +6,18 @@ window.Alpine = Alpine;
 Alpine.start();
 
 /**
+ * Ask before submitting a <form data-confirm="Question?">. Inline onsubmit
+ * handlers are blocked by the Content Security Policy.
+ */
+document.addEventListener('submit', (event) => {
+    const question = event.target.dataset?.confirm;
+
+    if (question && !window.confirm(question)) {
+        event.preventDefault();
+    }
+});
+
+/**
  * Enhance every <table data-datatable> with search, sorting and paging.
  * Columns opt out of sorting with data-orderable="false" on their <th>.
  */

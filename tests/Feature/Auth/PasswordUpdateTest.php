@@ -59,3 +59,28 @@ test('a weak new password is rejected', function (string $weakPassword, string $
     'without a number' => ['No-Numbers-Here!', 'The password field must contain at least one number.'],
     'without a symbol' => ['NoSymbolsHere123', 'The password field must contain at least one symbol.'],
 ]);
+
+test('a password change signs the account out of its other sessions', function () {
+    $user = User::factory()->employee()->create();
+    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+
+    // Changed elsewhere: on another device, or reset by the administrator.
+    $user->forceFill(['password' => Hash::make('Changed-Elsewhere-123!')])->save();
+
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
+    $this->assertGuest();
+});
+
+test('the session that changed the password stays signed in', function () {
+    $user = User::factory()->employee()->create();
+    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+
+    $this->from('/profile')->put('/password', [
+        'current_password' => 'password',
+        'password' => 'N3w-Strong-Passw0rd!',
+        'password_confirmation' => 'N3w-Strong-Passw0rd!',
+    ])->assertSessionHasNoErrors();
+
+    $this->get(route('dashboard'))->assertOk();
+    $this->assertAuthenticatedAs($user);
+});

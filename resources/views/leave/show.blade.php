@@ -202,7 +202,7 @@
             @if ($can['cancel'])
                 <x-card :title="$status === LeaveRequestStatus::Approved ? __('Cancel approved leave') : __('Withdraw application')">
                     <form method="POST" action="{{ route('leave.requests.cancel', $leaveRequest) }}" class="space-y-3"
-                          onsubmit="return confirm(@js(__('Cancel this leave application?')))">
+                          data-confirm="{{ __('Cancel this leave application?') }}">
                         @csrf
                         <x-input-label for="cancel_remarks" :value="$status === LeaveRequestStatus::Approved ? __('Reason (e.g. recalled to work)') : __('Reason (optional)')" />
                         <x-textarea-input id="cancel_remarks" name="remarks" rows="2" :required="$status === LeaveRequestStatus::Approved"></x-textarea-input>

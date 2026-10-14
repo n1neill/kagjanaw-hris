@@ -39,23 +39,23 @@ class ReportExporter
         return response()->streamDownload(function () use ($report): void {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [$report->title, $report->subtitle]);
+            fputcsv($out, SpreadsheetFormulaGuard::csvRow([$report->title, $report->subtitle]));
 
             foreach ($report->sections as $section) {
                 fputcsv($out, []);
 
                 if ($section->heading !== null) {
-                    fputcsv($out, [$section->heading]);
+                    fputcsv($out, SpreadsheetFormulaGuard::csvRow([$section->heading]));
                 }
 
-                fputcsv($out, $section->columns);
+                fputcsv($out, SpreadsheetFormulaGuard::csvRow($section->columns));
 
                 foreach ($section->rows as $row) {
-                    fputcsv($out, $row);
+                    fputcsv($out, SpreadsheetFormulaGuard::csvRow($row));
                 }
 
                 if ($section->totals !== null) {
-                    fputcsv($out, $section->totals);
+                    fputcsv($out, SpreadsheetFormulaGuard::csvRow($section->totals));
                 }
             }
 
@@ -66,6 +66,7 @@ class ReportExporter
     public function xlsx(Report $report): StreamedResponse
     {
         $spreadsheet = new Spreadsheet;
+        $spreadsheet->setValueBinder(SpreadsheetFormulaGuard::valueBinder());
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(mb_substr($report->title, 0, 31));
 

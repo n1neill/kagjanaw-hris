@@ -42,7 +42,7 @@
                                 <div class="flex flex-wrap justify-end gap-2">
                                     <x-button-link :href="route('admin.backups.download', $backup->name)" variant="secondary">{{ __('Download') }}</x-button-link>
                                     <x-secondary-button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'restore-{{ $index }}')">{{ __('Restore') }}</x-secondary-button>
-                                    <form method="POST" action="{{ route('admin.backups.destroy', $backup->name) }}" onsubmit="return confirm(@js(__('Delete this backup? This cannot be undone.')))">
+                                    <form method="POST" action="{{ route('admin.backups.destroy', $backup->name) }}" data-confirm="{{ __('Delete this backup? This cannot be undone.') }}">
                                         @csrf
                                         @method('DELETE')
                                         <x-danger-button>{{ __('Delete') }}</x-danger-button>

@@ -12,6 +12,7 @@ use App\Services\Payroll\PayrollRunService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 beforeEach(function () {
@@ -239,6 +240,24 @@ describe('payroll register', function () {
         $sheet = IOFactory::load($path)->getActiveSheet();
         unlink($path);
         expect($sheet->getCell('C5')->getValue())->toBe($employee->sortable_name)
+            ->and($sheet->getCell('Q5')->getValue())->toBe(10720.85);
+    });
+
+    it('exports names that look like formulas as plain text', function () {
+        ['run' => $run, 'employee' => $employee, 'hrOfficer' => $hrOfficer] = computedPayrollWithOneEmployee();
+        $employee->update(['last_name' => '=HYPERLINK("http://evil.test")']);
+
+        $csv = $this->actingAs($hrOfficer)->get(route('payroll.runs.register', [$run, 'csv']));
+        $xlsx = $this->actingAs($hrOfficer)->get(route('payroll.runs.register', [$run, 'xlsx']));
+
+        $rows = array_map('str_getcsv', explode("\n", trim(substr($csv->streamedContent(), 3))));
+        expect($rows[3][2])->toStartWith('\'=HYPERLINK')
+            ->and($rows[3][16])->toBe('10720.85');
+        $path = tempnam(sys_get_temp_dir(), 'register');
+        file_put_contents($path, $xlsx->streamedContent());
+        $sheet = IOFactory::load($path)->getActiveSheet();
+        unlink($path);
+        expect($sheet->getCell('C5')->getDataType())->toBe(DataType::TYPE_STRING)
             ->and($sheet->getCell('Q5')->getValue())->toBe(10720.85);
     });
 

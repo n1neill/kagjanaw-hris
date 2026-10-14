@@ -14,7 +14,7 @@
                 <div class="flex flex-wrap items-center gap-2">
                     @include('announcements.partials.status')
                     <x-button-link :href="route('announcements.edit', $announcement)" variant="secondary">{{ __('Edit') }}</x-button-link>
-                    <form method="POST" action="{{ route('announcements.destroy', $announcement) }}" onsubmit="return confirm(@js(__('Delete this announcement?')))">
+                    <form method="POST" action="{{ route('announcements.destroy', $announcement) }}" data-confirm="{{ __('Delete this announcement?') }}">
                         @csrf
                         @method('DELETE')
                         <x-danger-button>{{ __('Delete') }}</x-danger-button>

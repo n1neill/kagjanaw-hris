@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -38,6 +41,10 @@ class AppServiceProvider extends ServiceProvider
             ->numbers()
             ->symbols());
 
+        URL::forceHttps(config('app.force_https'));
+
+        $this->preventLazyLoading();
+
         // The notification bell in the main layout.
         View::composer('layouts.app', function (\Illuminate\View\View $view): void {
             $user = Auth::user();
@@ -47,5 +54,21 @@ class AppServiceProvider extends ServiceProvider
                 'recentNotifications' => $user?->notifications()->latest()->limit(8)->get() ?? collect(),
             ]);
         });
+    }
+
+    /**
+     * Catch N+1 queries: loading a relationship one model at a time inside a
+     * loop. The test suite fails on them; a development server only logs them,
+     * so a demo never breaks over one. Production is unaffected.
+     */
+    private function preventLazyLoading(): void
+    {
+        Model::preventLazyLoading(! $this->app->isProduction());
+
+        if (! $this->app->runningUnitTests()) {
+            Model::handleLazyLoadingViolationUsing(function (Model $model, string $relation): void {
+                Log::warning(sprintf('Lazy loading of %s::%s (N+1 query).', $model::class, $relation));
+            });
+        }
     }
 }

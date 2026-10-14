@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS
+    |--------------------------------------------------------------------------
+    |
+    | Once the server has a certificate, generate every link and redirect
+    | with https://. The web server should also redirect plain http:// to
+    | https://, and SESSION_SECURE_COOKIE should be true.
+    |
+    */
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

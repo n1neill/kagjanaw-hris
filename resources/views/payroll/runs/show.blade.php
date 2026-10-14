@@ -68,7 +68,7 @@
                 </form>
             @endif
             @if ($status === PayrollRunStatus::Approved)
-                <form method="POST" action="{{ route('payroll.runs.release', $run) }}" onsubmit="return confirm(@js(__('Release this payroll? Payslips become available to employees and the payroll is locked.')))">
+                <form method="POST" action="{{ route('payroll.runs.release', $run) }}" data-confirm="{{ __('Release this payroll? Payslips become available to employees and the payroll is locked.') }}">
                     @csrf
                     <x-primary-button>{{ __('Release payslips') }}</x-primary-button>
                 </form>
@@ -86,7 +86,7 @@
             @endif
 
             @if ($status->canDelete())
-                <form method="POST" action="{{ route('payroll.runs.destroy', $run) }}" class="ml-auto" onsubmit="return confirm(@js(__('Delete this payroll?')))">
+                <form method="POST" action="{{ route('payroll.runs.destroy', $run) }}" class="ml-auto" data-confirm="{{ __('Delete this payroll?') }}">
                     @csrf
                     @method('DELETE')
                     <x-danger-button>{{ __('Delete') }}</x-danger-button>

@@ -203,7 +203,7 @@
                                     @endif
                                     <a href="{{ route('employees.documents.download', [$employee, $document]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Download') }}</a>
                                     @if ($canManage)
-                                        <form method="POST" action="{{ route('employees.documents.destroy', [$employee, $document]) }}" onsubmit="return confirm(@js(__('Delete this document permanently?')))">
+                                        <form method="POST" action="{{ route('employees.documents.destroy', [$employee, $document]) }}" data-confirm="{{ __('Delete this document permanently?') }}">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('Delete') }}</button>

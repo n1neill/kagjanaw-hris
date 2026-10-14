@@ -58,7 +58,7 @@
                                 <td class="py-2 text-right tabular-nums">{{ Money::format($assignment->monthly_amount ?? $assignment->allowanceType->monthly_amount) }}</td>
                                 <td class="py-2">{{ $assignment->starts_on?->format('M j, Y') ?? __('Start') }} – {{ $assignment->ends_on?->format('M j, Y') ?? __('until removed') }}</td>
                                 <td class="py-2 text-right">
-                                    <form method="POST" action="{{ route('payroll.employees.allowances.destroy', [$employee, $assignment]) }}" onsubmit="return confirm(@js(__('Remove this allowance?')))">
+                                    <form method="POST" action="{{ route('payroll.employees.allowances.destroy', [$employee, $assignment]) }}" data-confirm="{{ __('Remove this allowance?') }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="text-sm font-medium text-red-700 hover:text-red-900">{{ __('Remove') }}</button>

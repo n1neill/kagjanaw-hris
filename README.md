@@ -12,7 +12,9 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | 4 | Leave: all CSC leave types, filing with rule checks, endorsement (department head or Municipal Mayor) and HR approval, leave ledger (leave card), monthly credits and tardiness deductions from validated DTRs, forced-leave forfeiture, opening balance import, Certificate of Leave Credits, utilization report, in-app notifications | Done |
 | 5 | Payroll: semi-monthly regular and Job Order / COS payrolls, SSL VI Salary Schedule at the LGU income-class rate, allowances (PERA), absences and tardiness without pay from validated DTRs, GSIS / PhilHealth / Pag-IBIG and withholding tax from dated tables, loans with a minimum net pay, queued computation, approve and release with locking, payslip PDFs, payroll register (Excel, CSV, PDF) | Done |
 | 6 | Announcements (all employees or chosen offices) with bell notifications and a notifications page; Reports page with employee list, attendance summary, leave utilization and payroll summary as Excel, CSV and PDF (department heads limited to their office); audit log of changes, access to personal data, sign-ins and denied requests; database and file backups with restore; System Settings | Done |
-| 7 | Hardening, user guide | Planned |
+| 7 | Hardening: an access test of every route for every role, security headers and Content Security Policy, sign-out of other sessions on a password change, protection of Excel/CSV exports against formula injection, an HTTPS switch, N+1 query detection, a production checklist and the [User Guide](USER_GUIDE.md) | Done |
+
+**End users:** see the [User Guide](USER_GUIDE.md), organized by role.
 
 ## Tech stack
 
@@ -164,6 +166,7 @@ The command prompts for the password, so it never appears in shell history. Next
 | Key | Purpose |
 | --- | --- |
 | `APP_NAME`, `APP_URL` | Application name and the LAN URL users open. |
+| `APP_FORCE_HTTPS` | `true` once the server has a certificate: every link and redirect uses `https://`. |
 | `APP_TIMEZONE` | `Asia/Manila`. Attendance and payroll depend on local time. |
 | `APP_ENV`, `APP_DEBUG` | Use `production` and `false` on the server. |
 | `DB_CONNECTION` | `mariadb` for XAMPP; `mysql` for MySQL 8.0. |
@@ -181,7 +184,7 @@ The command prompts for the password, so it never appears in shell history. Next
 
 Access is enforced on the server by permission middleware on every route group and by policies. Hiding a menu item is never the only protection. Roles and their permissions are defined in [app/Enums/Role.php](app/Enums/Role.php) and [app/Enums/Permission.php](app/Enums/Permission.php), and are seeded by `RolesAndPermissionsSeeder`. Re-running it is safe.
 
-| Role | Access so far |
+| Role | Access |
 | --- | --- |
 | System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, **biometric devices** (settings, test connection, sync now, sync log), **backups** (create, upload, download, restore, delete), the **audit log** and **System Settings**. Admins cannot change their own role or deactivate themselves. They do not see employee records, attendance, leave or reports. |
 | HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; **payroll**: create, compute, approve and release payrolls, pay setup (allowances, loans), Salary Schedule, contribution and tax tables, payroll settings, every payslip and the payroll register; **announcements** (post, edit, delete, drafts); every **report** for any office, including the payroll summary; plus departments, positions and employment types. HR officers cannot approve their own leave. |
@@ -462,6 +465,43 @@ php artisan backup:restore kagjanaw-hris-2026-10-13-180000-scheduled.zip
 - Sessions are stored in the database and encrypted.
 - Changes, access to personal data, failed sign-ins and refused requests are recorded in the audit log (RA 10173). A failed sign-in with an unknown username records only "Unknown username", in case a password was typed into the username field.
 - Backups contain all personal data. Only the System Administrator can download them, each download is logged, and they are served with `no-store` headers.
+- A password change (by the user, or a reset by the administrator) signs the account out on every other browser. The browser that made the change stays signed in.
+- Every response carries `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin` and a `Permissions-Policy`. Over HTTPS, `Strict-Transport-Security` is added.
+- Pages carry a **Content Security Policy**: scripts, styles, images and fonts load only from the server itself, forms post only to it, and no other site can frame it. Inline `<script>` blocks and `onclick`/`onsubmit` attributes are refused, so views must not use them (a test checks this); confirmation prompts use `data-confirm="…"` on the form. `'unsafe-eval'` is allowed because Alpine.js evaluates its attributes that way. While `npm run dev` runs, the Vite dev server is allowed too.
+- Excel and CSV exports store typed-in text (names, positions, offices) as text, never as a formula, so a value such as `=HYPERLINK(…)` cannot run when HR opens the file.
+- No query interpolates user input; filters and sorting are bound or chosen from fixed lists. All Blade output is escaped (`{{ }}`); the templates contain no `{!! !!}`.
+
+## Production checklist
+
+Before the system holds real data:
+
+1. **`.env`:** `APP_ENV=production`, `APP_DEBUG=false`, `LOG_LEVEL=warning`, and a new `APP_KEY` (`php artisan key:generate`). Keep a copy of `.env` with the backups (see [Backups and restore](#backups-and-restore)).
+2. **Database account:** create a MariaDB user for the application with a strong password, instead of `root` without one. It needs every privilege on `kagjanaw_hris`; restoring a backup needs nothing more.
+3. **Web server:** point the document root at the `public` folder only (never the project folder), and use Apache or Nginx rather than `php artisan serve`. In `php.ini`, set `expose_php = Off` and `display_errors = Off`, and enable OPcache (`opcache.enable=1`).
+4. **HTTPS** (recommended even on the LAN, because passwords and personal data cross it): install a certificate (for example from the provincial IT office, or a self-signed one trusted on the office computers), redirect `http://` to `https://` in the web server, then set `APP_URL=https://…`, `APP_FORCE_HTTPS=true` and `SESSION_SECURE_COOKIE=true`.
+5. **Install and optimize:**
+
+   ```powershell
+   composer install --no-dev --optimize-autoloader
+   npm ci
+   npm run build
+   php artisan migrate --force
+   php artisan optimize          # caches config, routes, events and views
+   ```
+
+   Run `php artisan optimize` again after every update or `.env` change (`php artisan optimize:clear` undoes it).
+6. **Background tasks:** the queue worker and the scheduler task (see [Setup](#setup)), both running as a service account.
+7. **First administrator:** `php artisan app:create-administrator` (see below). The demo accounts are not created in production.
+8. **Network:** allow only the office LAN to reach the server (Windows Firewall), and keep the database port (3306) closed to other computers.
+9. **Verify the seeded values** listed under [Assumptions and decisions](#assumptions-and-decisions): holidays, salary schedule, contribution and tax tables, leave rules and the LGU income class.
+
+## Performance
+
+- **N+1 queries are caught in development.** Loading a relationship one model at a time inside a loop fails the test suite and is logged as a warning on a development server (`storage/logs`); production is unaffected. Lists eager-load what they show.
+- **Indexes** cover the frequent lookups: attendance logs by employee and time, DTRs by employee and date (unique), leave ledger entries by employee, type and date, leave applications by status, payroll items by run and employee, and the audit log by event and date. Foreign keys are indexed.
+- **Large lists are paginated** on the server (audit log, attendance logs, notifications, announcements). HR's leave application list is limited to one year at a time.
+- **Heavy work runs outside the request:** payroll computation on the queue, device sync, DTR processing, credit posting and backups on the scheduler.
+- In production, `php artisan optimize` and OPcache (see the checklist) make the biggest difference on a modest server.
 
 ## Testing
 
@@ -469,8 +509,10 @@ php artisan backup:restore kagjanaw-hris-2026-10-13-180000-scheduled.zip
 php artisan test --compact
 ```
 
-The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It covers:
+The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`) and takes several minutes. It covers:
 - Authentication and the full role/permission matrix.
+- **Every route for every role** (`tests/Feature/RouteAuthorizationTest.php`): the roles allowed on each route are written out in the test. Guests are sent to sign in, every other role gets 403 or 404, and allowed roles open every page. A new route that is missing from the list fails the suite, so access is always decided on purpose.
+- Security headers, the Content Security Policy (including a check that no view has inline scripts or event handlers), session sign-out after a password change, formula-safe exports and the HTTPS switch.
 - The access rules for employee records, DTRs and leave, including changing IDs in the URL.
 - Unit tests of the DTR rules, the CSC leave tables (checked against published values), leave charging and centavo arithmetic.
 - Payroll computation against amounts worked out by hand from the seeded tables: halves, income-class rates, proration, allowances, contributions, tax, absences without pay (including partial and corrected months), loans and the minimum net pay, and Job Order pay.
@@ -524,3 +566,7 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - **Announcements are plain text**, without attachments or formatting, so nothing in them can run in the browser.
 - **The payroll summary counts released payrolls only.** Draft, computed and approved payrolls can still change.
 - **Department heads' reports follow their own employee record**, like the rest of their access. Without an office, the reports are empty rather than showing every office.
+- **The Content Security Policy allows `'unsafe-eval'`**, because the standard Alpine.js build needs it. Removing it would mean switching to Alpine's CSP build and rewriting every `x-data` expression. Inline scripts stay blocked, which is the main protection.
+- **HTTPS is optional** and switched on with `APP_FORCE_HTTPS`, because the server may start on the LAN without a certificate. It is strongly recommended (see the production checklist).
+- **The User Guide is a Markdown file** ([USER_GUIDE.md](USER_GUIDE.md)) in the repository, organized by role. It can be printed or converted to PDF for distribution.
+- **Development tool advisories.** `composer audit` reports no advisories for the PHP packages (October 2026). `npm audit` reports advisories in `concurrently` (through `shell-quote`) and `source-map-js`. Both are only used to build the assets on the developer's computer and are not shipped to browsers. They will be updated with the next dependency upgrade.

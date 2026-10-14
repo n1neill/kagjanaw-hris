@@ -27,7 +27,7 @@
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-3">
                                 <a href="{{ route('work-calendar.holidays.edit', $holiday) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
-                                <form method="POST" action="{{ route('work-calendar.holidays.destroy', $holiday) }}" onsubmit="return confirm(@js(__('Remove this holiday? Attendance on that day will be recomputed.')))">
+                                <form method="POST" action="{{ route('work-calendar.holidays.destroy', $holiday) }}" data-confirm="{{ __('Remove this holiday? Attendance on that day will be recomputed.') }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('Remove') }}</button>

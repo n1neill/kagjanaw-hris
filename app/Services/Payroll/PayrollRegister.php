@@ -4,6 +4,7 @@ namespace App\Services\Payroll;
 
 use App\Models\PayrollItem;
 use App\Models\PayrollRun;
+use App\Services\Reports\SpreadsheetFormulaGuard;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
@@ -80,12 +81,12 @@ class PayrollRegister
         return response()->streamDownload(function () use ($run, $data): void {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Payroll register', $run->title(), $run->status->label()]);
+            fputcsv($out, SpreadsheetFormulaGuard::csvRow(['Payroll register', $run->title(), $run->status->label()]));
             fputcsv($out, []);
-            fputcsv($out, $this->headings());
+            fputcsv($out, SpreadsheetFormulaGuard::csvRow($this->headings()));
 
             foreach ($data['items'] as $index => $item) {
-                fputcsv($out, [
+                fputcsv($out, SpreadsheetFormulaGuard::csvRow([
                     $index + 1,
                     $item->employee->employee_number,
                     $item->employee->sortable_name,
@@ -93,10 +94,10 @@ class PayrollRegister
                     $item->department_name,
                     $this->rateLabel($item),
                     ...array_map(fn (string $column): string => $item->{$column}, array_keys(self::MONEY_COLUMNS)),
-                ]);
+                ]));
             }
 
-            fputcsv($out, ['', '', 'Total', '', '', '', ...array_map(fn (int $total): string => Money::toDecimal($total), array_values($data['totals']))]);
+            fputcsv($out, SpreadsheetFormulaGuard::csvRow(['', '', 'Total', '', '', '', ...array_map(fn (int $total): string => Money::toDecimal($total), array_values($data['totals']))]));
             fclose($out);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
@@ -105,6 +106,7 @@ class PayrollRegister
     {
         $data = $this->data($run);
         $spreadsheet = new Spreadsheet;
+        $spreadsheet->setValueBinder(SpreadsheetFormulaGuard::valueBinder());
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Payroll register');
 
