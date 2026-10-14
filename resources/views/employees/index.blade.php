@@ -15,7 +15,7 @@
         @endif
 
         @if (! $canManage && $ownDepartment === null)
-            <p class="text-sm text-gray-600">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
+            <p class="text-sm text-ink-muted">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
         @else
             <form method="GET" action="{{ route('employees.index') }}" class="mb-4 flex flex-wrap items-end gap-3">
                 @if ($canManage)
@@ -49,7 +49,7 @@
                     @foreach ($employees as $employee)
                         <tr>
                             <td class="font-mono text-xs">{{ $employee->employee_number }}</td>
-                            <td class="font-medium text-gray-900" data-order="{{ $employee->sortable_name }}">{{ $employee->sortable_name }}</td>
+                            <td class="font-medium text-ink" data-order="{{ $employee->sortable_name }}">{{ $employee->sortable_name }}</td>
                             <td>{{ $employee->position->title }}</td>
                             @if ($canManage)
                                 <td>{{ $employee->department->code }}</td>
@@ -59,7 +59,7 @@
                                 <x-badge :color="$employee->employment_status->isInService() ? 'green' : 'gray'">{{ $employee->employment_status->label() }}</x-badge>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('employees.show', $employee) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('View') }}</a>
+                                <a href="{{ route('employees.show', $employee) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('View') }}</a>
                             </td>
                         </tr>
                     @endforeach

@@ -12,7 +12,7 @@
         @endif
 
         @unless ($hasDepartment)
-            <p class="mb-4 text-sm text-gray-600">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
+            <p class="mb-4 text-sm text-ink-muted">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
         @endunless
 
         <form method="GET" action="{{ route('leave.reports.utilization') }}" class="mb-6 flex flex-wrap items-end gap-3">
@@ -43,11 +43,11 @@
         <div class="grid gap-6 lg:grid-cols-2">
             @foreach ([['title' => __('By leave type'), 'rows' => $byType, 'label' => fn ($row) => $row['type']->name], ['title' => __('By office'), 'rows' => $byDepartment, 'label' => fn ($row) => $row['department']]] as $section)
                 <div>
-                    <h3 class="text-sm font-semibold text-gray-900">{{ $section['title'] }}</h3>
+                    <h3 class="text-sm font-semibold text-ink">{{ $section['title'] }}</h3>
                     <div class="mt-2 overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
-                                <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                                     <th class="py-2 pr-3"></th>
                                     <th class="px-2 py-2 text-right">{{ __('Employees') }}</th>
                                     <th class="px-2 py-2 text-right">{{ __('Days') }}</th>
@@ -57,15 +57,15 @@
                             </thead>
                             <tbody>
                                 @forelse ($section['rows'] as $row)
-                                    <tr class="border-b border-gray-100 last:border-0">
-                                        <td class="py-1.5 pr-3 text-gray-900">{{ $section['label']($row) }}</td>
+                                    <tr class="border-b border-line last:border-0">
+                                        <td class="py-1.5 pr-3 text-ink">{{ $section['label']($row) }}</td>
                                         <td class="px-2 py-1.5 text-right tabular-nums">{{ $row['employees'] }}</td>
                                         <td class="px-2 py-1.5 text-right tabular-nums">{{ LeaveDays::format($row['days']) }}</td>
                                         <td class="px-2 py-1.5 text-right tabular-nums">{{ LeaveDays::format($row['with_pay']) }}</td>
                                         <td class="py-1.5 pl-2 text-right tabular-nums">{{ LeaveDays::format($row['without_pay']) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="5" class="py-4 text-center text-gray-500">{{ __('No approved leave in this period.') }}</td></tr>
+                                    <tr><td colspan="5" class="py-4 text-center text-ink-muted">{{ __('No approved leave in this period.') }}</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

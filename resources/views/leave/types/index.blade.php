@@ -24,10 +24,10 @@
             <tbody>
                 @foreach ($types as $type)
                     <tr>
-                        <td class="font-medium text-gray-900">
+                        <td class="font-medium text-ink">
                             {{ $type->name }}
                             @if ($type->eligible_sex)
-                                <span class="ml-1 text-xs font-normal text-gray-500">({{ $type->eligible_sex->label() }})</span>
+                                <span class="ml-1 text-xs font-normal text-ink-muted">({{ $type->eligible_sex->label() }})</span>
                             @endif
                         </td>
                         <td class="font-mono text-xs">{{ $type->code }}</td>
@@ -36,12 +36,12 @@
                         <td class="text-right tabular-nums">
                             {{ $type->max_days_per_request ?? '—' }}
                             @if ($type->counts_calendar_days)
-                                <span class="block text-xs text-gray-500">{{ __('calendar days') }}</span>
+                                <span class="block text-xs text-ink-muted">{{ __('calendar days') }}</span>
                             @endif
                         </td>
                         <td><x-status-badge :active="$type->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('leave.types.edit', $type) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                            <a href="{{ route('leave.types.edit', $type) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                         </td>
                     </tr>
                 @endforeach

@@ -23,8 +23,8 @@
                     @php($employeeBalances = $balances->get($employee->id))
                     <tr>
                         <td>
-                            <span class="font-medium text-gray-900">{{ $employee->sortable_name }}</span>
-                            <span class="block font-mono text-xs text-gray-500">{{ $employee->employee_number }}</span>
+                            <span class="font-medium text-ink">{{ $employee->sortable_name }}</span>
+                            <span class="block font-mono text-xs text-ink-muted">{{ $employee->employee_number }}</span>
                         </td>
                         <td>{{ $employee->department?->name }}</td>
                         @if ($employee->earnsLeaveCredits())
@@ -34,12 +34,12 @@
                                 {{ $lastPosted->get($employee->id) ? \Carbon\CarbonImmutable::parse($lastPosted->get($employee->id))->format('F Y') : __('Not yet') }}
                             </td>
                         @else
-                            <td class="text-right text-gray-400">—</td>
-                            <td class="text-right text-gray-400">—</td>
-                            <td class="text-xs text-gray-500">{{ __(':type: no leave credits', ['type' => $employee->employmentType?->name]) }}</td>
+                            <td class="text-right text-ink-subtle">—</td>
+                            <td class="text-right text-ink-subtle">—</td>
+                            <td class="text-xs text-ink-muted">{{ __(':type: no leave credits', ['type' => $employee->employmentType?->name]) }}</td>
                         @endif
                         <td class="text-right">
-                            <a href="{{ route('leave.card', $employee) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Leave card') }}</a>
+                            <a href="{{ route('leave.card', $employee) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Leave card') }}</a>
                         </td>
                     </tr>
                 @endforeach

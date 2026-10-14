@@ -6,7 +6,7 @@
         @method('PUT')
 
         @if ($errors->any())
-            <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
                 {{ __('Please correct the highlighted fields below.') }}
             </div>
         @endif
@@ -27,13 +27,13 @@
                     <div>
                         <x-input-label for="backup_time" :value="__('Time of the daily backup')" />
                         <x-text-input id="backup_time" name="backup_time" type="time" class="mt-1" :value="old('backup_time', $backupTime)" required aria-describedby="backup_time-hint" />
-                        <p id="backup_time-hint" class="mt-1 text-xs text-gray-500">{{ __('The server must be on at this time. Choose a time after office hours.') }}</p>
+                        <p id="backup_time-hint" class="mt-1 text-xs text-ink-muted">{{ __('The server must be on at this time. Choose a time after office hours.') }}</p>
                         <x-input-error :messages="$errors->get('backup_time')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="backups_kept" :value="__('Backups to keep')" />
                         <x-text-input id="backups_kept" name="backups_kept" type="number" min="3" max="365" class="mt-1" :value="old('backups_kept', $backupsKept)" required aria-describedby="backups_kept-hint" />
-                        <p id="backups_kept-hint" class="mt-1 text-xs text-gray-500">{{ __('Older backups are deleted after each new backup. Copy important ones to external storage.') }}</p>
+                        <p id="backups_kept-hint" class="mt-1 text-xs text-ink-muted">{{ __('Older backups are deleted after each new backup. Copy important ones to external storage.') }}</p>
                         <x-input-error :messages="$errors->get('backups_kept')" class="mt-2" />
                     </div>
                 </div>
@@ -48,7 +48,7 @@
             </div>
         </x-card>
 
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-ink-muted">
             {{ __('Office hours, the grace period, holidays and payroll settings are kept by the HR Office under Work Calendar and Payroll.') }}
         </p>
 

@@ -29,7 +29,7 @@
                 <div>
                     <x-input-label for="port" :value="__('Port')" />
                     <x-text-input id="port" name="port" type="number" min="1" max="65535" class="mt-1 font-mono" :value="old('port', $device->port)" required aria-describedby="port-hint" />
-                    <p id="port-hint" class="mt-1 text-xs text-gray-500">{{ __('ZKTeco devices use 4370 by default.') }}</p>
+                    <p id="port-hint" class="mt-1 text-xs text-ink-muted">{{ __('ZKTeco devices use 4370 by default.') }}</p>
                     <x-input-error :messages="$errors->get('port')" class="mt-2" />
                 </div>
                 <div class="sm:col-span-2">

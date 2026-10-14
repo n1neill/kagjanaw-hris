@@ -1,7 +1,7 @@
 <x-app-layout :title="__('Dashboard')">
     <x-slot name="header">{{ __('Department Dashboard') }}</x-slot>
 
-    <p class="text-sm text-gray-600">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
+    <p class="text-sm text-ink-muted">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
 
     <x-card :title="__('Team attendance today')" :description="$department?->name ?? __('No department assigned')">
         <x-slot name="actions">
@@ -16,15 +16,15 @@
         </div>
     </x-card>
 
-    <a href="{{ route('leave.endorsements') }}" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-xs hover:border-brand-300">
+    <a href="{{ route('leave.endorsements') }}" class="flex items-center justify-between gap-4 rounded-xl border border-line bg-surface p-4 shadow-xs hover:border-brand-300 dark:hover:border-brand-700">
         <div class="flex items-center gap-3">
-            <x-icon name="inbox" class="size-6 text-brand-700" />
+            <x-icon name="inbox" class="size-6 text-brand-700 dark:text-brand-400" />
             <div>
-                <p class="text-sm font-medium text-gray-900">{{ __('Leave applications waiting for your endorsement') }}</p>
-                <p class="text-xs text-gray-500">{{ __('Endorse or reject them with your remarks.') }}</p>
+                <p class="text-sm font-medium text-ink">{{ __('Leave applications waiting for your endorsement') }}</p>
+                <p class="text-xs text-ink-muted">{{ __('Endorse or reject them with your remarks.') }}</p>
             </div>
         </div>
-        <span class="text-2xl font-semibold {{ $pendingEndorsements ? 'text-yellow-700' : 'text-gray-900' }}">{{ $pendingEndorsements }}</span>
+        <span class="text-2xl font-semibold {{ $pendingEndorsements ? 'text-yellow-700 dark:text-yellow-300' : 'text-ink' }}">{{ $pendingEndorsements }}</span>
     </a>
 
     @include('dashboard.partials.my-attendance')

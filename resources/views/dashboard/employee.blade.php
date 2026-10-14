@@ -1,7 +1,7 @@
 <x-app-layout :title="__('Dashboard')">
     <x-slot name="header">{{ __('My Dashboard') }}</x-slot>
 
-    <p class="text-sm text-gray-600">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
+    <p class="text-sm text-ink-muted">{{ __('Welcome back, :name.', ['name' => Auth::user()->name]) }}</p>
 
     @include('dashboard.partials.my-attendance')
 

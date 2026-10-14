@@ -21,23 +21,23 @@
             <div>
                 <x-input-label for="body" :value="__('Message')" />
                 <x-textarea-input id="body" name="body" rows="10" class="mt-1" maxlength="5000" required>{{ old('body', $announcement->body) }}</x-textarea-input>
-                <p class="mt-1 text-xs text-gray-500">{{ __('Plain text. Line breaks are kept.') }}</p>
+                <p class="mt-1 text-xs text-ink-muted">{{ __('Plain text. Line breaks are kept.') }}</p>
                 <x-input-error :messages="$errors->get('body')" class="mt-2" />
             </div>
 
             <fieldset>
-                <legend class="text-sm font-medium text-gray-700">{{ __('Addressed to') }}</legend>
+                <legend class="text-sm font-medium text-ink">{{ __('Addressed to') }}</legend>
                 <div class="mt-2 flex flex-wrap gap-4">
                     @foreach ($audiences as $value => $label)
-                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="radio" name="audience" value="{{ $value }}" x-model="audience" class="border-gray-300 text-brand-700 focus:ring-brand-500">
+                        <label class="inline-flex items-center gap-2 text-sm text-ink">
+                            <input type="radio" name="audience" value="{{ $value }}" x-model="audience" class="border-line-strong bg-surface text-brand-700 focus:ring-brand-500 focus:ring-offset-surface">
                             {{ $label }}
                         </label>
                     @endforeach
                 </div>
                 <x-input-error :messages="$errors->get('audience')" class="mt-2" />
 
-                <div x-show="audience === 'departments'" x-cloak class="mt-3 grid gap-2 rounded-md border border-gray-200 p-3 sm:grid-cols-2">
+                <div x-show="audience === 'departments'" x-cloak class="mt-3 grid gap-2 rounded-lg border border-line p-3 sm:grid-cols-2">
                     @foreach ($departments as $id => $name)
                         <x-checkbox name="departments[]" :value="$id" :checked="in_array($id, $selectedDepartments, true)" :label="$name" />
                     @endforeach
@@ -58,7 +58,7 @@
             </div>
 
             @if ($isNew || ! $announcement->isPublished())
-                <p class="text-sm text-gray-600">{{ __('Publishing notifies everyone it is addressed to.') }}</p>
+                <p class="text-sm text-ink-muted">{{ __('Publishing notifies everyone it is addressed to.') }}</p>
             @endif
 
             <div class="flex flex-wrap items-center gap-3">

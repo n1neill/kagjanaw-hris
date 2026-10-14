@@ -5,7 +5,7 @@
     <x-slot name="header">{{ __('Pay Setup') }}</x-slot>
 
     @if ($errors->any())
-        <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
             {{ __('Please correct the highlighted fields below.') }}
         </div>
     @endif
@@ -29,13 +29,13 @@
                 <x-detail :label="__('Daily rate')">{{ $employee->daily_rate !== null ? Money::format($employee->daily_rate) : __('Not set') }}</x-detail>
             @endif
         </dl>
-        <p class="mt-3 text-xs text-gray-500">{{ __('Grade, step and daily rate are edited on the employee\'s 201 file.') }}</p>
+        <p class="mt-3 text-xs text-ink-muted">{{ __('Grade, step and daily rate are edited on the employee\'s 201 file.') }}</p>
     </x-card>
 
     @if ($payBasis === PayBasis::SalaryGrade)
         <x-card :title="__('Allowances')" :description="__('Allowances covering every salary-grade employee apply automatically. Assign others here, or assign a covering allowance to give this employee a different amount or period.')">
             @if ($currentAllowances->isNotEmpty())
-                <p class="mb-3 text-sm text-gray-700">
+                <p class="mb-3 text-sm text-ink">
                     {{ __('This month:') }}
                     {{ $currentAllowances->map(fn ($allowance) => $allowance['type']->name.' '.Money::format($allowance['monthly']))->implode(' · ') }}
                 </p>
@@ -44,7 +44,7 @@
             @if ($employee->allowances->isNotEmpty())
                 <table class="mb-4 w-full text-sm">
                     <thead>
-                        <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr class="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
                             <th class="py-2">{{ __('Assigned allowance') }}</th>
                             <th class="py-2 text-right">{{ __('Monthly') }}</th>
                             <th class="py-2">{{ __('Period') }}</th>
@@ -53,15 +53,15 @@
                     </thead>
                     <tbody>
                         @foreach ($employee->allowances as $assignment)
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2 font-medium text-gray-900">{{ $assignment->allowanceType->name }}</td>
+                            <tr class="border-b border-line">
+                                <td class="py-2 font-medium text-ink">{{ $assignment->allowanceType->name }}</td>
                                 <td class="py-2 text-right tabular-nums">{{ Money::format($assignment->monthly_amount ?? $assignment->allowanceType->monthly_amount) }}</td>
                                 <td class="py-2">{{ $assignment->starts_on?->format('M j, Y') ?? __('Start') }} – {{ $assignment->ends_on?->format('M j, Y') ?? __('until removed') }}</td>
                                 <td class="py-2 text-right">
                                     <form method="POST" action="{{ route('payroll.employees.allowances.destroy', [$employee, $assignment]) }}" data-confirm="{{ __('Remove this allowance?') }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-sm font-medium text-red-700 hover:text-red-900">{{ __('Remove') }}</button>
+                                        <button type="submit" class="text-sm font-medium text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">{{ __('Remove') }}</button>
                                     </form>
                                 </td>
                             </tr>
@@ -106,7 +106,7 @@
             <div class="mb-6 overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr class="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
                             <th class="py-2 pr-3">{{ __('Deduction') }}</th>
                             <th class="px-3 py-2 text-right">{{ __('Monthly') }}</th>
                             <th class="px-3 py-2 text-right">{{ __('Total') }}</th>
@@ -118,11 +118,11 @@
                     </thead>
                     <tbody>
                         @foreach ($deductions as $deduction)
-                            <tr class="border-b border-gray-100">
-                                <td class="py-2 pr-3 font-medium text-gray-900">
+                            <tr class="border-b border-line">
+                                <td class="py-2 pr-3 font-medium text-ink">
                                     {{ $deduction->name }}
                                     @if ($deduction->reference)
-                                        <span class="block text-xs font-normal text-gray-500">{{ $deduction->reference }}</span>
+                                        <span class="block text-xs font-normal text-ink-muted">{{ $deduction->reference }}</span>
                                     @endif
                                 </td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ Money::format($deduction->monthly_amount) }}</td>
@@ -131,7 +131,7 @@
                                 <td class="px-3 py-2 whitespace-nowrap">{{ $deduction->starts_on->format('M j, Y') }} – {{ $deduction->ends_on?->format('M j, Y') ?? __('open') }}</td>
                                 <td class="px-3 py-2"><x-status-badge :active="$deduction->is_active" /></td>
                                 <td class="py-2 pl-3 text-right">
-                                    <a href="{{ route('payroll.employees.deductions.edit', [$employee, $deduction]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                                    <a href="{{ route('payroll.employees.deductions.edit', [$employee, $deduction]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                                 </td>
                             </tr>
                         @endforeach
@@ -142,7 +142,7 @@
 
         <form method="POST" action="{{ route('payroll.employees.deductions.store', $employee) }}" class="space-y-4">
             @csrf
-            <h3 class="text-sm font-semibold text-gray-900">{{ __('Add a deduction') }}</h3>
+            <h3 class="text-sm font-semibold text-ink">{{ __('Add a deduction') }}</h3>
             @include('payroll.employees.partials.deduction-fields', ['deduction' => null])
             <x-secondary-button type="submit">{{ __('Add Deduction') }}</x-secondary-button>
         </form>
@@ -150,11 +150,11 @@
 
     <x-card :title="__('Recent payslips')">
         @if ($payslips->isEmpty())
-            <p class="text-sm text-gray-500">{{ __('No payroll has included this employee yet.') }}</p>
+            <x-empty-state icon="banknotes" :title="__('No payroll has included this employee yet.')" />
         @else
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
                         <th class="py-2">{{ __('Period') }}</th>
                         <th class="py-2">{{ __('Status') }}</th>
                         <th class="py-2 text-right">{{ __('Net pay') }}</th>
@@ -163,11 +163,11 @@
                 </thead>
                 <tbody>
                     @foreach ($payslips as $payslip)
-                        <tr class="border-b border-gray-100">
-                            <td class="py-2"><a href="{{ route('payroll.runs.show', $payslip->run) }}" class="font-medium text-brand-700 hover:text-brand-900">{{ $payslip->run->period->label() }}</a></td>
+                        <tr class="border-b border-line">
+                            <td class="py-2"><a href="{{ route('payroll.runs.show', $payslip->run) }}" class="font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ $payslip->run->period->label() }}</a></td>
                             <td class="py-2"><x-badge :color="$payslip->run->status->badgeColor()">{{ $payslip->run->status->label() }}</x-badge></td>
                             <td class="py-2 text-right tabular-nums">{{ Money::format($payslip->net_pay) }}</td>
-                            <td class="py-2 text-right"><a href="{{ route('payroll.payslips.show', $payslip) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Payslip') }}</a></td>
+                            <td class="py-2 text-right"><a href="{{ route('payroll.payslips.show', $payslip) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Payslip') }}</a></td>
                         </tr>
                     @endforeach
                 </tbody>

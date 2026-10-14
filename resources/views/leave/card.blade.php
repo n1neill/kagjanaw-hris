@@ -12,7 +12,7 @@
         @endif
 
         @unless ($employee->earnsLeaveCredits())
-            <p class="mb-4 rounded-md bg-yellow-50 px-3 py-2 text-sm text-yellow-800">{{ __(':type employees do not earn vacation or sick leave credits.', ['type' => $employee->employmentType?->name]) }}</p>
+            <p class="mb-4 rounded-lg bg-yellow-50 dark:bg-yellow-500/10 px-3 py-2 text-sm text-yellow-800 dark:text-yellow-200">{{ __(':type employees do not earn vacation or sick leave credits.', ['type' => $employee->employmentType?->name]) }}</p>
         @endunless
 
         @include('leave.partials.balances')
@@ -22,19 +22,19 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        <th rowspan="2" class="border-b border-gray-200 py-2 pr-3 text-left align-bottom">{{ __('Date') }}</th>
-                        <th rowspan="2" class="border-b border-gray-200 px-2 py-2 text-left align-bottom">{{ __('Particulars') }}</th>
-                        <th colspan="4" class="border-b border-l border-gray-200 px-2 py-1 text-center">{{ __('Vacation Leave') }}</th>
-                        <th colspan="4" class="border-b border-l border-gray-200 px-2 py-1 text-center">{{ __('Sick Leave') }}</th>
-                        <th rowspan="2" class="border-b border-l border-gray-200 py-2 pl-2 text-left align-bottom">{{ __('Remarks') }}</th>
+                    <tr class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <th rowspan="2" class="border-b border-line py-2 pr-3 text-left align-bottom">{{ __('Date') }}</th>
+                        <th rowspan="2" class="border-b border-line px-2 py-2 text-left align-bottom">{{ __('Particulars') }}</th>
+                        <th colspan="4" class="border-b border-l border-line px-2 py-1 text-center">{{ __('Vacation Leave') }}</th>
+                        <th colspan="4" class="border-b border-l border-line px-2 py-1 text-center">{{ __('Sick Leave') }}</th>
+                        <th rowspan="2" class="border-b border-l border-line py-2 pl-2 text-left align-bottom">{{ __('Remarks') }}</th>
                     </tr>
-                    <tr class="text-[0.65rem] font-semibold uppercase tracking-wide text-gray-500">
+                    <tr class="text-[0.65rem] font-semibold uppercase tracking-wide text-ink-muted">
                         @foreach ([1, 2] as $ledger)
-                            <th class="border-b border-l border-gray-200 px-2 py-1 text-right">{{ __('Earned') }}</th>
-                            <th class="border-b border-gray-200 px-2 py-1 text-right">{{ __('Used') }}</th>
-                            <th class="border-b border-gray-200 px-2 py-1 text-right">{{ __('Balance') }}</th>
-                            <th class="border-b border-gray-200 px-2 py-1 text-right">{{ __('W/o pay') }}</th>
+                            <th class="border-b border-l border-line px-2 py-1 text-right">{{ __('Earned') }}</th>
+                            <th class="border-b border-line px-2 py-1 text-right">{{ __('Used') }}</th>
+                            <th class="border-b border-line px-2 py-1 text-right">{{ __('Balance') }}</th>
+                            <th class="border-b border-line px-2 py-1 text-right">{{ __('W/o pay') }}</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -51,32 +51,32 @@
                             ];
                             $isVacation = $entry->leave_type_id === $vacationTypeId;
                         @endphp
-                        <tr class="border-b border-gray-100">
+                        <tr class="border-b border-line">
                             <td class="whitespace-nowrap py-1.5 pr-3">{{ $entry->entry_date->format('M j, Y') }}</td>
                             <td class="px-2 py-1.5">
                                 @if ($entry->leave_request_id)
-                                    <a href="{{ route('leave.requests.show', $entry->leave_request_id) }}" class="text-brand-700 hover:underline">{{ $entry->particulars }}</a>
+                                    <a href="{{ route('leave.requests.show', $entry->leave_request_id) }}" class="text-brand-700 dark:text-brand-400 hover:underline">{{ $entry->particulars }}</a>
                                 @else
                                     {{ $entry->particulars }}
                                 @endif
                             </td>
                             @foreach ([true, false] as $vacationColumns)
                                 @foreach ($cells as $key => $value)
-                                    <td @class(['px-2 py-1.5 text-right tabular-nums', 'border-l border-gray-100' => $key === 'earned', 'font-medium text-gray-900' => $key === 'balance'])>
+                                    <td @class(['px-2 py-1.5 text-right tabular-nums', 'border-l border-line' => $key === 'earned', 'font-medium text-ink' => $key === 'balance'])>
                                         {{ $isVacation === $vacationColumns ? $value : '' }}
                                     </td>
                                 @endforeach
                             @endforeach
-                            <td class="border-l border-gray-100 py-1.5 pl-2 text-xs text-gray-600">
+                            <td class="border-l border-line py-1.5 pl-2 text-xs text-ink-muted">
                                 {{ $entry->remarks }}
                                 @if ($entry->creator)
-                                    <span class="block text-gray-400">{{ $entry->creator->name }}</span>
+                                    <span class="block text-ink-subtle">{{ $entry->creator->name }}</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="11" class="py-6 text-center text-gray-500">{{ __('No entries yet. HR imports the opening balance; credits are then posted each month.') }}</td>
+                            <td colspan="11" class="py-6 text-center text-ink-muted">{{ __('No entries yet. HR imports the opening balance; credits are then posted each month.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

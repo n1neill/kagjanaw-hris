@@ -34,13 +34,13 @@
             <div class="max-w-md">
                 <x-input-label for="pay_basis" :value="__('Paid by')" />
                 <x-select-input id="pay_basis" name="pay_basis" class="mt-1" :options="PayBasis::options()" :selected="old('pay_basis', $employmentType->pay_basis?->value ?? PayBasis::SalaryGrade->value)" />
-                <p class="mt-1 text-xs text-gray-500">{{ __('Also decides the payroll: regular, or Job Order / COS.') }}</p>
+                <p class="mt-1 text-xs text-ink-muted">{{ __('Also decides the payroll: regular, or Job Order / COS.') }}</p>
                 <x-input-error :messages="$errors->get('pay_basis')" class="mt-2" />
             </div>
 
             <div>
                 <x-checkbox name="earns_leave_credits" value="1" :checked="old('earns_leave_credits', $employmentType->earns_leave_credits ?? true)" :label="__('Earns vacation and sick leave credits')" />
-                <p class="mt-1 text-xs text-gray-500">{{ __('Leave credits are earned under the CSC rules on leave. Elective officials and Job Order / Contract of Service workers do not earn them.') }}</p>
+                <p class="mt-1 text-xs text-ink-muted">{{ __('Leave credits are earned under the CSC rules on leave. Elective officials and Job Order / Contract of Service workers do not earn them.') }}</p>
             </div>
 
             <x-checkbox name="is_active" value="1" :checked="old('is_active', $employmentType->is_active)" :label="__('Active')" />

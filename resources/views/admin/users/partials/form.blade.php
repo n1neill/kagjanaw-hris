@@ -5,7 +5,7 @@
 @php($linkedEmployee = $user?->employee)
 
 @if ($linkedEmployee)
-    <div class="rounded-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">
+    <div class="rounded-lg border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-500/10 px-4 py-3 text-sm text-brand-900 dark:text-brand-300">
         {{ __('This account belongs to employee :number. Its name and username follow the employee record.', ['number' => $linkedEmployee->employee_number]) }}
     </div>
 @endif
@@ -44,22 +44,22 @@
         <x-select-input id="role" name="role" class="mt-1" :options="$roles" :selected="old('role', $currentRole?->value)" :placeholder="__('Select a role')" required />
     @else
         <x-select-input id="role" class="mt-1" :options="$roles" :selected="$currentRole?->value" disabled />
-        <p class="mt-1 text-xs text-gray-500">{{ __('You cannot change the role of your own account.') }}</p>
+        <p class="mt-1 text-xs text-ink-muted">{{ __('You cannot change the role of your own account.') }}</p>
     @endif
     <x-input-error :messages="$errors->get('role')" class="mt-2" />
 </div>
 
-<fieldset class="space-y-4 rounded-md border border-gray-200 p-4">
-    <legend class="px-1 text-sm font-medium text-gray-700">
+<fieldset class="space-y-4 rounded-lg border border-line p-4">
+    <legend class="px-1 text-sm font-medium text-ink">
         {{ $user ? __('Reset password (optional)') : __('Temporary password') }}
     </legend>
 
-    <p class="text-xs text-gray-500">{{ __('The user must change this password the next time they sign in.') }}</p>
+    <p class="text-xs text-ink-muted">{{ __('The user must change this password the next time they sign in.') }}</p>
 
     <div>
         <x-input-label for="password" :value="__('Password')" />
         <x-text-input id="password" name="password" type="password" class="mt-1" :required="$user === null" autocomplete="new-password" aria-describedby="password-hint" />
-        <p id="password-hint" class="mt-1 text-xs text-gray-500">
+        <p id="password-hint" class="mt-1 text-xs text-ink-muted">
             {{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}
             @if ($user)
                 {{ __('Leave blank to keep the current password.') }}

@@ -1,11 +1,11 @@
 <x-app-layout :title="$announcement->title">
     <x-slot name="header">{{ __('Announcement') }}</x-slot>
 
-    <article class="rounded-lg border border-gray-200 bg-white p-4 shadow-xs sm:p-6">
+    <article class="rounded-xl border border-line bg-surface p-4 shadow-xs sm:p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
-                <h2 class="text-xl font-semibold text-gray-900">{{ $announcement->title }}</h2>
-                <p class="mt-1 text-sm text-gray-500">
+                <h2 class="text-xl font-semibold text-ink">{{ $announcement->title }}</h2>
+                <p class="mt-1 text-sm text-ink-muted">
                     {{ $announcement->published_at?->format('F j, Y g:i A') ?? __('Not published') }}
                     · {{ $announcement->author?->name ?? __('HR Office') }}
                 </p>
@@ -23,10 +23,10 @@
             @endcan
         </div>
 
-        <div class="mt-6 whitespace-pre-line text-sm leading-6 text-gray-800">{{ $announcement->body }}</div>
+        <div class="mt-6 whitespace-pre-line text-sm leading-6 text-ink">{{ $announcement->body }}</div>
 
         @can('update', $announcement)
-            <dl class="mt-6 grid gap-4 border-t border-gray-100 pt-4 sm:grid-cols-3">
+            <dl class="mt-6 grid gap-4 border-t border-line pt-4 sm:grid-cols-3">
                 <x-detail :label="__('Addressed to')">
                     {{ $announcement->audience === \App\Enums\AnnouncementAudience::Everyone ? $announcement->audience->label() : $announcement->departments->pluck('name')->join(', ') }}
                 </x-detail>

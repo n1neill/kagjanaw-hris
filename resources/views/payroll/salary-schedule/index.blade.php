@@ -17,7 +17,7 @@
         </x-slot>
 
         @unless ($isConfirmed)
-            <p class="mb-4 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+            <p class="mb-4 rounded-lg border border-yellow-200 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10 px-3 py-2 text-sm text-yellow-800 dark:text-yellow-200">
                 {{ __('The LGU income class is not yet confirmed.') }}
                 <a href="{{ route('payroll.settings.edit') }}" class="font-medium underline">{{ __('Set it in Payroll Settings.') }}</a>
             </p>
@@ -28,9 +28,9 @@
                 @foreach ($dates as $date)
                     <a href="{{ route('payroll.salary-schedule.index', ['effective' => $date]) }}"
                        @class([
-                           'rounded-md px-3 py-1.5 text-sm font-medium',
+                           'rounded-lg px-3 py-1.5 text-sm font-medium',
                            'bg-brand-700 text-white' => $date === $selected,
-                           'border border-gray-300 text-gray-700 hover:bg-gray-50' => $date !== $selected,
+                           'border border-line-strong text-ink hover:bg-surface-muted' => $date !== $selected,
                        ])>
                         {{ __('From :date', ['date' => CarbonImmutable::parse($date)->format('M j, Y')]) }}
                         @if ($date === $inForce)
@@ -52,16 +52,16 @@
         <x-input-error :messages="$errors->get('effective_from')" class="mb-4" />
 
         @if ($legalBasis)
-            <p class="mb-4 text-sm text-gray-600">{{ __('Basis:') }} {{ $legalBasis }}</p>
+            <p class="mb-4 text-sm text-ink-muted">{{ __('Basis:') }} {{ $legalBasis }}</p>
         @endif
 
         @if ($grid->isEmpty())
-            <p class="text-sm text-gray-500">{{ __('No Salary Schedule has been entered.') }}</p>
+            <x-empty-state icon="chart" :title="__('No Salary Schedule has been entered.')" />
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr class="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
                             <th class="py-2 pr-3">{{ __('SG') }}</th>
                             @foreach (range(1, 8) as $step)
                                 <th class="px-2 py-2 text-right">{{ __('Step :step', ['step' => $step]) }}</th>
@@ -70,13 +70,13 @@
                     </thead>
                     <tbody>
                         @foreach ($grid as $grade => $steps)
-                            <tr class="border-b border-gray-100">
-                                <th class="py-1.5 pr-3 text-left font-semibold text-gray-900">{{ $grade }}</th>
+                            <tr class="border-b border-line">
+                                <th class="py-1.5 pr-3 text-left font-semibold text-ink">{{ $grade }}</th>
                                 @foreach (range(1, 8) as $step)
                                     <td class="px-2 py-1.5 text-right tabular-nums">
                                         @isset($steps[$step])
-                                            <span class="block text-gray-900">{{ Money::format($schedule->lguAmount(Money::toCentavos($steps[$step]))) }}</span>
-                                            <span class="block text-xs text-gray-500">{{ Money::format($steps[$step]) }}</span>
+                                            <span class="block text-ink">{{ Money::format($schedule->lguAmount(Money::toCentavos($steps[$step]))) }}</span>
+                                            <span class="block text-xs text-ink-muted">{{ Money::format($steps[$step]) }}</span>
                                         @endisset
                                     </td>
                                 @endforeach
@@ -85,7 +85,7 @@
                     </tbody>
                 </table>
             </div>
-            <p class="mt-3 text-xs text-gray-500">{{ __('Upper figure: LGU rate (rounded to the peso). Lower figure: national rate.') }}</p>
+            <p class="mt-3 text-xs text-ink-muted">{{ __('Upper figure: LGU rate (rounded to the peso). Lower figure: national rate.') }}</p>
         @endif
     </x-card>
 </x-app-layout>

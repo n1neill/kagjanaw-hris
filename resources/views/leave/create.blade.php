@@ -28,7 +28,7 @@
                 @csrf
 
                 @if ($errors->any())
-                    <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                    <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
                         {{ __('Please correct the highlighted fields below.') }}
                     </div>
                 @endif
@@ -39,9 +39,9 @@
                     <x-input-error :messages="$errors->get('leave_type_id')" class="mt-2" />
 
                     <template x-if="info">
-                        <div class="mt-2 rounded-md bg-gray-50 p-3 text-xs text-gray-600">
+                        <div class="mt-2 rounded-lg bg-surface-muted p-3 text-xs text-ink-muted">
                             <p x-text="info.description"></p>
-                            <p class="mt-1 font-medium text-gray-700">
+                            <p class="mt-1 font-medium text-ink">
                                 <span x-text="'{{ __('Charged to:') }} ' + info.source"></span>
                                 <span x-show="info.calendar">· {{ __('counted in calendar days') }}</span>
                                 <span x-show="info.notice > 0" x-text="'· {{ __('file at least') }} ' + info.notice + ' {{ __('days ahead') }}'"></span>
@@ -59,7 +59,7 @@
                     <div>
                         <x-input-label for="date_to" :value="__('Last day')" />
                         <x-text-input id="date_to" name="date_to" type="date" class="mt-1" :value="old('date_to')" x-model="to" x-bind:min="from" />
-                        <p class="mt-1 text-xs text-gray-500">{{ __('Leave blank for a single day. Rest days and holidays are not counted.') }}</p>
+                        <p class="mt-1 text-xs text-ink-muted">{{ __('Leave blank for a single day. Rest days and holidays are not counted.') }}</p>
                         <x-input-error :messages="$errors->get('date_to')" class="mt-2" />
                     </div>
                 </div>
@@ -81,8 +81,8 @@
 
                 <div>
                     <x-input-label for="attachment" :value="__('Supporting document (PDF, JPG or PNG, up to 5 MB)')" />
-                    <input id="attachment" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
-                    <p class="mt-1 text-xs text-gray-500" x-show="info && info.attachment" x-text="info ? info.attachment : ''"></p>
+                    <input id="attachment" name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" class="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 dark:file:bg-brand-500/10 dark:file:text-brand-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100 dark:hover:file:bg-brand-500/20">
+                    <p class="mt-1 text-xs text-ink-muted" x-show="info && info.attachment" x-text="info ? info.attachment : ''"></p>
                     <x-input-error :messages="$errors->get('attachment')" class="mt-2" />
                 </div>
 
@@ -95,7 +95,7 @@
 
         <x-card :title="__('Your balances')">
             @include('leave.partials.balances')
-            <p class="mt-4 text-xs text-gray-500">{{ __('If your credits are not enough, the excess days are leave without pay.') }}</p>
+            <p class="mt-4 text-xs text-ink-muted">{{ __('If your credits are not enough, the excess days are leave without pay.') }}</p>
         </x-card>
     </div>
 </x-app-layout>

@@ -13,7 +13,7 @@
         @endif
 
         @unless ($hasDepartment)
-            <p class="text-sm text-gray-600">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
+            <p class="text-sm text-ink-muted">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
         @else
             <form method="GET" action="{{ route('reports.employees') }}" class="mb-6 flex flex-wrap items-end gap-3">
                 @if ($seesAllDepartments)

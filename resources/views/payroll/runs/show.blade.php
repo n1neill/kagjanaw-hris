@@ -7,7 +7,7 @@
     <x-slot name="header">{{ $run->pay_basis->payrollLabel() }}</x-slot>
 
     @if ($errors->any())
-        <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
             @foreach ($errors->all() as $error)
                 <p>{{ $error }}</p>
             @endforeach
@@ -20,13 +20,13 @@
         </x-slot>
 
         @if ($status === PayrollRunStatus::Computing)
-            <p class="text-sm text-gray-600" x-data x-init="setTimeout(() => window.location.reload(), 4000)">
+            <p class="text-sm text-ink-muted" x-data x-init="setTimeout(() => window.location.reload(), 4000)">
                 {{ __('The payroll is being computed. This page refreshes by itself; if it stays here, make sure the queue worker is running, then queue it again.') }}
             </p>
         @endif
 
         @if ($run->failure_message)
-            <p role="alert" class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{{ $run->failure_message }}</p>
+            <p role="alert" class="mb-4 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-3 py-2 text-sm text-red-800 dark:text-red-200">{{ $run->failure_message }}</p>
         @endif
 
         <dl class="grid gap-4 sm:grid-cols-4">
@@ -54,7 +54,7 @@
             </x-detail>
         </dl>
 
-        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-gray-200 pt-4">
+        <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-4">
             @if ($status->canCompute())
                 <form method="POST" action="{{ route('payroll.runs.compute', $run) }}">
                     @csrf
@@ -79,9 +79,9 @@
             @endif
 
             @if (in_array($status, [PayrollRunStatus::Computed, PayrollRunStatus::Approved, PayrollRunStatus::Released], true))
-                <span class="text-sm text-gray-500">{{ __('Register:') }}</span>
+                <span class="text-sm text-ink-muted">{{ __('Register:') }}</span>
                 @foreach (['xlsx' => 'Excel', 'csv' => 'CSV', 'pdf' => 'PDF'] as $format => $label)
-                    <a href="{{ route('payroll.runs.register', [$run, $format]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900" @if ($format === 'pdf') target="_blank" rel="noopener" @endif>{{ $label }}</a>
+                    <a href="{{ route('payroll.runs.register', [$run, $format]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300" @if ($format === 'pdf') target="_blank" rel="noopener" @endif>{{ $label }}</a>
                 @endforeach
             @endif
 
@@ -95,7 +95,7 @@
         </div>
 
         @if ($status === PayrollRunStatus::Released)
-            <p class="mt-3 text-sm text-gray-500">{{ __('Released payrolls are locked. Corrections go in a later payroll.') }}</p>
+            <p class="mt-3 text-sm text-ink-muted">{{ __('Released payrolls are locked. Corrections go in a later payroll.') }}</p>
         @endif
     </x-card>
 
@@ -109,7 +109,7 @@
                         @else
                             <x-badge color="yellow">{{ __('Note') }}</x-badge>
                         @endif
-                        <span class="text-gray-700">{{ $warning['message'] }}</span>
+                        <span class="text-ink">{{ $warning['message'] }}</span>
                     </li>
                 @endforeach
             </ul>
@@ -132,11 +132,11 @@
             <tbody>
                 @foreach ($items as $item)
                     <tr>
-                        <td class="font-medium text-gray-900">
+                        <td class="font-medium text-ink">
                             {{ $item->employee->sortable_name }}
-                            <span class="block text-xs font-normal text-gray-500">{{ $item->position_title }}</span>
+                            <span class="block text-xs font-normal text-ink-muted">{{ $item->position_title }}</span>
                             @if ($item->notes)
-                                <span class="block text-xs font-normal text-yellow-700">{{ implode(' ', $item->notes) }}</span>
+                                <span class="block text-xs font-normal text-yellow-700 dark:text-yellow-300">{{ implode(' ', $item->notes) }}</span>
                             @endif
                         </td>
                         <td>{{ $item->department_name }}</td>
@@ -145,8 +145,8 @@
                         <td class="text-right tabular-nums">{{ Money::format($item->total_deductions) }}</td>
                         <td class="text-right font-medium tabular-nums">{{ Money::format($item->net_pay) }}</td>
                         <td class="whitespace-nowrap text-right">
-                            <a href="{{ route('payroll.payslips.show', $item) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Payslip') }}</a>
-                            <a href="{{ route('payroll.employees.show', $item->employee) }}" class="ml-3 text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Pay setup') }}</a>
+                            <a href="{{ route('payroll.payslips.show', $item) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Payslip') }}</a>
+                            <a href="{{ route('payroll.employees.show', $item->employee) }}" class="ml-3 text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Pay setup') }}</a>
                         </td>
                     </tr>
                 @endforeach

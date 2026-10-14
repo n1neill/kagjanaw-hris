@@ -32,11 +32,11 @@
             <x-stat-card :label="__('Net pay')" :value="'₱ '.Money::format(Money::toDecimal($totals['amounts']['net_pay']))" />
         </dl>
 
-        <h3 class="text-sm font-semibold text-gray-900">{{ __('By office') }}</h3>
+        <h3 class="text-sm font-semibold text-ink">{{ __('By office') }}</h3>
         <div class="mt-2 overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-3">{{ __('Office') }}</th>
                         <th class="px-2 py-2 text-right">{{ __('Employees') }}</th>
                         @foreach (PayrollSummaryReport::AMOUNTS as $heading)
@@ -46,15 +46,15 @@
                 </thead>
                 <tbody>
                     @forelse ($byOffice as $row)
-                        <tr class="border-b border-gray-100">
-                            <td class="py-1.5 pr-3 text-gray-900">{{ $row['office'] }}</td>
+                        <tr class="border-b border-line">
+                            <td class="py-1.5 pr-3 text-ink">{{ $row['office'] }}</td>
                             <td class="px-2 py-1.5 text-right tabular-nums">{{ $row['employees'] }}</td>
                             @foreach ($row['amounts'] as $centavos)
                                 <td class="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">{{ Money::format(Money::toDecimal($centavos)) }}</td>
                             @endforeach
                         </tr>
                     @empty
-                        <tr><td colspan="{{ count(PayrollSummaryReport::AMOUNTS) + 2 }}" class="py-4 text-center text-gray-500">{{ __('No released payroll in this period.') }}</td></tr>
+                        <tr><td colspan="{{ count(PayrollSummaryReport::AMOUNTS) + 2 }}" class="py-4 text-center text-ink-muted">{{ __('No released payroll in this period.') }}</td></tr>
                     @endforelse
                     @if ($byOffice->isNotEmpty())
                         <tr class="font-semibold">
@@ -70,12 +70,12 @@
         </div>
 
         @if ($byRun->isNotEmpty())
-            <h3 class="mt-8 text-sm font-semibold text-gray-900">{{ __('By payroll') }}</h3>
-            <ul class="mt-2 divide-y divide-gray-100 text-sm">
+            <h3 class="mt-8 text-sm font-semibold text-ink">{{ __('By payroll') }}</h3>
+            <ul class="mt-2 divide-y divide-line text-sm">
                 @foreach ($byRun as $row)
                     <li class="flex flex-wrap items-center justify-between gap-2 py-2">
-                        <a href="{{ route('payroll.runs.show', $row['run']) }}" class="font-medium text-brand-700 hover:text-brand-900">{{ $row['run']->title() }}</a>
-                        <span class="tabular-nums text-gray-600">{{ __('Net pay ₱ :amount', ['amount' => Money::format(Money::toDecimal($row['amounts']['net_pay']))]) }}</span>
+                        <a href="{{ route('payroll.runs.show', $row['run']) }}" class="font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ $row['run']->title() }}</a>
+                        <span class="tabular-nums text-ink-muted">{{ __('Net pay ₱ :amount', ['amount' => Money::format(Money::toDecimal($row['amounts']['net_pay']))]) }}</span>
                     </li>
                 @endforeach
             </ul>

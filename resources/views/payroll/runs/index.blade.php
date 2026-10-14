@@ -42,14 +42,14 @@
             <tbody>
                 @foreach ($runs as $run)
                     <tr>
-                        <td class="font-medium text-gray-900" data-order="{{ $run->period->start_date->toDateString() }}">{{ $run->period->label() }}</td>
+                        <td class="font-medium text-ink" data-order="{{ $run->period->start_date->toDateString() }}">{{ $run->period->label() }}</td>
                         <td>{{ $run->pay_basis->payrollLabel() }}</td>
                         <td><x-badge :color="$run->status->badgeColor()">{{ $run->status->label() }}</x-badge></td>
                         <td class="text-right tabular-nums">{{ $run->employee_count }}</td>
                         <td class="text-right tabular-nums">{{ Money::format($run->total_gross) }}</td>
                         <td class="text-right tabular-nums">{{ Money::format($run->total_net) }}</td>
                         <td class="text-right">
-                            <a href="{{ route('payroll.runs.show', $run) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Open') }}</a>
+                            <a href="{{ route('payroll.runs.show', $run) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Open') }}</a>
                         </td>
                     </tr>
                 @endforeach

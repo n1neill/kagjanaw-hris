@@ -11,7 +11,7 @@
             </dl>
 
             @if ($result['errors'] !== [])
-                <div class="mt-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                <div class="mt-4 rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-200">
                     <p class="font-semibold">{{ trans_choice(':count row was skipped:|:count rows were skipped:', count($result['errors']), ['count' => count($result['errors'])]) }}</p>
                     <ul class="mt-2 list-disc space-y-1 pl-5">
                         @foreach (array_slice($result['errors'], 0, 50) as $error)
@@ -25,8 +25,8 @@
             @endif
 
             @if ($result['flagged'] > 0)
-                <p class="mt-4 text-sm text-gray-600">
-                    <a href="{{ route('attendance.logs', ['status' => 'unknown-user']) }}" class="font-medium text-brand-700 hover:underline">{{ __('Review flagged punches') }}</a>
+                <p class="mt-4 text-sm text-ink-muted">
+                    <a href="{{ route('attendance.logs', ['status' => 'unknown-user']) }}" class="font-medium text-brand-700 dark:text-brand-400 hover:underline">{{ __('Review flagged punches') }}</a>
                 </p>
             @endif
         </x-card>
@@ -37,7 +37,7 @@
             <x-button-link :href="route('attendance.import.template')" variant="secondary">{{ __('Download template') }}</x-button-link>
         </x-slot>
 
-        <div class="mb-6 rounded-md bg-gray-50 p-4 text-sm text-gray-700">
+        <div class="mb-6 rounded-lg bg-surface-muted p-4 text-sm text-ink">
             <p class="font-semibold">{{ __('File format') }}</p>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 <li>{{ __('The first row is the header:') }} <code class="font-mono">{{ implode(',', $columns) }}</code></li>
@@ -51,7 +51,7 @@
             @csrf
             <div>
                 <x-input-label for="file" :value="__('CSV file (up to 5 MB)')" />
-                <input id="file" name="file" type="file" accept=".csv,text/csv" required class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
+                <input id="file" name="file" type="file" accept=".csv,text/csv" required class="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 dark:file:bg-brand-500/10 dark:file:text-brand-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100 dark:hover:file:bg-brand-500/20">
                 <x-input-error :messages="$errors->get('file')" class="mt-2" />
             </div>
             <x-primary-button>{{ __('Import') }}</x-primary-button>

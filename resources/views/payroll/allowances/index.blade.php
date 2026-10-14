@@ -27,24 +27,24 @@
             <tbody>
                 @foreach ($types as $type)
                     <tr>
-                        <td class="font-medium text-gray-900">{{ $type->name }}</td>
+                        <td class="font-medium text-ink">{{ $type->name }}</td>
                         <td class="font-mono text-xs">{{ $type->code }}</td>
                         <td class="text-right tabular-nums">{{ Money::format($type->monthly_amount) }}</td>
                         <td class="text-sm">
                             {{ $type->coverage->label() }}
                             @if ($type->coverage === AllowanceCoverage::Assigned)
-                                <span class="block text-xs text-gray-500">{{ trans_choice('{0} nobody yet|{1} :count employee|[2,*] :count employees', $type->assignments_count, ['count' => $type->assignments_count]) }}</span>
+                                <span class="block text-xs text-ink-muted">{{ trans_choice('{0} nobody yet|{1} :count employee|[2,*] :count employees', $type->assignments_count, ['count' => $type->assignments_count]) }}</span>
                             @endif
                         </td>
                         <td class="text-sm">
                             {{ $type->is_taxable ? __('Taxable') : __('Not taxable') }}
                             @if ($type->reduced_for_unpaid_days)
-                                <span class="block text-xs text-gray-500">{{ __('Reduced for days without pay') }}</span>
+                                <span class="block text-xs text-ink-muted">{{ __('Reduced for days without pay') }}</span>
                             @endif
                         </td>
                         <td><x-status-badge :active="$type->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('payroll.allowances.edit', $type) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                            <a href="{{ route('payroll.allowances.edit', $type) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                         </td>
                     </tr>
                 @endforeach

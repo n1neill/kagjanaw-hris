@@ -12,7 +12,7 @@
         @endif
 
         @if (! $hasDepartment)
-            <p class="text-sm text-gray-600">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
+            <p class="text-sm text-ink-muted">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
         @else
             <x-month-picker :month="$month" :action="route('attendance.summary')" class="mb-6">
                 @if ($canManage)
@@ -43,8 +43,8 @@
                     @foreach ($rows as $row)
                         <tr>
                             <td>
-                                <span class="font-medium text-gray-900">{{ $row['employee']->sortable_name }}</span>
-                                <span class="block font-mono text-xs text-gray-500">{{ $row['employee']->employee_number }}</span>
+                                <span class="font-medium text-ink">{{ $row['employee']->sortable_name }}</span>
+                                <span class="block font-mono text-xs text-ink-muted">{{ $row['employee']->employee_number }}</span>
                             </td>
                             @if ($canManage)
                                 <td>{{ $row['employee']->department->code }}</td>
@@ -62,7 +62,7 @@
                                 @endif
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('DTR') }}</a>
+                                <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('DTR') }}</a>
                             </td>
                         </tr>
                     @endforeach

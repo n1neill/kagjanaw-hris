@@ -26,14 +26,14 @@
             <tbody>
                 @foreach ($employmentTypes as $employmentType)
                     <tr>
-                        <td class="font-medium text-gray-900">{{ $employmentType->name }}</td>
-                        <td class="font-mono text-xs text-gray-700">{{ $employmentType->code }}</td>
-                        <td class="text-gray-600">{{ $employmentType->description }}</td>
+                        <td class="font-medium text-ink">{{ $employmentType->name }}</td>
+                        <td class="font-mono text-xs text-ink">{{ $employmentType->code }}</td>
+                        <td class="text-ink-muted">{{ $employmentType->description }}</td>
                         <td>{{ $employmentType->earns_leave_credits ? __('Earns') : __('None') }}</td>
                         <td>{{ $employmentType->pay_basis === PayBasis::DailyRate ? __('Daily rate') : __('Salary grade') }}</td>
                         <td><x-status-badge :active="$employmentType->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('reference-data.employment-types.edit', $employmentType) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                            <a href="{{ route('reference-data.employment-types.edit', $employmentType) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                         </td>
                     </tr>
                 @endforeach

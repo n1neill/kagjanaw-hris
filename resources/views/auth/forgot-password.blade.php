@@ -20,7 +20,7 @@
         </x-primary-button>
 
         <p class="text-center">
-            <a href="{{ route('login') }}" class="text-sm font-medium text-brand-700 hover:text-brand-900 hover:underline dark:text-brand-400 dark:hover:text-brand-300">{{ __('Back to sign in') }}</a>
+            <a href="{{ route('login') }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300 hover:underline dark:text-brand-400 dark:hover:text-brand-300">{{ __('Back to sign in') }}</a>
         </p>
     </form>
 </x-guest-layout>

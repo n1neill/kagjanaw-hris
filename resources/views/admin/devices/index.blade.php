@@ -24,8 +24,8 @@
                 @foreach ($devices as $device)
                     <tr>
                         <td>
-                            <span class="font-medium text-gray-900">{{ $device->name }}</span>
-                            <span class="block text-xs text-gray-500">{{ $device->location }}</span>
+                            <span class="font-medium text-ink">{{ $device->name }}</span>
+                            <span class="block text-xs text-ink-muted">{{ $device->location }}</span>
                         </td>
                         <td class="font-mono text-xs">{{ $device->ip_address }}:{{ $device->port }}</td>
                         <td>{{ $device->driver }}</td>
@@ -37,7 +37,7 @@
                         </td>
                         <td><x-status-badge :active="$device->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('admin.devices.show', $device) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Open') }}</a>
+                            <a href="{{ route('admin.devices.show', $device) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Open') }}</a>
                         </td>
                     </tr>
                 @endforeach

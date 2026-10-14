@@ -23,7 +23,7 @@
         @endunless
 
         @if ($errors->any())
-            <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
                 {{ __('Please correct the highlighted fields below.') }}
             </div>
         @endif
@@ -108,7 +108,7 @@
                 <div>
                     <x-input-label for="employee_number" :value="__('Employee ID')" />
                     <x-text-input id="employee_number" name="employee_number" class="mt-1 font-mono uppercase" maxlength="30" placeholder="2026-0001" :value="old('employee_number', $employee->employee_number)" required aria-describedby="employee-number-hint" />
-                    <p id="employee-number-hint" class="mt-1 text-xs text-gray-500">{{ __('Also the employee\'s username for signing in.') }}</p>
+                    <p id="employee-number-hint" class="mt-1 text-xs text-ink-muted">{{ __('Also the employee\'s username for signing in.') }}</p>
                     <x-input-error :messages="$errors->get('employee_number')" class="mt-2" />
                 </div>
                 <div>
@@ -141,7 +141,7 @@
                 <div>
                     <x-input-label for="daily_rate" :value="__('Daily rate (Job Order / COS)')" />
                     <x-text-input id="daily_rate" name="daily_rate" inputmode="decimal" class="mt-1" :value="old('daily_rate', $employee->daily_rate)" aria-describedby="daily-rate-hint" />
-                    <p id="daily-rate-hint" class="mt-1 text-xs text-gray-500">{{ __('Only for workers paid by the day.') }}</p>
+                    <p id="daily-rate-hint" class="mt-1 text-xs text-ink-muted">{{ __('Only for workers paid by the day.') }}</p>
                     <x-input-error :messages="$errors->get('daily_rate')" class="mt-2" />
                 </div>
                 <div>
@@ -157,13 +157,13 @@
                 <div x-show="status !== 'active'" x-cloak>
                     <x-input-label for="separation_date" :value="__('Separation date')" />
                     <x-text-input id="separation_date" name="separation_date" type="date" class="mt-1" :value="old('separation_date', $employee->separation_date?->toDateString())" x-bind:disabled="status === 'active'" />
-                    <p class="mt-1 text-xs text-gray-500">{{ __('Separated employees can no longer sign in.') }}</p>
+                    <p class="mt-1 text-xs text-ink-muted">{{ __('Separated employees can no longer sign in.') }}</p>
                     <x-input-error :messages="$errors->get('separation_date')" class="mt-2" />
                 </div>
                 <div>
                     <x-input-label for="biometric_user_id" :value="__('Biometric user ID')" />
                     <x-text-input id="biometric_user_id" name="biometric_user_id" inputmode="numeric" class="mt-1" :value="old('biometric_user_id', $employee->biometric_user_id)" aria-describedby="biometric-hint" />
-                    <p id="biometric-hint" class="mt-1 text-xs text-gray-500">{{ __('The user number enrolled on the ZKTeco device.') }}</p>
+                    <p id="biometric-hint" class="mt-1 text-xs text-ink-muted">{{ __('The user number enrolled on the ZKTeco device.') }}</p>
                     <x-input-error :messages="$errors->get('biometric_user_id')" class="mt-2" />
                 </div>
             </div>

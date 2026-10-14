@@ -8,7 +8,7 @@
             @method('PUT')
 
             <fieldset>
-                <legend class="text-sm font-medium text-gray-700">{{ __('Sessions') }}</legend>
+                <legend class="text-sm font-medium text-ink">{{ __('Sessions') }}</legend>
                 <div class="mt-2 grid gap-4 sm:grid-cols-4">
                     @foreach (['am_start' => __('Morning start'), 'am_end' => __('Morning end'), 'pm_start' => __('Afternoon start'), 'pm_end' => __('Afternoon end')] as $field => $label)
                         <div>
@@ -23,12 +23,12 @@
             <div class="max-w-xs">
                 <x-input-label for="grace_minutes" :value="__('Grace period (minutes)')" />
                 <x-text-input id="grace_minutes" name="grace_minutes" type="number" min="0" max="60" class="mt-1" :value="old('grace_minutes', $schedule->grace_minutes)" required aria-describedby="grace-hint" />
-                <p id="grace-hint" class="mt-1 text-xs text-gray-500">{{ __('Arrivals within this many minutes of the start of a session are on time. Later arrivals are late from the start of the session.') }}</p>
+                <p id="grace-hint" class="mt-1 text-xs text-ink-muted">{{ __('Arrivals within this many minutes of the start of a session are on time. Later arrivals are late from the start of the session.') }}</p>
                 <x-input-error :messages="$errors->get('grace_minutes')" class="mt-2" />
             </div>
 
             <fieldset>
-                <legend class="text-sm font-medium text-gray-700">{{ __('Working days') }}</legend>
+                <legend class="text-sm font-medium text-ink">{{ __('Working days') }}</legend>
                 <div class="mt-2 flex flex-wrap gap-4">
                     @php($selectedDays = array_map('intval', old('working_days', $schedule->working_days)))
                     @foreach ($dayNames as $number => $name)

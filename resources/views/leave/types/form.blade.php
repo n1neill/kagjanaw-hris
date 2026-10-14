@@ -11,7 +11,7 @@
             @endunless
 
             @if ($isFixed)
-                <p class="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">{{ __('This type drives the leave card. Its code and the credits it is charged to cannot be changed, and it cannot be deactivated.') }}</p>
+                <p class="rounded-lg bg-surface-muted px-3 py-2 text-sm text-ink-muted">{{ __('This type drives the leave card. Its code and the credits it is charged to cannot be changed, and it cannot be deactivated.') }}</p>
             @endif
 
             <div class="grid gap-5 sm:grid-cols-4">
@@ -45,7 +45,7 @@
                 <div>
                     <x-input-label for="annual_days" :value="__('Days per year (optional)')" />
                     <x-text-input id="annual_days" name="annual_days" inputmode="decimal" class="mt-1" :value="old('annual_days', $type->annual_days)" />
-                    <p class="mt-1 text-xs text-gray-500">{{ __('Required for an own yearly allotment.') }}</p>
+                    <p class="mt-1 text-xs text-ink-muted">{{ __('Required for an own yearly allotment.') }}</p>
                     <x-input-error :messages="$errors->get('annual_days')" class="mt-2" />
                 </div>
                 <div>
@@ -66,7 +66,7 @@
                 <div>
                     <x-input-label for="attachment_required_over_days" :value="__('Attachment required over (days)')" />
                     <x-text-input id="attachment_required_over_days" name="attachment_required_over_days" type="number" min="0" class="mt-1" :value="old('attachment_required_over_days', $type->attachment_required_over_days)" />
-                    <p class="mt-1 text-xs text-gray-500">{{ __('0 = always; blank = never.') }}</p>
+                    <p class="mt-1 text-xs text-ink-muted">{{ __('0 = always; blank = never.') }}</p>
                     <x-input-error :messages="$errors->get('attachment_required_over_days')" class="mt-2" />
                 </div>
             </div>

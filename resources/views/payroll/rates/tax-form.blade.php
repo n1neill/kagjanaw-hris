@@ -15,7 +15,7 @@
             @method('PUT')
 
             @if ($errors->any())
-                <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
                     @foreach ($errors->all() as $error)
                         <p>{{ $error }}</p>
                     @endforeach
@@ -29,7 +29,7 @@
 
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr class="text-left text-xs uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-2">{{ __('Monthly pay over (₱)') }}</th>
                         <th class="px-2 py-2">{{ __('Base tax (₱)') }}</th>
                         <th class="py-2 pl-2">{{ __('Rate on excess (%)') }}</th>

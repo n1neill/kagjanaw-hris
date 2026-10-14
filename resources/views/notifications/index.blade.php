@@ -11,21 +11,21 @@
             </x-slot>
         @endif
 
-        <ul class="-my-2 divide-y divide-gray-100">
+        <ul class="-my-2 divide-y divide-line">
             @forelse ($notifications as $notification)
                 <li>
-                    <a href="{{ route('notifications.open', $notification->id) }}" @class(['flex items-start justify-between gap-4 rounded-md px-2 py-3 text-sm hover:bg-gray-50', 'bg-brand-50/50' => $notification->unread()])>
-                        <span @class(['font-medium text-gray-900' => $notification->unread(), 'text-gray-600' => ! $notification->unread()])>
+                    <a href="{{ route('notifications.open', $notification->id) }}" @class(['flex items-start justify-between gap-4 rounded-lg px-2 py-3 text-sm hover:bg-surface-muted', 'bg-brand-50/50 dark:bg-brand-500/5' => $notification->unread()])>
+                        <span @class(['font-medium text-ink' => $notification->unread(), 'text-ink-muted' => ! $notification->unread()])>
                             @if ($notification->unread())
                                 <span class="sr-only">{{ __('Unread:') }}</span>
                             @endif
                             {{ $notification->data['message'] ?? __('Notification') }}
                         </span>
-                        <span class="shrink-0 text-xs text-gray-500">{{ $notification->created_at->format('M j, Y g:i A') }}</span>
+                        <span class="shrink-0 text-xs text-ink-muted">{{ $notification->created_at->format('M j, Y g:i A') }}</span>
                     </a>
                 </li>
             @empty
-                <li class="py-3 text-sm text-gray-500">{{ __('You have no notifications.') }}</li>
+                <li class="py-3 text-sm text-ink-muted">{{ __('You have no notifications.') }}</li>
             @endforelse
         </ul>
 

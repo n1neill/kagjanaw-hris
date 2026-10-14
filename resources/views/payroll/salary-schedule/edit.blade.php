@@ -10,7 +10,7 @@
             @method('PUT')
 
             @if ($errors->any())
-                <div role="alert" class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <div role="alert" class="rounded-lg border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
                     {{ __('Please correct the highlighted amounts.') }}
                 </div>
             @endif
@@ -24,7 +24,7 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
+                        <tr class="text-left text-xs uppercase tracking-wide text-ink-muted">
                             <th class="py-2 pr-3">{{ __('SG') }}</th>
                             @foreach (range(1, 8) as $step)
                                 <th class="px-1 py-2">{{ __('Step :step', ['step' => $step]) }}</th>
@@ -34,16 +34,16 @@
                     <tbody>
                         @foreach (range(1, 33) as $grade)
                             <tr>
-                                <th class="py-1 pr-3 text-left font-semibold text-gray-900">{{ $grade }}</th>
+                                <th class="py-1 pr-3 text-left font-semibold text-ink">{{ $grade }}</th>
                                 @foreach (range(1, 8) as $step)
                                     <td class="px-1 py-1">
                                         <input type="text" inputmode="decimal" name="amounts[{{ $grade }}][{{ $step }}]"
                                                value="{{ old('amounts.'.$grade.'.'.$step, $grid[$grade][$step] ?? '') }}"
                                                aria-label="{{ __('SG :grade Step :step', ['grade' => $grade, 'step' => $step]) }}"
                                                @class([
-                                                   'block w-28 rounded-md text-right text-sm shadow-xs focus:border-brand-500 focus:ring-brand-500',
-                                                   'border-red-400' => $errors->has('amounts.'.$grade.'.'.$step),
-                                                   'border-gray-300' => ! $errors->has('amounts.'.$grade.'.'.$step),
+                                                   'block w-28 rounded-lg bg-surface text-right text-sm text-ink shadow-xs focus:border-brand-500 focus:ring-brand-500',
+                                                   'border-red-400 dark:border-red-500/60' => $errors->has('amounts.'.$grade.'.'.$step),
+                                                   'border-line-strong' => ! $errors->has('amounts.'.$grade.'.'.$step),
                                                ])>
                                     </td>
                                 @endforeach

@@ -21,11 +21,11 @@
             <tbody>
                 @foreach ($departments as $department)
                     <tr>
-                        <td class="font-mono text-xs font-semibold text-gray-700">{{ $department->code }}</td>
-                        <td class="font-medium text-gray-900">{{ $department->name }}</td>
+                        <td class="font-mono text-xs font-semibold text-ink">{{ $department->code }}</td>
+                        <td class="font-medium text-ink">{{ $department->name }}</td>
                         <td><x-status-badge :active="$department->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('reference-data.departments.edit', $department) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                            <a href="{{ route('reference-data.departments.edit', $department) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                         </td>
                     </tr>
                 @endforeach

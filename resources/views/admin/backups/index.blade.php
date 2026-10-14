@@ -18,7 +18,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-3">{{ __('Created') }}</th>
                         <th class="px-2 py-2">{{ __('Type') }}</th>
                         <th class="px-2 py-2">{{ __('By') }}</th>
@@ -29,10 +29,10 @@
                 </thead>
                 <tbody>
                     @forelse ($backups as $index => $backup)
-                        <tr class="border-b border-gray-100">
+                        <tr class="border-b border-line">
                             <td class="py-2 pr-3">
-                                <span class="block font-medium text-gray-900">{{ $backup->createdAt->format('M j, Y g:i A') }}</span>
-                                <span class="block font-mono text-xs text-gray-500">{{ $backup->name }}</span>
+                                <span class="block font-medium text-ink">{{ $backup->createdAt->format('M j, Y g:i A') }}</span>
+                                <span class="block font-mono text-xs text-ink-muted">{{ $backup->name }}</span>
                             </td>
                             <td class="px-2 py-2">{{ $backup->trigger?->label() ?? '—' }}</td>
                             <td class="px-2 py-2">{{ $backup->createdBy ?? __('System') }}</td>
@@ -54,11 +54,11 @@
                                         @csrf
                                         <input type="hidden" name="backup_name" value="{{ $backup->name }}">
 
-                                        <h2 class="text-lg font-semibold text-gray-900">{{ __('Restore the backup of :date?', ['date' => $backup->createdAt->format('M j, Y g:i A')]) }}</h2>
-                                        <p class="mt-2 text-sm text-gray-600">
+                                        <h2 class="text-lg font-semibold text-ink">{{ __('Restore the backup of :date?', ['date' => $backup->createdAt->format('M j, Y g:i A')]) }}</h2>
+                                        <p class="mt-2 text-sm text-ink-muted">
                                             {{ __('Every record and uploaded file will be replaced with the backup\'s contents. Anything entered after the backup was made will be lost. A safety backup of the current data is made first, and the system returns to it automatically if the restore fails.') }}
                                         </p>
-                                        <p class="mt-2 text-sm text-gray-600">{{ __('Ask everyone to stop using the system until the restore is finished.') }}</p>
+                                        <p class="mt-2 text-sm text-ink-muted">{{ __('Ask everyone to stop using the system until the restore is finished.') }}</p>
 
                                         <div class="mt-4">
                                             <x-input-label :for="'password-'.$index" :value="__('Your password')" />
@@ -76,7 +76,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-6 text-center text-gray-500">{{ __('No backups yet.') }}</td>
+                            <td colspan="6"><x-empty-state icon="archive" :title="__('No backups yet.')" /></td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -89,11 +89,11 @@
             @csrf
             <div class="min-w-0 flex-1">
                 <x-input-label for="backup" :value="__('Backup file (.zip, up to :size MB)', ['size' => $maxUploadMegabytes])" />
-                <input id="backup" name="backup" type="file" accept=".zip,application/zip" required class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200">
+                <input id="backup" name="backup" type="file" accept=".zip,application/zip" required class="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-surface-muted file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-line">
                 <x-input-error :messages="$errors->get('backup')" class="mt-2" />
             </div>
             <x-secondary-button type="submit">{{ __('Upload') }}</x-secondary-button>
         </form>
-        <p class="mt-3 text-xs text-gray-500">{{ __('If the upload is refused because the file is too large, copy the file into the storage\app\backups folder on the server instead; it then appears in the list.') }}</p>
+        <p class="mt-3 text-xs text-ink-muted">{{ __('If the upload is refused because the file is too large, copy the file into the storage\app\backups folder on the server instead; it then appears in the list.') }}</p>
     </x-card>
 </x-app-layout>

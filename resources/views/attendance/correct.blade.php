@@ -5,10 +5,10 @@
         <x-card class="lg:col-span-2" :title="$employee->full_name.' — '.$day->format('l, F j, Y')"
                 :description="__('Enter the correct punches in 24-hour time. Leave a punch blank if there was none. The day\'s late, undertime and absence are recomputed, and the change is recorded with your name and reason.')">
             @if ($record->exists)
-                <p class="mb-4 text-sm text-gray-600">
+                <p class="mb-4 text-sm text-ink-muted">
                     {{ __('Current status:') }} <x-badge :color="$record->status->badgeColor()">{{ $record->status->label() }}</x-badge>
                     @if ($record->validated_at)
-                        <span class="ml-2 text-xs text-gray-500">{{ __('Validated — correcting it will require validating the month again.') }}</span>
+                        <span class="ml-2 text-xs text-ink-muted">{{ __('Validated — correcting it will require validating the month again.') }}</span>
                     @endif
                 </p>
             @endif
@@ -43,30 +43,30 @@
         <div class="space-y-6">
             <x-card :title="__('Punches recorded')" :description="__('Raw logs from the device or CSV import for this day.')">
                 @forelse ($rawLogs as $log)
-                    <p class="flex items-center justify-between border-b border-gray-100 py-1.5 text-sm last:border-0">
+                    <p class="flex items-center justify-between border-b border-line py-1.5 text-sm last:border-0">
                         <span class="font-mono">{{ $log->logged_at->format('H:i:s') }}</span>
-                        <span class="text-xs text-gray-500">{{ $log->source->label() }}</span>
+                        <span class="text-xs text-ink-muted">{{ $log->source->label() }}</span>
                     </p>
                 @empty
-                    <p class="text-sm text-gray-500">{{ __('No punches were recorded on this day.') }}</p>
+                    <p class="text-sm text-ink-muted">{{ __('No punches were recorded on this day.') }}</p>
                 @endforelse
             </x-card>
 
             <x-card :title="__('Correction history')">
                 @forelse ($adjustments as $adjustment)
-                    <div class="border-b border-gray-100 py-2 text-sm last:border-0">
-                        <p class="font-medium text-gray-900">{{ $adjustment->user?->name ?? __('Unknown user') }}
-                            <span class="font-normal text-gray-500">· {{ $adjustment->created_at->format('M j, Y g:i A') }}</span>
+                    <div class="border-b border-line py-2 text-sm last:border-0">
+                        <p class="font-medium text-ink">{{ $adjustment->user?->name ?? __('Unknown user') }}
+                            <span class="font-normal text-ink-muted">· {{ $adjustment->created_at->format('M j, Y g:i A') }}</span>
                         </p>
-                        <ul class="mt-1 text-xs text-gray-600">
+                        <ul class="mt-1 text-xs text-ink-muted">
                             @foreach ($adjustment->changes as $field => $change)
                                 <li>{{ str_replace('_', ' ', $field) }}: <span class="font-mono">{{ $change['from'] ?? '—' }} → {{ $change['to'] ?? '—' }}</span></li>
                             @endforeach
                         </ul>
-                        <p class="mt-1 text-gray-700">{{ $adjustment->reason }}</p>
+                        <p class="mt-1 text-ink">{{ $adjustment->reason }}</p>
                     </div>
                 @empty
-                    <p class="text-sm text-gray-500">{{ __('This day has not been corrected.') }}</p>
+                    <p class="text-sm text-ink-muted">{{ __('This day has not been corrected.') }}</p>
                 @endforelse
             </x-card>
         </div>

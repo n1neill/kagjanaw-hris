@@ -14,7 +14,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-3">{{ __('Contribution') }}</th>
                         <th class="px-3 py-2">{{ __('Effective') }}</th>
                         <th class="px-3 py-2 text-right">{{ __('Employee') }}</th>
@@ -28,16 +28,16 @@
                 <tbody>
                     @foreach ($types as $type)
                         @foreach ($rates->get($type->value, collect()) as $rate)
-                            <tr class="border-b border-gray-100 align-top">
-                                <td class="py-2 pr-3 font-medium text-gray-900">{{ $loop->first ? $type->label() : '' }}</td>
+                            <tr class="border-b border-line align-top">
+                                <td class="py-2 pr-3 font-medium text-ink">{{ $loop->first ? $type->label() : '' }}</td>
                                 <td class="px-3 py-2 whitespace-nowrap">{{ $rate->effective_from->format('M j, Y') }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ $rate->employee_rate }}%</td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ $rate->employer_rate }}%</td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ $rate->salary_floor !== null ? Money::format($rate->salary_floor) : '—' }}</td>
                                 <td class="px-3 py-2 text-right tabular-nums">{{ $rate->salary_ceiling !== null ? Money::format($rate->salary_ceiling) : '—' }}</td>
-                                <td class="px-3 py-2 text-xs text-gray-600">{{ $rate->legal_basis }}</td>
+                                <td class="px-3 py-2 text-xs text-ink-muted">{{ $rate->legal_basis }}</td>
                                 <td class="py-2 pl-3 text-right">
-                                    <a href="{{ route('payroll.rates.contributions.edit', $rate) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                                    <a href="{{ route('payroll.rates.contributions.edit', $rate) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                                 </td>
                             </tr>
                         @endforeach
@@ -62,17 +62,17 @@
 
         <div class="grid gap-6 lg:grid-cols-2">
             @foreach ($taxTables as $effectiveFrom => $brackets)
-                <div class="rounded-lg border border-gray-200 p-4">
+                <div class="rounded-lg border border-line p-4">
                     <div class="flex items-center justify-between gap-3">
-                        <h3 class="text-sm font-semibold text-gray-900">{{ __('Effective :date', ['date' => $brackets->first()->effective_from->format('F j, Y')]) }}</h3>
-                        <a href="{{ route('payroll.rates.tax.edit', $effectiveFrom) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Edit') }}</a>
+                        <h3 class="text-sm font-semibold text-ink">{{ __('Effective :date', ['date' => $brackets->first()->effective_from->format('F j, Y')]) }}</h3>
+                        <a href="{{ route('payroll.rates.tax.edit', $effectiveFrom) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
                     </div>
                     @if ($brackets->first()->legal_basis)
-                        <p class="mt-1 text-xs text-gray-500">{{ $brackets->first()->legal_basis }}</p>
+                        <p class="mt-1 text-xs text-ink-muted">{{ $brackets->first()->legal_basis }}</p>
                     @endif
                     <table class="mt-3 w-full text-sm">
                         <thead>
-                            <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
+                            <tr class="text-left text-xs uppercase tracking-wide text-ink-muted">
                                 <th class="py-1">{{ __('Over') }}</th>
                                 <th class="py-1 text-right">{{ __('Base tax') }}</th>
                                 <th class="py-1 text-right">{{ __('Rate on excess') }}</th>
@@ -80,7 +80,7 @@
                         </thead>
                         <tbody>
                             @foreach ($brackets as $bracket)
-                                <tr class="border-t border-gray-100">
+                                <tr class="border-t border-line">
                                     <td class="py-1 tabular-nums">{{ Money::format($bracket->over) }}</td>
                                     <td class="py-1 text-right tabular-nums">{{ Money::format($bracket->base_tax) }}</td>
                                     <td class="py-1 text-right tabular-nums">{{ $bracket->rate }}%</td>

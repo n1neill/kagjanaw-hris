@@ -27,7 +27,7 @@
         </div>
 
         @if ($isValidated)
-            <p class="mb-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{{ __('Days of this month have been validated by HR.') }}</p>
+            <p class="mb-4 rounded-lg bg-green-50 dark:bg-green-500/10 px-3 py-2 text-sm text-green-800 dark:text-green-200">{{ __('Days of this month have been validated by HR.') }}</p>
         @endif
 
         @include('attendance.partials.dtr-table')

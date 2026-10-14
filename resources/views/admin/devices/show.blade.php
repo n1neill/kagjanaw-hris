@@ -34,7 +34,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-3">{{ __('Started') }}</th>
                         <th class="px-2 py-2">{{ __('By') }}</th>
                         <th class="px-2 py-2">{{ __('Result') }}</th>
@@ -46,13 +46,13 @@
                 </thead>
                 <tbody>
                     @forelse ($runs as $run)
-                        <tr class="border-b border-gray-100 align-top">
+                        <tr class="border-b border-line align-top">
                             <td class="whitespace-nowrap py-2 pr-3">{{ $run->started_at->format('M j, Y g:i:s A') }}</td>
-                            <td class="px-2 py-2 text-gray-600">{{ $run->triggeredBy?->name ?? __('Scheduler') }}</td>
+                            <td class="px-2 py-2 text-ink-muted">{{ $run->triggeredBy?->name ?? __('Scheduler') }}</td>
                             <td class="px-2 py-2">
                                 <x-badge :color="$run->status->badgeColor()">{{ $run->status->label() }}</x-badge>
                                 @if ($run->error_message)
-                                    <span class="mt-1 block text-xs text-red-700">{{ $run->error_message }}</span>
+                                    <span class="mt-1 block text-xs text-red-700 dark:text-red-300">{{ $run->error_message }}</span>
                                 @endif
                             </td>
                             <td class="px-2 py-2 text-right">{{ $run->fetched_count }}</td>
@@ -62,7 +62,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-6 text-center text-gray-500">{{ __('This device has not been synchronized yet.') }}</td>
+                            <td colspan="7"><x-empty-state icon="server" :title="__('This device has not been synchronized yet.')" /></td>
                         </tr>
                     @endforelse
                 </tbody>

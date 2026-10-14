@@ -9,19 +9,19 @@
     <x-slot name="header">{{ $isOwnRecord ? __('My Record') : __('Employee Record') }}</x-slot>
 
     @if (session('temporaryPassword'))
-        <div role="alert" class="rounded-md border border-yellow-300 bg-yellow-50 p-4">
+        <div role="alert" class="rounded-lg border border-yellow-300 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10 p-4">
             <div class="flex gap-3">
-                <x-icon name="key" class="size-6 shrink-0 text-yellow-700" />
-                <div class="text-sm text-yellow-900">
+                <x-icon name="key" class="size-6 shrink-0 text-yellow-700 dark:text-yellow-300" />
+                <div class="text-sm text-yellow-900 dark:text-yellow-200">
                     <p class="font-semibold">{{ __('Login account created') }}</p>
                     <p class="mt-1">{{ __('Give these sign-in details to the employee in person. The password is shown only once, and the employee must change it at first sign-in.') }}</p>
                     <dl class="mt-3 grid gap-2 sm:grid-cols-2">
                         <div>
-                            <dt class="text-xs uppercase tracking-wide text-yellow-800">{{ __('Employee ID') }}</dt>
+                            <dt class="text-xs uppercase tracking-wide text-yellow-800 dark:text-yellow-200">{{ __('Employee ID') }}</dt>
                             <dd class="font-mono text-base font-semibold">{{ $employee->employee_number }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs uppercase tracking-wide text-yellow-800">{{ __('Temporary password') }}</dt>
+                            <dt class="text-xs uppercase tracking-wide text-yellow-800 dark:text-yellow-200">{{ __('Temporary password') }}</dt>
                             <dd class="font-mono text-base font-semibold">{{ session('temporaryPassword') }}</dd>
                         </div>
                     </dl>
@@ -30,14 +30,14 @@
         </div>
     @endif
 
-    <section class="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-xs sm:p-6">
+    <section class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-surface p-4 shadow-xs sm:p-6">
         <div class="flex items-center gap-4">
-            <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-800" aria-hidden="true">
+            <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-500/15 text-xl font-semibold text-brand-800 dark:text-brand-300" aria-hidden="true">
                 {{ mb_substr($employee->first_name, 0, 1) }}{{ mb_substr($employee->last_name, 0, 1) }}
             </span>
             <div>
-                <h2 class="text-xl font-semibold text-gray-900">{{ $employee->full_name }}</h2>
-                <p class="text-sm text-gray-600">{{ $employee->position->title }} · {{ $employee->department->name }}</p>
+                <h2 class="text-xl font-semibold text-ink">{{ $employee->full_name }}</h2>
+                <p class="text-sm text-ink-muted">{{ $employee->position->title }} · {{ $employee->department->name }}</p>
                 <div class="mt-2 flex flex-wrap items-center gap-2">
                     <x-badge color="brand" class="font-mono">{{ $employee->employee_number }}</x-badge>
                     <x-badge :color="$employee->employment_status->isInService() ? 'green' : 'gray'">{{ $employee->employment_status->label() }}</x-badge>
@@ -137,7 +137,7 @@
                         {{ $employee->user->must_change_password ? __('Temporary (not yet changed)') : __('Set by the employee') }}
                     </x-detail>
                 </dl>
-                <p class="mt-4 text-xs text-gray-500">{{ __('Forgotten passwords are reset by the System Administrator under User Accounts.') }}</p>
+                <p class="mt-4 text-xs text-ink-muted">{{ __('Forgotten passwords are reset by the System Administrator under User Accounts.') }}</p>
             </x-card>
         @endif
     </div>
@@ -145,7 +145,7 @@
     @if ($canViewSensitive)
         <x-card id="documents" :title="__('201 File')" :description="__('Appointment papers, IDs, certificates and other documents.')">
             @if ($canManage)
-                <form method="POST" action="{{ route('employees.documents.store', $employee) }}" enctype="multipart/form-data" class="mb-6 grid gap-4 rounded-md border border-gray-200 bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+                <form method="POST" action="{{ route('employees.documents.store', $employee) }}" enctype="multipart/form-data" class="mb-6 grid gap-4 rounded-xl border border-line bg-surface-muted p-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
                     @csrf
                     <div>
                         <x-input-label for="document_type" :value="__('Document type')" />
@@ -159,7 +159,7 @@
                     </div>
                     <div>
                         <x-input-label for="file" :value="__('File (PDF, JPG or PNG, up to 10 MB)')" />
-                        <input id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
+                        <input id="file" name="file" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" required class="mt-1 block w-full text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 dark:file:bg-brand-500/10 dark:file:text-brand-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100 dark:hover:file:bg-brand-500/20">
                         <x-input-error :messages="$errors->get('file')" class="mt-2" />
                     </div>
                     <div>
@@ -182,31 +182,31 @@
                     @foreach ($documents as $document)
                         <tr>
                             <td>
-                                <span class="flex items-center gap-2 font-medium text-gray-900">
-                                    <x-icon name="document" class="size-4 shrink-0 text-gray-400" />
+                                <span class="flex items-center gap-2 font-medium text-ink">
+                                    <x-icon name="document" class="size-4 shrink-0 text-ink-subtle" />
                                     {{ $document->title }}
                                 </span>
-                                <span class="block text-xs text-gray-500">{{ $document->original_name }}</span>
+                                <span class="block text-xs text-ink-muted">{{ $document->original_name }}</span>
                             </td>
                             <td>{{ $document->document_type->label() }}</td>
                             <td data-order="{{ $document->size }}">{{ \Illuminate\Support\Number::fileSize($document->size, precision: 1) }}</td>
                             <td data-order="{{ $document->created_at->timestamp }}">
                                 {{ $document->created_at->format('M j, Y') }}
                                 @if ($document->uploader)
-                                    <span class="block text-xs text-gray-500">{{ __('by :name', ['name' => $document->uploader->name]) }}</span>
+                                    <span class="block text-xs text-ink-muted">{{ __('by :name', ['name' => $document->uploader->name]) }}</span>
                                 @endif
                             </td>
                             <td class="text-right">
                                 <div class="flex items-center justify-end gap-3">
                                     @if ($document->isViewableInline())
-                                        <a href="{{ route('employees.documents.show', [$employee, $document]) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('View') }}</a>
+                                        <a href="{{ route('employees.documents.show', [$employee, $document]) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('View') }}</a>
                                     @endif
-                                    <a href="{{ route('employees.documents.download', [$employee, $document]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Download') }}</a>
+                                    <a href="{{ route('employees.documents.download', [$employee, $document]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Download') }}</a>
                                     @if ($canManage)
                                         <form method="POST" action="{{ route('employees.documents.destroy', [$employee, $document]) }}" data-confirm="{{ __('Delete this document permanently?') }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-800">{{ __('Delete') }}</button>
+                                            <button type="submit" class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">{{ __('Delete') }}</button>
                                         </form>
                                     @endif
                                 </div>

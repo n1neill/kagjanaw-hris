@@ -37,7 +37,7 @@
             <tbody>
                 @foreach ($rows as $row)
                     <tr>
-                        <td class="font-medium text-gray-900">{{ $row['employee']->sortable_name }}</td>
+                        <td class="font-medium text-ink">{{ $row['employee']->sortable_name }}</td>
                         <td>{{ $row['employee']->department?->name }}</td>
                         <td>
                             @if ($row['posted'])
@@ -46,12 +46,12 @@
                                 <x-badge color="blue">{{ __('Ready') }}</x-badge>
                             @else
                                 <x-badge color="yellow">{{ __('Waiting') }}</x-badge>
-                                <span class="ml-1 text-xs text-gray-600">{{ $row['reason'] }}</span>
+                                <span class="ml-1 text-xs text-ink-muted">{{ $row['reason'] }}</span>
                             @endif
                         </td>
                         <td class="whitespace-nowrap text-right">
-                            <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('DTR') }}</a>
-                            <a href="{{ route('leave.card', $row['employee']) }}" class="ml-3 text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Leave card') }}</a>
+                            <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('DTR') }}</a>
+                            <a href="{{ route('leave.card', $row['employee']) }}" class="ml-3 text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Leave card') }}</a>
                         </td>
                     </tr>
                 @endforeach

@@ -33,7 +33,7 @@
                 <div>
                     <x-input-label for="monthly_amount" :value="__('Monthly amount (₱)')" />
                     <x-text-input id="monthly_amount" name="monthly_amount" inputmode="decimal" class="mt-1" :value="old('monthly_amount', $type->monthly_amount)" required />
-                    <p class="mt-1 text-xs text-gray-500">{{ __('An employee\'s assignment may set a different amount.') }}</p>
+                    <p class="mt-1 text-xs text-ink-muted">{{ __('An employee\'s assignment may set a different amount.') }}</p>
                     <x-input-error :messages="$errors->get('monthly_amount')" class="mt-2" />
                 </div>
                 <div>

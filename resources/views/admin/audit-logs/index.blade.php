@@ -2,7 +2,7 @@
     <x-slot name="header">{{ __('Audit Log') }}</x-slot>
 
     @if ($failedSignInsToday > 0)
-        <div role="status" class="rounded-md border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+        <div role="status" class="rounded-lg border border-yellow-300 dark:border-yellow-500/30 bg-yellow-50 dark:bg-yellow-500/10 px-4 py-3 text-sm text-yellow-900 dark:text-yellow-200">
             {{ trans_choice(':count failed sign-in or lockout today.|:count failed sign-ins or lockouts today.', $failedSignInsToday, ['count' => $failedSignInsToday]) }}
             <a href="{{ route('admin.audit-logs.index', ['category' => 'security', 'from' => today()->toDateString()]) }}" class="font-semibold underline">{{ __('Show them') }}</a>
         </div>
@@ -38,7 +38,7 @@
             <div class="flex items-center gap-3 lg:col-span-2">
                 <x-secondary-button type="submit">{{ __('Filter') }}</x-secondary-button>
                 @if ($filters !== [])
-                    <a href="{{ route('admin.audit-logs.index') }}" class="text-sm text-gray-600 hover:underline">{{ __('Clear') }}</a>
+                    <a href="{{ route('admin.audit-logs.index') }}" class="text-sm text-ink-muted hover:underline">{{ __('Clear') }}</a>
                 @endif
             </div>
         </form>
@@ -46,7 +46,7 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                         <th class="py-2 pr-3">{{ __('Time') }}</th>
                         <th class="px-2 py-2">{{ __('User') }}</th>
                         <th class="px-2 py-2">{{ __('Action') }}</th>
@@ -57,24 +57,24 @@
                 </thead>
                 <tbody>
                     @forelse ($entries as $entry)
-                        <tr class="border-b border-gray-100 align-top">
+                        <tr class="border-b border-line align-top">
                             <td class="whitespace-nowrap py-2 pr-3 font-mono text-xs">{{ $entry->created_at->format('Y-m-d H:i:s') }}</td>
                             <td class="px-2 py-2">{{ $entry->user?->name ?? __('System or visitor') }}</td>
                             <td class="px-2 py-2"><x-badge :color="$entry->event->badgeColor()">{{ $entry->event->label() }}</x-badge></td>
                             <td class="px-2 py-2">
                                 @if ($entry->subjectType())
-                                    <span class="text-xs text-gray-500">{{ $entry->subjectType() }}</span><br>
+                                    <span class="text-xs text-ink-muted">{{ $entry->subjectType() }}</span><br>
                                 @endif
                                 {{ $entry->description }}
                             </td>
-                            <td class="px-2 py-2 font-mono text-xs text-gray-600">{{ $entry->ip_address ?? '—' }}</td>
+                            <td class="px-2 py-2 font-mono text-xs text-ink-muted">{{ $entry->ip_address ?? '—' }}</td>
                             <td class="px-2 py-2 text-right">
-                                <a href="{{ route('admin.audit-logs.show', $entry) }}" class="text-brand-700 hover:underline">{{ __('Details') }}</a>
+                                <a href="{{ route('admin.audit-logs.show', $entry) }}" class="text-brand-700 dark:text-brand-400 hover:underline">{{ __('Details') }}</a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-6 text-center text-gray-500">{{ __('No activity matches these filters.') }}</td>
+                            <td colspan="6"><x-empty-state icon="shield" :title="__('No activity matches these filters.')" /></td>
                         </tr>
                     @endforelse
                 </tbody>

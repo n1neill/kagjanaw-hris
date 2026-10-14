@@ -11,7 +11,7 @@
     <div>
         <x-input-label for="update_password_password" :value="__('New Password')" />
         <x-text-input id="update_password_password" name="password" type="password" class="mt-1" autocomplete="new-password" aria-describedby="update-password-hint" />
-        <p id="update-password-hint" class="mt-1 text-xs text-gray-500">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
+        <p id="update-password-hint" class="mt-1 text-xs text-ink-muted">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
         <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
     </div>
 

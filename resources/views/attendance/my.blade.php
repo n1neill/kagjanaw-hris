@@ -17,6 +17,6 @@
 
         @include('attendance.partials.dtr-table', ['canManage' => false])
 
-        <p class="mt-4 text-xs text-gray-500">{{ __('Think a time is wrong? Ask the HR office to correct it. Corrections are recorded with the reason.') }}</p>
+        <p class="mt-4 text-xs text-ink-muted">{{ __('Think a time is wrong? Ask the HR office to correct it. Corrections are recorded with the reason.') }}</p>
     </x-card>
 </x-app-layout>

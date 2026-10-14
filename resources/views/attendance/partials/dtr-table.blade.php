@@ -8,7 +8,7 @@
 <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead>
-            <tr class="border-b border-gray-200 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
                 <th class="py-2 pr-3">{{ __('Date') }}</th>
                 <th class="px-2 py-2 text-center" colspan="2">{{ __('Morning') }}<span class="block font-normal normal-case">{{ __('In · Out') }}</span></th>
                 <th class="px-2 py-2 text-center" colspan="2">{{ __('Afternoon') }}<span class="block font-normal normal-case">{{ __('In · Out') }}</span></th>
@@ -27,15 +27,15 @@
                     $record = $day['record'];
                     $isOffDay = $day['holiday'] !== null || ($record?->status && ! $record->status->isWorkingDay());
                 @endphp
-                <tr @class(['border-b border-gray-100', 'bg-gray-50 text-gray-500' => $isOffDay, 'bg-yellow-50/60' => $record?->status === \App\Enums\DtrStatus::Incomplete])>
+                <tr @class(['border-b border-line', 'bg-surface-muted text-ink-muted' => $isOffDay, 'bg-yellow-50/60 dark:bg-yellow-500/5' => $record?->status === \App\Enums\DtrStatus::Incomplete])>
                     <td class="whitespace-nowrap py-2 pr-3">
-                        <span class="font-medium text-gray-900">{{ $day['date']->format('j') }}</span>
-                        <span class="text-gray-500">{{ $day['date']->format('D') }}</span>
+                        <span class="font-medium text-ink">{{ $day['date']->format('j') }}</span>
+                        <span class="text-ink-muted">{{ $day['date']->format('D') }}</span>
                     </td>
                     @if ($day['holiday'] && ! $record?->am_in && ! $record?->pm_in)
                         <td colspan="4" class="px-2 py-2 text-center italic">{{ $day['holiday']->name }}</td>
                     @elseif ($day['leave'] && $day['leave']->portion === \App\Enums\LeavePortion::FullDay && ! $record?->am_in && ! $record?->pm_in)
-                        <td colspan="4" class="px-2 py-2 text-center italic text-brand-800">{{ $day['leave']->leaveRequest->leaveType->name }}</td>
+                        <td colspan="4" class="px-2 py-2 text-center italic text-brand-800 dark:text-brand-300">{{ $day['leave']->leaveRequest->leaveType->name }}</td>
                     @else
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->am_in) }}</td>
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->am_out) }}</td>
@@ -51,18 +51,18 @@
                                 <x-badge color="brand" title="{{ __('Corrected by HR') }}">{{ __('Corrected') }}</x-badge>
                             @endif
                             @if ($day['leave'] && $day['leave']->portion !== \App\Enums\LeavePortion::FullDay)
-                                <span class="block text-xs text-brand-800">{{ $day['leave']->leaveRequest->leaveType->code }} · {{ mb_strtolower($day['leave']->portion->label()) }}</span>
+                                <span class="block text-xs text-brand-800 dark:text-brand-300">{{ $day['leave']->leaveRequest->leaveType->code }} · {{ mb_strtolower($day['leave']->portion->label()) }}</span>
                             @endif
                         @elseif ($day['date']->isFuture())
-                            <span class="text-gray-400">—</span>
+                            <span class="text-ink-subtle">—</span>
                         @else
-                            <span class="text-xs text-gray-400">{{ __('Not processed') }}</span>
+                            <span class="text-xs text-ink-subtle">{{ __('Not processed') }}</span>
                         @endif
                     </td>
                     @if ($canManage)
                         <td class="py-2 pl-2 text-right">
                             @if (! $day['date']->isFuture() && $employee->wasEmployedOn($day['date']))
-                                <a href="{{ route('attendance.dtr.edit', [$employee, $day['date']->toDateString()]) }}" class="text-sm font-medium text-brand-700 hover:text-brand-900">{{ __('Correct') }}</a>
+                                <a href="{{ route('attendance.dtr.edit', [$employee, $day['date']->toDateString()]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Correct') }}</a>
                             @endif
                         </td>
                     @endif
@@ -70,7 +70,7 @@
 
                 @if ($day['endsWeek'])
                     @php($week = $weeks[$day['week']])
-                    <tr class="border-b-2 border-gray-200 bg-brand-50/40 text-xs text-gray-600">
+                    <tr class="border-b-2 border-line bg-brand-50/40 dark:bg-brand-500/5 text-xs text-ink-muted">
                         <td class="py-1.5 pr-3 font-semibold">{{ __('Week total') }}</td>
                         <td colspan="4" class="px-2 py-1.5">
                             {{ __(':present present · :absent days absent · :missing missing punch', [
