@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Enums\ThemePreference;
 use App\Models\Concerns\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -23,6 +24,15 @@ class User extends Authenticatable
     use Auditable, HasFactory, HasRoles, Notifiable;
 
     /**
+     * New accounts follow the colour scheme of the user's computer.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'theme' => 'system',
+    ];
+
+    /**
      * How the record is named in the audit log.
      */
     public function auditLabel(): string
@@ -31,13 +41,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Sign-ins are recorded as their own audit events.
+     * Sign-ins are recorded as their own audit events, and the colour scheme
+     * is a personal display setting.
      *
      * @return list<string>
      */
     public function auditExcluded(): array
     {
-        return ['last_login_at'];
+        return ['last_login_at', 'theme'];
     }
 
     /**
@@ -53,6 +64,7 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
             'last_login_at' => 'datetime',
+            'theme' => ThemePreference::class,
         ];
     }
 

@@ -1,7 +1,7 @@
 @use('App\Enums\Permission')
 
 {{-- Menu items are shown per permission; routes enforce the same permissions server-side. --}}
-<nav class="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-4" aria-label="{{ __('Main') }}">
+<nav class="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-5" aria-label="{{ __('Main') }}">
     <div class="space-y-1">
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="home">
             {{ __('Dashboard') }}
@@ -43,7 +43,7 @@
 
     @can(Permission::ManageEmployees)
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Human Resources') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Human Resources') }}</p>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('Employees') }}
@@ -61,7 +61,7 @@
         </div>
     @elsecan(Permission::ViewDepartmentEmployees)
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Department') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Department') }}</p>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('My Department') }}
@@ -77,7 +77,7 @@
 
     @canany([Permission::ApproveLeave, Permission::ManageLeaveCredits])
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Leave') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Leave') }}</p>
             <div class="mt-2 space-y-1">
                 @can(Permission::ApproveLeave)
                     <x-sidebar-link :href="route('leave.requests.index')" :active="request()->routeIs('leave.requests.index', 'leave.requests.show')" icon="inbox">
@@ -104,7 +104,7 @@
 
     @can(Permission::ProcessPayroll)
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Payroll') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Payroll') }}</p>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('payroll.runs.index')" :active="request()->routeIs('payroll.runs.*', 'payroll.employees.*')" icon="banknotes">
                     {{ __('Payroll Runs') }}
@@ -127,7 +127,7 @@
 
     @can(Permission::ManageWorkCalendar)
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Work Calendar') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Work Calendar') }}</p>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('work-calendar.schedule.edit')" :active="request()->routeIs('work-calendar.schedule.*')" icon="clock">
                     {{ __('Office Hours') }}
@@ -141,7 +141,7 @@
 
     @can(Permission::ManageReferenceData)
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Reference Data') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Reference Data') }}</p>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('reference-data.departments.index')" :active="request()->routeIs('reference-data.departments.*')" icon="building">
                     {{ __('Departments') }}
@@ -158,7 +158,7 @@
 
     @canany([Permission::ManageUsers, Permission::ManageBiometricDevices, Permission::ManageSettings, Permission::ManageBackups, Permission::ViewAuditLogs])
         <div>
-            <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Administration') }}</p>
+            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Administration') }}</p>
             <div class="mt-2 space-y-1">
                 @can(Permission::ManageUsers)
                     <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" icon="users">
@@ -189,14 +189,14 @@
         </div>
     @endcanany
 
-    <div class="mt-auto space-y-1 border-t border-brand-800 pt-4">
+    <div class="mt-auto space-y-1 border-t border-line pt-4">
         <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')" icon="user">
             {{ __('My Account') }}
         </x-sidebar-link>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-brand-100 transition hover:bg-brand-800/60 hover:text-white">
-                <x-icon name="logout" class="size-5 shrink-0" />
+            <button type="submit" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:bg-red-500/10 dark:hover:text-red-300">
+                <x-icon name="logout" class="size-5 shrink-0 text-ink-subtle group-hover:text-current" />
                 <span>{{ __('Log Out') }}</span>
             </button>
         </form>

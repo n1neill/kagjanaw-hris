@@ -1,6 +1,6 @@
 <x-guest-layout>
-    <h2 class="text-lg font-semibold text-gray-900">{{ __('Set your own password') }}</h2>
-    <p class="mt-1 text-sm text-gray-600">
+    <h2 class="text-xl font-semibold tracking-tight text-ink">{{ __('Set your own password') }}</h2>
+    <p class="mt-1 text-sm text-ink-muted">
         {{ __('You signed in with a temporary password. Choose a new password that only you know before continuing.') }}
     </p>
 
@@ -17,7 +17,7 @@
         <div>
             <x-input-label for="password" :value="__('New password')" />
             <x-text-input id="password" class="mt-1" type="password" name="password" required autocomplete="new-password" aria-describedby="password-hint" />
-            <p id="password-hint" class="mt-1 text-xs text-gray-500">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
+            <p id="password-hint" class="mt-1 text-xs text-ink-muted">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -31,6 +31,6 @@
 
     <form method="POST" action="{{ route('logout') }}" class="mt-4 text-center">
         @csrf
-        <button type="submit" class="text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline">{{ __('Log out') }}</button>
+        <button type="submit" class="text-sm font-medium text-ink-muted hover:text-ink hover:underline">{{ __('Log out') }}</button>
     </form>
 </x-guest-layout>

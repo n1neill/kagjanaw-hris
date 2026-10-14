@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ThemePreference;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Http\Requests\ThemeUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -38,5 +40,17 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', __('Your account information has been updated.'));
+    }
+
+    /**
+     * Save the user's colour scheme and return to the page they were on.
+     */
+    public function updateTheme(ThemeUpdateRequest $request): RedirectResponse
+    {
+        $request->user()->forceFill([
+            'theme' => $request->enum('theme', ThemePreference::class),
+        ])->save();
+
+        return Redirect::back();
     }
 }

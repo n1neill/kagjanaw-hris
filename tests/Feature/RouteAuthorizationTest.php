@@ -56,6 +56,7 @@ function routeAccessMatrix(): array
         'dashboard' => $everyone,
         'profile.edit' => $everyone,
         'profile.update' => $everyone,
+        'profile.theme' => $everyone,
         'password.confirm' => $everyone,
         'password.update' => $everyone,
         'password.change' => $everyone,

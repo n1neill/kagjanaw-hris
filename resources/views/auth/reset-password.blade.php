@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <h2 class="text-lg font-semibold text-gray-900">{{ __('Choose a new password') }}</h2>
+    <h2 class="text-xl font-semibold tracking-tight text-ink">{{ __('Choose a new password') }}</h2>
 
     <form method="POST" action="{{ route('password.store') }}" class="mt-6 space-y-5">
         @csrf
@@ -15,7 +15,7 @@
         <div>
             <x-input-label for="password" :value="__('Password')" />
             <x-text-input id="password" class="mt-1" type="password" name="password" required autocomplete="new-password" aria-describedby="password-hint" />
-            <p id="password-hint" class="mt-1 text-xs text-gray-500">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
+            <p id="password-hint" class="mt-1 text-xs text-ink-muted">{{ __('At least 12 characters with upper and lower case letters, a number and a symbol.') }}</p>
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
