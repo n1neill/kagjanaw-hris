@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PayBasis;
+use App\Models\Concerns\Auditable;
 use Database\Factories\EmploymentTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 class EmploymentType extends Model
 {
     /** @use HasFactory<EmploymentTypeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * @return array<string, string>

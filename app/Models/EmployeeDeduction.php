@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Services\Payroll\Money;
 use Carbon\CarbonInterface;
 use Database\Factories\EmployeeDeductionFactory;
@@ -21,7 +22,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class EmployeeDeduction extends Model
 {
     /** @use HasFactory<EmployeeDeductionFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->name.' of employee '.$this->employee?->employee_number;
+    }
 
     /**
      * @return array<string, string>

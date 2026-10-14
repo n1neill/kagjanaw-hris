@@ -11,7 +11,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 | 3 | Attendance: device driver interface and mock driver, scheduled sync, CSV import, DTR processing (CSC Form 48), HR corrections with audit trail, validation, summaries and DTR PDF; office hours and holidays | Done |
 | 4 | Leave: all CSC leave types, filing with rule checks, endorsement (department head or Municipal Mayor) and HR approval, leave ledger (leave card), monthly credits and tardiness deductions from validated DTRs, forced-leave forfeiture, opening balance import, Certificate of Leave Credits, utilization report, in-app notifications | Done |
 | 5 | Payroll: semi-monthly regular and Job Order / COS payrolls, SSL VI Salary Schedule at the LGU income-class rate, allowances (PERA), absences and tardiness without pay from validated DTRs, GSIS / PhilHealth / Pag-IBIG and withholding tax from dated tables, loans with a minimum net pay, queued computation, approve and release with locking, payslip PDFs, payroll register (Excel, CSV, PDF) | Done |
-| 6 | Notifications, announcements, reports, admin tools (audit log, backup/restore, settings) | Planned |
+| 6 | Announcements (all employees or chosen offices) with bell notifications and a notifications page; Reports page with employee list, attendance summary, leave utilization and payroll summary as Excel, CSV and PDF (department heads limited to their office); audit log of changes, access to personal data, sign-ins and denied requests; database and file backups with restore; System Settings | Done |
 | 7 | Hardening, user guide | Planned |
 
 ## Tech stack
@@ -81,7 +81,7 @@ A web-based, on-premise Human Resource Information System for the **Municipality
 
    Without a worker, a payroll stays at "Computing…".
 
-6. **Run the scheduler** (attendance sync every 5 minutes, nightly DTR processing, daily leave credit posting, yearly forced-leave forfeiture). During development:
+6. **Run the scheduler** (attendance sync every few minutes, nightly DTR processing, daily leave credit posting, yearly forced-leave forfeiture, the daily backup and nightly audit log pruning). The sync interval and the backup time are set under **Administration → System Settings**. During development:
 
    ```powershell
    php artisan schedule:work
@@ -138,6 +138,8 @@ The sample employees have accounts with unknown temporary passwords; reset one u
 - Last month's regular and Job Order / COS payrolls for both halves, approved and released, so employees see payslips.
 - This month's first regular payroll, computed and waiting for review.
 
+`DemoAnnouncementSeeder` posts three announcements from the HR Office (one pinned, one for the Municipal Health Office only), so the dashboards and the notification bell have content.
+
 ## Production: first administrator
 
 With `APP_ENV=production`, the demo accounts are not created. Create the first System Administrator with:
@@ -171,7 +173,8 @@ The command prompts for the password, so it never appears in shell history. Next
 | `SESSION_LIFETIME` | Idle minutes before users are signed out (default 120). |
 | `QUEUE_CONNECTION` | `database`. Payroll computations are queued; run `php artisan queue:work`. |
 | `ATTENDANCE_DRIVER` | Default driver for new biometric devices: `mock` (no hardware). |
-| `ATTENDANCE_SYNC_INTERVAL` | Minutes between automatic device syncs (default 5). |
+| `ATTENDANCE_SYNC_INTERVAL` | Minutes between automatic device syncs (default 5), until the administrator sets the interval under **System Settings**. |
+| `BACKUP_MAX_UPLOAD_MB` | Largest backup the administrator may upload (default 512). PHP's `upload_max_filesize` and `post_max_size` must allow it too. |
 | `MAIL_*` | Password-reset emails. With no mail server on the LAN, keep `MAIL_MAILER=log`; the System Administrator resets passwords instead. |
 
 ## Roles and access
@@ -180,13 +183,13 @@ Access is enforced on the server by permission middleware on every route group a
 
 | Role | Access so far |
 | --- | --- |
-| System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, and **biometric devices** (settings, test connection, sync now, sync log). Admins cannot change their own role or deactivate themselves. They do not see employee records, attendance or leave. |
-| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; **payroll**: create, compute, approve and release payrolls, pay setup (allowances, loans), Salary Schedule, contribution and tax tables, payroll settings, every payslip and the payroll register; plus departments, positions and employment types. HR officers cannot approve their own leave. |
+| System Administrator | User accounts (create, assign role, reset password, activate or deactivate), reference data, **biometric devices** (settings, test connection, sync now, sync log), **backups** (create, upload, download, restore, delete), the **audit log** and **System Settings**. Admins cannot change their own role or deactivate themselves. They do not see employee records, attendance, leave or reports. |
+| HR Officer | All employee records and 201 files; attendance summaries, every DTR (view, print, correct, validate, recompute), raw attendance logs and CSV import; **office hours and holidays**; **leave**: approve or reject endorsed applications, cancel approved leave, leave cards and adjustments, monthly posting, opening balance import, Certificate of Leave Credits, leave types, utilization report; **payroll**: create, compute, approve and release payrolls, pay setup (allowances, loans), Salary Schedule, contribution and tax tables, payroll settings, every payslip and the payroll register; **announcements** (post, edit, delete, drafts); every **report** for any office, including the payroll summary; plus departments, positions and employment types. HR officers cannot approve their own leave. |
 | Municipal Mayor | Everything a Department Head can do for the Office of the Mayor, plus **endorsing department heads' leave** (and leave from offices with no department head in the system). |
-| Department Head | The basic profile (name, position, type, status, date hired, mobile number) and the attendance summary and DTRs of employees in **their own department**, read-only, and **endorsing or rejecting their leave applications**. No government IDs, salary, birth details, address or 201 documents. |
+| Department Head | The basic profile (name, position, type, status, date hired, mobile number) and the attendance summary and DTRs of employees in **their own department**, read-only, **endorsing or rejecting their leave applications**, and the **reports** of their own office (employee list, attendance summary, leave utilization). No government IDs, salary, birth details, address or 201 documents. |
 | Employee | Their own full record and 201 file under **My Record**, their own DTR under **My Attendance** (with the printable Form 48), and **My Leave**: balances, leave card, applying for leave and withdrawing an application still waiting for a decision, and **My Payslips**: their own payslips once a payroll is released. |
 
-Everyone with an employee record (HR, the Mayor and department heads included) files their own leave and sees their own payslips the same way. Department heads and the Mayor see no one else's pay.
+Everyone with an employee record (HR, the Mayor and department heads included) files their own leave and sees their own payslips the same way. Department heads and the Mayor see no one else's pay. Every user reads the **announcements** addressed to them and has a **Notifications** page.
 
 Requests for records a user may not see return **404 Not Found**, so changing an ID in the URL does not reveal whether a record exists.
 
@@ -397,12 +400,68 @@ Rates and tables are versioned with effectivity dates. Enter a new version ahead
 - **Payslip (PDF, A5):** earnings, deductions, net pay and notes. Employees see their own once released; HR sees all, marked "for review only" before release.
 - **Payroll register:** one row per employee, by office then name, with totals and employer shares. Exported as Excel (.xlsx), CSV or PDF (legal, landscape, with signature lines).
 
+## Announcements and notifications
+
+- HR posts announcements under **Announcements** to **all employees** or to **selected offices**, with an optional expiry date and pin. A draft is not shown until it is published.
+- Publishing notifies every active account in the audience through the bell. Later edits do not notify again.
+- Dashboards show the three newest announcements addressed to the user, pinned first. Expired announcements disappear for employees; HR still sees them, marked "Expired".
+- Messages are plain text; HTML is shown as typed, never run.
+- The bell lists the eight newest notifications. **View all notifications** opens the full list.
+
+## Reports
+
+**Reports** (HR, department heads and the Mayor) gathers the reports a user may run. Each downloads as **Excel (.xlsx)**, **CSV** or **PDF**:
+
+| Report | HR | Department head / Mayor |
+| --- | --- | --- |
+| Employee list (office, position, type, salary grade, date hired, status; never government IDs) | Any office | Own office |
+| Attendance summary (monthly) | Any office | Own office |
+| Leave utilization (month or year, by type and office) | Any office | Own office |
+| Payroll summary (released payrolls only, by office and by payroll, with employer shares) | Yes | No |
+
+The payroll register of a single payroll stays on the payroll page. Every export is recorded in the audit log.
+
+## Administration
+
+### Audit log
+
+**Administration → Audit Log** (System Administrator) records:
+- **Changes to records**: who created, changed or deleted employees, 201 documents, user accounts and roles, leave applications, DTR corrections, payrolls, pay setup, salary schedule and tax tables, reference data, the work calendar, announcements and settings, with the values before and after.
+- **Access to personal data**: opening another employee's 201 file, documents, payslip, leave card or Certificate of Leave Credits, and every report or payroll register export. Employees looking at their own records are not logged.
+- **Sign-ins and denied access**: sign-ins, sign-outs, failed sign-ins, lockouts, password resets, and every refused request (403) with its address.
+- **Backups**: creating, uploading, downloading, restoring and deleting backups.
+
+Government ID numbers and passwords are never written; the log only shows that they changed. Entries cannot be edited or deleted from the application. Entries older than the retention period (System Settings, default 5 years) are pruned nightly.
+
+### Backups and restore
+
+**Administration → Backups** (System Administrator):
+- A backup is one `.zip` in `storage/app/backups` holding the whole database (`database.sql`), every uploaded file (201 documents, leave attachments) and a manifest. Sessions, cache and queue tables are left out.
+- The **daily backup** runs at the time set in System Settings (default 6:00 PM); only the newest backups are kept (default 30). **Back Up Now** makes one at any time.
+- **Copy backups off the server** (USB drive or another computer) regularly. A backup on the same disk does not survive a disk failure. Keep the `.env` file (with its `APP_KEY`) with them: without it, encrypted government IDs cannot be read.
+- **Restore** asks for the administrator's password. It first makes a safety backup of the current data, replaces the database and the uploaded files, and then runs any newer migrations. If the restore fails, the system returns to the safety backup automatically. A backup made by a newer version of the system is refused.
+- A backup from another computer can be uploaded and then restored. If it is larger than PHP's upload limit, copy it into `storage\app\backups` instead.
+
+From the command line:
+
+```powershell
+php artisan backup:create                      # back up now
+php artisan backup:restore                     # list the backups
+php artisan backup:restore kagjanaw-hris-2026-10-13-180000-scheduled.zip
+```
+
+### System Settings
+
+**Administration → System Settings** (System Administrator): the biometric sync interval, whether and when the daily backup runs, how many backups to keep, and how long audit log entries are kept. Office hours, holidays and payroll settings belong to HR.
+
 ## Security notes
 
 - Passwords: at least 12 characters, with mixed case, a number and a symbol. The online breached-password check is disabled because the server has no internet access.
 - Login is throttled after 5 failed attempts per username and IP address.
 - There is no self-registration, and users cannot delete their own accounts.
 - Sessions are stored in the database and encrypted.
+- Changes, access to personal data, failed sign-ins and refused requests are recorded in the audit log (RA 10173). A failed sign-in with an unknown username records only "Unknown username", in case a password was typed into the username field.
+- Backups contain all personal data. Only the System Administrator can download them, each download is logged, and they are served with `no-store` headers.
 
 ## Testing
 
@@ -417,6 +476,10 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - Payroll computation against amounts worked out by hand from the seeded tables: halves, income-class rates, proration, allowances, contributions, tax, absences without pay (including partial and corrected months), loans and the minimum net pay, and Job Order pay.
 - The payroll workflow, locking after release, payslip access and the register exports.
 - End-to-end flows: biometric punches → DTR → validated month → leave card; leave approval → balance → DTR; and biometric punches with leave without pay → validated month → payroll deduction.
+- Announcements: audiences, drafts, expiry, notifications sent once, and plain-text output.
+- Reports: each role's reports, department heads held to their own office (also when asking for another), payroll summary totals, and the Excel, CSV and PDF exports.
+- The audit log: values before and after, redaction of government IDs and passwords, sign-in events, refused requests, access logging, the admin screen and pruning.
+- Backups: archive contents, pruning, restore with password, automatic return to the safety backup on failure, refusal of newer backups, uploads and safe file names. The SQL dump and restore run for real against a scratch database (`kagjanaw_hris_test_dumper`, created and dropped by the test), so the database user needs the CREATE and DROP DATABASE privileges.
 
 ## Assumptions and decisions
 
@@ -453,3 +516,11 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`). It
 - **HR alone computes, approves and releases payroll.** There is no separate Accountant or Mayor approval in the system; the printed register has signature lines for them.
 - **Only elective and Job Order / COS employees are exempt from absence deductions**: deductions follow the leave card, which those employees do not have. Job Order workers are paid only for time worked instead.
 - **Contributions are not reduced for absences.** GSIS, PhilHealth and Pag-IBIG are computed on the full monthly salary (prorated only for partial months of service).
+- **Backups are made in PHP**, not with `mysqldump`, so they work the same on any server without extra programs or paths to configure. They suit the size of a municipal HRIS; a very large database would be better served by `mysqldump`.
+- **Restore covers the database and uploaded files, not `.env`.** The `APP_KEY` must be the one in use when the backup was made, or encrypted government IDs cannot be read.
+- **Sessions, cache and queue tables are not backed up or restored**, so the administrator stays signed in during a restore. Restore when no payroll is being computed.
+- **Audit log retention defaults to 5 years.** Confirm the period with the municipality's records officer against the National Archives of the Philippines retention schedule, and set it under System Settings.
+- **Employees viewing their own records are not logged**, only access by someone else. Department heads opening their team's DTRs are not logged either; 201 files, documents, payslips, leave cards, certificates and exports are.
+- **Announcements are plain text**, without attachments or formatting, so nothing in them can run in the browser.
+- **The payroll summary counts released payrolls only.** Draft, computed and approved payrolls can still change.
+- **Department heads' reports follow their own employee record**, like the rest of their access. Without an office, the reports are empty rather than showing every office.

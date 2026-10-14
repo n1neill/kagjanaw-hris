@@ -218,7 +218,7 @@ describe('leave utilization', function () {
         $response = $this->actingAs($hrOfficer)->get(route('leave.reports.utilization', ['year' => 2026, 'month' => 9]));
 
         $response->assertViewHas('totals', ['employees' => 1, 'days' => 3000, 'with_pay' => 3000, 'without_pay' => 0]);
-        $this->actingAs($hrOfficer)->get(route('leave.reports.utilization.export', ['year' => 2026, 'month' => 9]))
+        $this->actingAs($hrOfficer)->get(route('leave.reports.utilization.export', ['year' => 2026, 'month' => 9, 'format' => 'csv']))
             ->assertOk()
             ->assertDownload('leave-utilization-2026-09-01-to-2026-09-30.csv');
     });

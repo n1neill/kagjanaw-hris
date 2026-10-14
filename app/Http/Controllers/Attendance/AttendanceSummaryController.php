@@ -8,10 +8,12 @@ use App\Http\Requests\Attendance\AttendanceSummaryRequest;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Services\Attendance\AttendanceReportService;
+use App\Services\Reports\AttendanceSummaryReport;
+use App\Services\Reports\ReportExporter;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Monthly attendance totals: all departments for HR, their own department
@@ -34,35 +36,13 @@ class AttendanceSummaryController extends Controller
         ]);
     }
 
-    public function export(AttendanceSummaryRequest $request, AttendanceReportService $reports): StreamedResponse
+    public function export(AttendanceSummaryRequest $request, string $format, AttendanceReportService $reports, AttendanceSummaryReport $report, ReportExporter $exporter): Response
     {
         $month = $request->month();
         [$employees, $department] = $this->scope($request, $month);
         $rows = $employees === null ? collect() : $reports->monthlySummary($employees, $month);
 
-        $filename = 'attendance-summary-'.$month->format('Y-m').($department ? '-'.$department->code : '').'.csv';
-
-        return response()->streamDownload(function () use ($rows): void {
-            $output = fopen('php://output', 'w');
-            fputcsv($output, ['Employee ID', 'Name', 'Department', 'Working days', 'Present', 'Absences (days)', 'Times late', 'Late (minutes)', 'Undertime (minutes)', 'Missing punches']);
-
-            foreach ($rows as $row) {
-                fputcsv($output, [
-                    $row['employee']->employee_number,
-                    $row['employee']->sortable_name,
-                    $row['employee']->department->code,
-                    $row['working_days'],
-                    $row['present_days'],
-                    $row['absent_days'],
-                    $row['late_count'],
-                    $row['late_minutes'],
-                    $row['undertime_minutes'],
-                    $row['missing_punch_days'],
-                ]);
-            }
-
-            fclose($output);
-        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return $exporter->download($report->report($rows, $month, $department), $format);
     }
 
     /**

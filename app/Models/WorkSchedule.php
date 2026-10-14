@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Services\Attendance\ScheduleRules;
 use Database\Factories\WorkScheduleFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,7 +17,15 @@ use Illuminate\Database\Eloquent\Model;
 class WorkSchedule extends Model
 {
     /** @use HasFactory<WorkScheduleFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return 'Office hours';
+    }
 
     /**
      * ISO-8601 day numbers (1 = Monday ... 7 = Sunday) with their names.

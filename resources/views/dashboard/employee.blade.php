@@ -22,8 +22,6 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         @include('dashboard.partials.my-payslip')
-        <x-upcoming-module :title="__('Announcements')" icon="megaphone">
-            {{ __('News and memos from the HR office (Phase 6).') }}
-        </x-upcoming-module>
+        @include('dashboard.partials.announcements')
     </div>
 </x-app-layout>

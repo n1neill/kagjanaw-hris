@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Employees;
 
+use App\Enums\AuditEvent;
 use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employees\StoreEmployeeDocumentRequest;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
+use App\Services\Audit\AuditLogger;
 use App\Services\EmployeeDocumentService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
@@ -48,10 +50,12 @@ class EmployeeDocumentController extends Controller
     /**
      * Open a PDF or image in the browser.
      */
-    public function show(Employee $employee, EmployeeDocument $document): StreamedResponse
+    public function show(Employee $employee, EmployeeDocument $document, AuditLogger $audit): StreamedResponse
     {
         Gate::authorize('viewDocuments', $employee);
         abort_unless($document->isViewableInline(), 404);
+
+        $audit->accessed(AuditEvent::Viewed, $document->auditLabel(), $document, $employee);
 
         return $this->diskContaining($document)->response($document->path, $document->original_name, [
             ...self::PRIVATE_FILE_HEADERS,
@@ -59,9 +63,11 @@ class EmployeeDocumentController extends Controller
         ], 'inline');
     }
 
-    public function download(Employee $employee, EmployeeDocument $document): StreamedResponse
+    public function download(Employee $employee, EmployeeDocument $document, AuditLogger $audit): StreamedResponse
     {
         Gate::authorize('viewDocuments', $employee);
+
+        $audit->accessed(AuditEvent::Downloaded, $document->auditLabel(), $document, $employee);
 
         return $this->diskContaining($document)->download($document->path, $document->original_name, self::PRIVATE_FILE_HEADERS);
     }

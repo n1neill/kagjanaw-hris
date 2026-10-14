@@ -58,13 +58,14 @@ it('exports the summary as CSV', function () {
     $employee = Employee::factory()->create(['employee_number' => '2021-0230', 'date_hired' => '2020-01-06']);
     DailyTimeRecord::factory()->for($employee)->late(20)->create(['work_date' => '2026-10-05']);
 
-    $response = $this->actingAs($hrOfficer)->get(route('attendance.summary.export', ['month' => '2026-10']));
+    $response = $this->actingAs($hrOfficer)->get(route('attendance.summary.export', ['month' => '2026-10', 'format' => 'csv']));
 
     $response->assertOk()->assertDownload('attendance-summary-2026-10.csv');
     $lines = explode("\n", trim($response->streamedContent()));
-    expect($lines[0])->toBe('"Employee ID",Name,Department,"Working days",Present,"Absences (days)","Times late","Late (minutes)","Undertime (minutes)","Missing punches"')
-        ->and($lines[1])->toStartWith('2021-0230,')
-        ->and($lines[1])->toEndWith(',1,1,0,1,20,0,0');
+    expect($lines[0])->toContain('Attendance Summary')
+        ->and($lines[2])->toBe('"Employee ID",Name,Department,"Working days",Present,"Absences (days)","Times late","Late (minutes)","Undertime (minutes)","Missing punches"')
+        ->and($lines[3])->toStartWith('2021-0230,')
+        ->and($lines[3])->toEndWith(',1,1,0,1,20,0,0');
 });
 
 it('forbids employees', function () {

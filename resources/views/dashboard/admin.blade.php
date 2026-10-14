@@ -9,6 +9,8 @@
         <x-stat-card :label="__('Deactivated')" :value="$inactiveUsers" />
     </div>
 
+    @include('dashboard.partials.announcements')
+
     <div class="grid gap-6 lg:grid-cols-3">
         <x-card :title="__('Accounts by role')" class="lg:col-span-1">
             <x-slot name="actions">
@@ -48,9 +50,40 @@
                     <p class="text-sm text-gray-500">{{ __('No devices configured yet.') }}</p>
                 @endforelse
             </x-card>
-            <x-upcoming-module :title="__('Database backups')" icon="server">
-                {{ __('Latest backup and restore tools will appear here (Phase 6).') }}
-            </x-upcoming-module>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <x-card :title="__('Backups')">
+                    <x-slot name="actions">
+                        <x-button-link :href="route('admin.backups.index')" variant="secondary">{{ __('Manage') }}</x-button-link>
+                    </x-slot>
+
+                    @if ($latestBackup)
+                        <p class="text-sm text-gray-900">{{ __('Latest: :time', ['time' => $latestBackup->createdAt->diffForHumans()]) }}</p>
+                        <p class="mt-1 text-xs text-gray-500">{{ $latestBackup->createdAt->format('M j, Y g:i A') }} · {{ $latestBackup->readableSize() }}</p>
+                    @else
+                        <p class="text-sm text-yellow-800">{{ __('No backup has been made yet.') }}</p>
+                    @endif
+                    <p class="mt-2 text-xs text-gray-500">
+                        {{ $backupEnabled ? __('Daily backup at :time.', ['time' => \Carbon\Carbon::createFromFormat('H:i', $backupTime)->format('g:i A')]) : __('The daily backup is turned off.') }}
+                    </p>
+                </x-card>
+
+                <x-card :title="__('Security')">
+                    <x-slot name="actions">
+                        <x-button-link :href="route('admin.audit-logs.index', ['category' => 'security'])" variant="secondary">{{ __('Audit Log') }}</x-button-link>
+                    </x-slot>
+
+                    <dl class="space-y-2 text-sm">
+                        <div class="flex items-center justify-between">
+                            <dt class="text-gray-600">{{ __('Failed sign-ins (24 hours)') }}</dt>
+                            <dd @class(['font-semibold', 'text-yellow-700' => $failedSignIns > 0, 'text-gray-900' => $failedSignIns === 0])>{{ $failedSignIns }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt class="text-gray-600">{{ __('Denied requests (24 hours)') }}</dt>
+                            <dd @class(['font-semibold', 'text-yellow-700' => $deniedRequests > 0, 'text-gray-900' => $deniedRequests === 0])>{{ $deniedRequests }}</dd>
+                        </div>
+                    </dl>
+                </x-card>
+            </div>
         </div>
     </div>
 </x-app-layout>

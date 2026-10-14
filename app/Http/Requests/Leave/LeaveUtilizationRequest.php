@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Leave;
 
 use App\Enums\Permission;
+use App\Http\Requests\Concerns\ScopesReportToDepartment;
 use App\Models\Department;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -10,16 +11,19 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * The period (a year, or one month of it) and office for the leave utilization report.
+ * The period (a year, or one month of it) and office for the leave utilization
+ * report. Department heads see only their own office.
  */
 class LeaveUtilizationRequest extends FormRequest
 {
+    use ScopesReportToDepartment;
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()->can(Permission::ManageLeaveCredits) || $this->user()->can(Permission::GenerateReports);
+        return $this->seesAllDepartments() || $this->user()->can(Permission::ViewDepartmentReports);
     }
 
     /**
@@ -62,10 +66,8 @@ class LeaveUtilizationRequest extends FormRequest
         return [$start, $month === null ? $start->endOfYear() : $start->endOfMonth()];
     }
 
-    public function departmentId(): ?int
+    public function seesAllDepartments(): bool
     {
-        $department = $this->validated('department');
-
-        return $department === null ? null : (int) $department;
+        return $this->user()->can(Permission::ManageLeaveCredits) || $this->user()->can(Permission::GenerateReports);
     }
 }

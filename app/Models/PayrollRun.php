@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PayBasis;
 use App\Enums\PayrollRunStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\PayrollRunFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PayrollRun extends Model
 {
     /** @use HasFactory<PayrollRunFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->title();
+    }
 
     /**
      * @return array<string, string>

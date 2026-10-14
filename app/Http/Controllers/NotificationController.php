@@ -4,12 +4,21 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 /**
- * In-app notifications: open one (marking it read) or mark all as read.
+ * In-app notifications: list them, open one (marking it read) or mark all as read.
  */
 class NotificationController extends Controller
 {
+    public function index(Request $request): View
+    {
+        return view('notifications.index', [
+            'notifications' => $request->user()->notifications()->latest()->paginate(20),
+            'unreadCount' => $request->user()->unreadNotifications()->count(),
+        ]);
+    }
+
     public function open(Request $request, string $notification): RedirectResponse
     {
         $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();

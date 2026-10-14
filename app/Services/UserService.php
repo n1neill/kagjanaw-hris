@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\AuditEvent;
 use App\Enums\Role;
 use App\Models\User;
+use App\Services\Audit\AuditLogger;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  */
 class UserService
 {
+    public function __construct(private AuditLogger $audit) {}
+
     /**
      * @param  array{name: string, username: string, email?: string|null, password: string, role: string}  $data
      */
@@ -30,7 +34,7 @@ class UserService
 
             $user->forceFill(['must_change_password' => $mustChangePassword])->save();
 
-            $user->syncRoles([Role::from($data['role'])]);
+            $this->assignRole($user, Role::from($data['role']));
 
             return $user;
         });
@@ -55,11 +59,27 @@ class UserService
             $user->save();
 
             if (! empty($data['role'])) {
-                $user->syncRoles([Role::from($data['role'])]);
+                $this->assignRole($user, Role::from($data['role']));
             }
 
             return $user;
         });
+    }
+
+    /**
+     * Give the user this role in place of any other, recording the change in the audit log.
+     */
+    private function assignRole(User $user, Role $role): void
+    {
+        $previous = $user->primaryRole();
+
+        if ($previous === $role) {
+            return;
+        }
+
+        $user->syncRoles([$role]);
+
+        $this->audit->record(AuditEvent::Updated, $user->auditLabel(), $user, ['role' => $previous?->label()], ['role' => $role->label()]);
     }
 
     public function setActive(User $user, bool $isActive): User

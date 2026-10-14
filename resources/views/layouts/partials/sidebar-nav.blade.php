@@ -31,6 +31,14 @@
                 {{ __('Leave Endorsements') }}
             </x-sidebar-link>
         @endcanany
+        <x-sidebar-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')" icon="megaphone">
+            {{ __('Announcements') }}
+        </x-sidebar-link>
+        @canany([Permission::GenerateReports, Permission::ViewDepartmentReports])
+            <x-sidebar-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" icon="chart">
+                {{ __('Reports') }}
+            </x-sidebar-link>
+        @endcanany
     </div>
 
     @can(Permission::ManageEmployees)
@@ -148,7 +156,7 @@
         </div>
     @endcan
 
-    @canany([Permission::ManageUsers, Permission::ManageBiometricDevices])
+    @canany([Permission::ManageUsers, Permission::ManageBiometricDevices, Permission::ManageSettings, Permission::ManageBackups, Permission::ViewAuditLogs])
         <div>
             <p class="px-3 text-xs font-semibold uppercase tracking-wider text-brand-300">{{ __('Administration') }}</p>
             <div class="mt-2 space-y-1">
@@ -160,6 +168,21 @@
                 @can(Permission::ManageBiometricDevices)
                     <x-sidebar-link :href="route('admin.devices.index')" :active="request()->routeIs('admin.devices.*')" icon="server">
                         {{ __('Biometric Devices') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageBackups)
+                    <x-sidebar-link :href="route('admin.backups.index')" :active="request()->routeIs('admin.backups.*')" icon="archive">
+                        {{ __('Backups') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ViewAuditLogs)
+                    <x-sidebar-link :href="route('admin.audit-logs.index')" :active="request()->routeIs('admin.audit-logs.*')" icon="shield">
+                        {{ __('Audit Log') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageSettings)
+                    <x-sidebar-link :href="route('admin.settings.edit')" :active="request()->routeIs('admin.settings.*')" icon="cog">
+                        {{ __('System Settings') }}
                     </x-sidebar-link>
                 @endcan
             </div>

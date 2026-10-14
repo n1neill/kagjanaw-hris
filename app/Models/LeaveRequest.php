@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\LeaveEndorsementRoute;
 use App\Enums\LeavePortion;
 use App\Enums\LeaveRequestStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\LeaveRequestFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -32,7 +33,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class LeaveRequest extends Model
 {
     /** @use HasFactory<LeaveRequestFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return 'Leave application #'.$this->getKey().' of employee '.$this->employee?->employee_number;
+    }
 
     public const ATTACHMENT_DISK = 'local';
 

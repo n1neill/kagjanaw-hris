@@ -3,10 +3,17 @@
 <x-app-layout :title="__('Leave Utilization')">
     <x-slot name="header">{{ __('Leave Utilization') }}</x-slot>
 
-    <x-card :title="__('Approved leave taken, :from to :to', ['from' => $from->format('M j, Y'), 'to' => $to->format('M j, Y')])">
-        <x-slot name="actions">
-            <x-button-link :href="route('leave.reports.utilization.export', array_filter(['year' => $year, 'month' => $month, 'department' => $departmentId]))" variant="secondary">{{ __('Export CSV') }}</x-button-link>
-        </x-slot>
+    <x-card :title="__('Approved leave taken, :from to :to', ['from' => $from->format('M j, Y'), 'to' => $to->format('M j, Y')])"
+            :description="$ownDepartment?->name">
+        @if ($hasDepartment)
+            <x-slot name="actions">
+                <x-export-links route="leave.reports.utilization.export" :parameters="array_filter(['year' => $year, 'month' => $month, 'department' => $seesAllDepartments ? $departmentId : null])" />
+            </x-slot>
+        @endif
+
+        @unless ($hasDepartment)
+            <p class="mb-4 text-sm text-gray-600">{{ __('Your account is not linked to an employee record with a department yet. Please contact the HR office.') }}</p>
+        @endunless
 
         <form method="GET" action="{{ route('leave.reports.utilization') }}" class="mb-6 flex flex-wrap items-end gap-3">
             <div>
@@ -17,10 +24,12 @@
                 <x-input-label for="month" :value="__('Month')" />
                 <x-select-input id="month" name="month" class="mt-1" :options="collect(range(1, 12))->mapWithKeys(fn ($m) => [$m => \Carbon\CarbonImmutable::create(2000, $m)->format('F')])->all()" :selected="$month" :placeholder="__('Whole year')" />
             </div>
-            <div>
-                <x-input-label for="department" :value="__('Office')" />
-                <x-select-input id="department" name="department" class="mt-1" :options="$departments" :selected="$departmentId" :placeholder="__('All offices')" />
-            </div>
+            @if ($seesAllDepartments)
+                <div>
+                    <x-input-label for="department" :value="__('Office')" />
+                    <x-select-input id="department" name="department" class="mt-1" :options="$departments" :selected="$departmentId" :placeholder="__('All offices')" />
+                </div>
+            @endif
             <x-secondary-button type="submit">{{ __('Show') }}</x-secondary-button>
         </form>
 

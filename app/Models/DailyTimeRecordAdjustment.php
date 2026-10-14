@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\DailyTimeRecordAdjustmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class DailyTimeRecordAdjustment extends Model
 {
     /** @use HasFactory<DailyTimeRecordAdjustmentFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return 'DTR correction of employee '.$this->dailyTimeRecord?->employee?->employee_number.' for '.$this->dailyTimeRecord?->work_date?->toDateString();
+    }
 
     /**
      * @return array<string, string>

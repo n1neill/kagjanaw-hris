@@ -1,10 +1,14 @@
 <?php
 
 use App\Enums\Permission;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\BiometricDeviceActionController;
 use App\Http\Controllers\Admin\BiometricDeviceController;
+use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserStatusController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Attendance\AttendanceImportController;
 use App\Http\Controllers\Attendance\AttendanceLogController;
 use App\Http\Controllers\Attendance\AttendanceSummaryController;
@@ -46,8 +50,12 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReferenceData\DepartmentController;
 use App\Http\Controllers\ReferenceData\EmploymentTypeController;
 use App\Http\Controllers\ReferenceData\PositionController;
+use App\Http\Controllers\Reports\EmployeeListController;
+use App\Http\Controllers\Reports\PayrollSummaryController;
+use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\WorkCalendar\HolidayController;
 use App\Http\Controllers\WorkCalendar\WorkScheduleController;
+use App\Services\Reports\ReportExporter;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 
@@ -84,10 +92,14 @@ Route::middleware('auth')->group(function () {
         ->scopeBindings()
         ->name('employees.documents.download');
 
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('notifications/{notification}', [NotificationController::class, 'open'])
         ->whereUuid('notification')
         ->name('notifications.open');
+
+    // Everyone reads the announcements addressed to them; HR manages them. The policy decides.
+    Route::resource('announcements', AnnouncementController::class);
 
     Route::prefix('leave')->name('leave.')->group(function () {
         Route::middleware(PermissionMiddleware::using(Permission::FileLeave))->group(function () {
@@ -129,9 +141,12 @@ Route::middleware('auth')->group(function () {
             Route::resource('types', LeaveTypeController::class)->except(['show', 'destroy'])->parameters(['types' => 'leaveType']);
         });
 
-        Route::middleware(PermissionMiddleware::using([Permission::ManageLeaveCredits, Permission::GenerateReports]))->group(function () {
+        // HR sees every office; department heads their own (the request decides).
+        Route::middleware(PermissionMiddleware::using([Permission::ManageLeaveCredits, Permission::GenerateReports, Permission::ViewDepartmentReports]))->group(function () {
             Route::get('reports/utilization', [LeaveUtilizationController::class, 'index'])->name('reports.utilization');
-            Route::get('reports/utilization/export', [LeaveUtilizationController::class, 'export'])->name('reports.utilization.export');
+            Route::get('reports/utilization/export.{format}', [LeaveUtilizationController::class, 'export'])
+                ->whereIn('format', ReportExporter::FORMATS)
+                ->name('reports.utilization.export');
         });
     });
 
@@ -205,7 +220,9 @@ Route::middleware('auth')->group(function () {
 
         Route::middleware(PermissionMiddleware::using([Permission::ManageAttendance, Permission::ViewDepartmentAttendance]))->group(function () {
             Route::get('summary', [AttendanceSummaryController::class, 'index'])->name('summary');
-            Route::get('summary/export', [AttendanceSummaryController::class, 'export'])->name('summary.export');
+            Route::get('summary/export.{format}', [AttendanceSummaryController::class, 'export'])
+                ->whereIn('format', ReportExporter::FORMATS)
+                ->name('summary.export');
         });
 
         // Reachable by HR, the employee's department head and the employee; the policy decides.
@@ -247,6 +264,48 @@ Route::middleware('auth')->group(function () {
                 ->middleware('throttle:10,1')
                 ->name('devices.sync');
         });
+
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // HR sees every office; department heads their own (the request decides).
+        Route::middleware(PermissionMiddleware::using([Permission::GenerateReports, Permission::ViewDepartmentReports]))->group(function () {
+            Route::get('/', ReportController::class)->name('index');
+            Route::get('employees', [EmployeeListController::class, 'index'])->name('employees');
+            Route::get('employees/export.{format}', [EmployeeListController::class, 'export'])
+                ->whereIn('format', ReportExporter::FORMATS)
+                ->name('employees.export');
+        });
+
+        Route::middleware(PermissionMiddleware::using(Permission::ProcessPayroll))->group(function () {
+            Route::get('payroll', [PayrollSummaryController::class, 'index'])->name('payroll');
+            Route::get('payroll/export.{format}', [PayrollSummaryController::class, 'export'])
+                ->whereIn('format', ReportExporter::FORMATS)
+                ->name('payroll.export');
+        });
+    });
+
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::middleware(PermissionMiddleware::using(Permission::ViewAuditLogs))->group(function () {
+            Route::get('audit-log', [AuditLogController::class, 'index'])->name('audit-logs.index');
+            Route::get('audit-log/{auditLog}', [AuditLogController::class, 'show'])->name('audit-logs.show');
+        });
+
+        Route::middleware(PermissionMiddleware::using(Permission::ManageSettings))->group(function () {
+            Route::get('settings', [SystemSettingsController::class, 'edit'])->name('settings.edit');
+            Route::put('settings', [SystemSettingsController::class, 'update'])->name('settings.update');
+        });
+
+        Route::middleware(PermissionMiddleware::using(Permission::ManageBackups))->group(function () {
+            Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
+            Route::post('backups', [BackupController::class, 'store'])->middleware('throttle:5,1')->name('backups.store');
+            Route::post('backups/upload', [BackupController::class, 'upload'])->name('backups.upload');
+            Route::get('backups/{backup}', [BackupController::class, 'download'])->where('backup', '[A-Za-z0-9._-]+\.zip')->name('backups.download');
+            Route::post('backups/{backup}/restore', [BackupController::class, 'restore'])
+                ->where('backup', '[A-Za-z0-9._-]+\.zip')
+                ->middleware('throttle:5,1')
+                ->name('backups.restore');
+            Route::delete('backups/{backup}', [BackupController::class, 'destroy'])->where('backup', '[A-Za-z0-9._-]+\.zip')->name('backups.destroy');
+        });
+    });
 
     Route::prefix('work-calendar')
         ->name('work-calendar.')

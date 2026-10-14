@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SyncStatus;
+use App\Models\Concerns\Auditable;
 use Database\Factories\BiometricDeviceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class BiometricDevice extends Model
 {
     /** @use HasFactory<BiometricDeviceFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * Sync results are kept in the device's sync history instead.
+     *
+     * @return list<string>
+     */
+    public function auditExcluded(): array
+    {
+        return ['last_synced_at', 'last_sync_status'];
+    }
 
     /**
      * @return array<string, string>

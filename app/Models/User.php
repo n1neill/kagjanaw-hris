@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\Role;
+use App\Models\Concerns\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,7 +20,25 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use Auditable, HasFactory, HasRoles, Notifiable;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->name.' ('.$this->username.')';
+    }
+
+    /**
+     * Sign-ins are recorded as their own audit events.
+     *
+     * @return list<string>
+     */
+    public function auditExcluded(): array
+    {
+        return ['last_login_at'];
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -33,5 +33,6 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         @include('dashboard.partials.my-payslip')
+        @include('dashboard.partials.announcements')
     </div>
 </x-app-layout>

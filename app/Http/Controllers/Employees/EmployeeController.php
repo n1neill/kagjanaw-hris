@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Employees;
 
+use App\Enums\AuditEvent;
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\Permission;
@@ -14,6 +15,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmploymentType;
 use App\Models\Position;
+use App\Services\Audit\AuditLogger;
 use App\Services\EmployeeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -80,9 +82,11 @@ class EmployeeController extends Controller
             ->with('temporaryPassword', $temporaryPassword);
     }
 
-    public function show(Request $request, Employee $employee): View
+    public function show(Request $request, Employee $employee, AuditLogger $audit): View
     {
         Gate::authorize('view', $employee);
+
+        $audit->accessed(AuditEvent::Viewed, __('201 file of :employee', ['employee' => $employee->auditLabel()]), $employee, $employee);
 
         return $this->renderEmployeeRecord($request->user(), $employee);
     }

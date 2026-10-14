@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,16 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['key', 'value', 'updated_by'])]
 class Setting extends Model
 {
+    use Auditable;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return 'Setting '.$this->key;
+    }
+
     /**
      * @return array<string, string>
      */

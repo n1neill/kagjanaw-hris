@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AllowanceCoverage;
+use App\Models\Concerns\Auditable;
 use Database\Factories\AllowanceTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class AllowanceType extends Model
 {
     /** @use HasFactory<AllowanceTypeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public const PERA = 'PERA';
 

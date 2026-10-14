@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LeaveCreditSource;
 use App\Enums\Sex;
+use App\Models\Concerns\Auditable;
 use Database\Factories\LeaveTypeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -39,7 +40,7 @@ use Illuminate\Database\Eloquent\Model;
 class LeaveType extends Model
 {
     /** @use HasFactory<LeaveTypeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public const VACATION = 'VL';
 

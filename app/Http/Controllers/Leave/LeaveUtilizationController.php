@@ -5,13 +5,15 @@ namespace App\Http\Controllers\Leave;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Leave\LeaveUtilizationRequest;
 use App\Models\Department;
-use App\Services\Leave\LeaveDays;
 use App\Services\Leave\LeaveReportService;
+use App\Services\Reports\LeaveUtilizationReport;
+use App\Services\Reports\ReportExporter;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Leave utilization report: approved leave taken in a period, by type and office.
+ * Leave utilization report: approved leave taken in a period, by type and
+ * office. Department heads see their own office only.
  */
 class LeaveUtilizationController extends Controller
 {
@@ -22,41 +24,36 @@ class LeaveUtilizationController extends Controller
         [$from, $to] = $request->period();
 
         return view('leave.utilization', [
-            ...$this->reports->utilization($from, $to, $request->departmentId()),
+            ...$this->utilization($request),
             'from' => $from,
             'to' => $to,
             'year' => $request->year(),
             'month' => $request->monthNumber(),
             'departmentId' => $request->departmentId(),
-            'departments' => Department::query()->orderBy('name')->pluck('name', 'id'),
+            'seesAllDepartments' => $request->seesAllDepartments(),
+            'hasDepartment' => $request->hasDepartmentScope(),
+            'ownDepartment' => $request->seesAllDepartments() ? null : Department::find($request->departmentId()),
+            'departments' => $request->seesAllDepartments() ? Department::query()->orderBy('name')->pluck('name', 'id') : collect(),
         ]);
     }
 
-    public function export(LeaveUtilizationRequest $request): StreamedResponse
+    public function export(LeaveUtilizationRequest $request, string $format, LeaveUtilizationReport $report, ReportExporter $exporter): Response
     {
         [$from, $to] = $request->period();
-        $report = $this->reports->utilization($from, $to, $request->departmentId());
+        $department = $request->departmentId() === null ? null : Department::find($request->departmentId());
 
-        return response()->streamDownload(function () use ($report, $from, $to): void {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['Leave utilization', $from->format('M j, Y').' to '.$to->format('M j, Y')]);
-            fputcsv($out, []);
-            fputcsv($out, ['Leave type', 'Employees', 'Days taken', 'With pay', 'Without pay']);
+        return $exporter->download($report->report($this->utilization($request), $from, $to, $department), $format);
+    }
 
-            foreach ($report['byType'] as $row) {
-                fputcsv($out, [$row['type']->name, $row['employees'], LeaveDays::format($row['days']), LeaveDays::format($row['with_pay']), LeaveDays::format($row['without_pay'])]);
-            }
+    /**
+     * @return array<string, mixed>
+     */
+    private function utilization(LeaveUtilizationRequest $request): array
+    {
+        [$from, $to] = $request->period();
 
-            fputcsv($out, ['Total', $report['totals']['employees'], LeaveDays::format($report['totals']['days']), LeaveDays::format($report['totals']['with_pay']), LeaveDays::format($report['totals']['without_pay'])]);
-            fputcsv($out, []);
-            fputcsv($out, ['Office', 'Employees', 'Days taken', 'With pay', 'Without pay']);
-
-            foreach ($report['byDepartment'] as $row) {
-                fputcsv($out, [$row['department'], $row['employees'], LeaveDays::format($row['days']), LeaveDays::format($row['with_pay']), LeaveDays::format($row['without_pay'])]);
-            }
-
-            fclose($out);
-        }, sprintf('leave-utilization-%s-to-%s.csv', $from->format('Y-m-d'), $to->format('Y-m-d')), ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return $request->hasDepartmentScope()
+            ? $this->reports->utilization($from, $to, $request->departmentId())
+            : ['byType' => collect(), 'byDepartment' => collect(), 'totals' => ['employees' => 0, 'days' => 0, 'with_pay' => 0, 'without_pay' => 0]];
     }
 }

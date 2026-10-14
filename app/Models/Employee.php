@@ -6,6 +6,7 @@ use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\PayBasis;
 use App\Enums\Sex;
+use App\Models\Concerns\Auditable;
 use Carbon\CarbonInterface;
 use Database\Factories\EmployeeFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -55,7 +56,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Employee extends Model
 {
     /** @use HasFactory<EmployeeFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->sortable_name.' ('.$this->employee_number.')';
+    }
 
     /**
      * @return array<string, string>

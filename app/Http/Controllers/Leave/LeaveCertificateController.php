@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Leave;
 
+use App\Enums\AuditEvent;
 use App\Enums\LeaveCreditSource;
 use App\Enums\LeaveRequestStatus;
 use App\Http\Controllers\Controller;
@@ -9,6 +10,7 @@ use App\Http\Requests\Leave\LeaveCertificateRequest;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Services\Audit\AuditLogger;
 use App\Services\Leave\LeaveDays;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
@@ -20,10 +22,12 @@ use Illuminate\Http\Response;
  */
 class LeaveCertificateController extends Controller
 {
-    public function __invoke(LeaveCertificateRequest $request, Employee $employee): Response
+    public function __invoke(LeaveCertificateRequest $request, Employee $employee, AuditLogger $audit): Response
     {
         $employee->load(['department', 'position']);
         $asOf = $request->asOf();
+
+        $audit->accessed(AuditEvent::Downloaded, __('Certificate of Leave Credits of :employee', ['employee' => $employee->auditLabel()]), $employee, $employee);
 
         $balanceAsOf = fn (LeaveType $type): int => LeaveDays::toThousandths(
             $employee->leaveLedgerEntries()

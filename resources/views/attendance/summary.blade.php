@@ -7,9 +7,7 @@
             :description="__('Totals from the Daily Time Records. Absences are in days; late and undertime in hours and minutes.')">
         @if ($hasDepartment)
             <x-slot name="actions">
-                <x-button-link :href="route('attendance.summary.export', array_filter(['month' => $month->format('Y-m'), 'department' => $department?->id]))" variant="secondary">
-                    {{ __('Export CSV') }}
-                </x-button-link>
+                <x-export-links route="attendance.summary.export" :parameters="array_filter(['month' => $month->format('Y-m'), 'department' => $canManage ? $department?->id : null])" />
             </x-slot>
         @endif
 

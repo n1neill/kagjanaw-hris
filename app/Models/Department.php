@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\DepartmentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class Department extends Model
 {
     /** @use HasFactory<DepartmentFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * @return array<string, string>

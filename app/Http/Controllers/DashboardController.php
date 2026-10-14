@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AttendanceLogStatus;
+use App\Enums\AuditEvent;
 use App\Enums\DtrStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\LeaveLedgerEntryType;
 use App\Enums\LeaveRequestStatus;
 use App\Enums\PayrollRunStatus;
 use App\Enums\Role;
+use App\Models\Announcement;
 use App\Models\AttendanceLog;
+use App\Models\AuditLog;
 use App\Models\BiometricDevice;
 use App\Models\DailyTimeRecord;
 use App\Models\Department;
@@ -21,9 +24,11 @@ use App\Models\PayrollItem;
 use App\Models\PayrollRun;
 use App\Models\User;
 use App\Models\WorkSchedule;
+use App\Services\Backup\BackupService;
 use App\Services\Leave\LeaveBalanceService;
 use App\Services\Leave\LeaveCreditPostingService;
 use App\Services\Leave\LeaveEndorsementRouter;
+use App\Services\SystemSettings;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role as RoleModel;
@@ -37,6 +42,8 @@ class DashboardController extends Controller
         private LeaveBalanceService $leaveBalances,
         private LeaveEndorsementRouter $endorsements,
         private LeaveCreditPostingService $leavePosting,
+        private BackupService $backups,
+        private SystemSettings $settings,
     ) {}
 
     /**
@@ -49,7 +56,9 @@ class DashboardController extends Controller
 
         abort_if($role === null, 403, __('Your account has no role assigned. Please contact the System Administrator.'));
 
-        return view($role->dashboardView(), match ($role) {
+        $announcements = Announcement::query()->visibleTo($user)->latestFirst()->limit(3)->get();
+
+        return view($role->dashboardView(), ['announcements' => $announcements, ...match ($role) {
             Role::SystemAdministrator => $this->administratorData(),
             Role::HrOfficer => [...$this->hrData(), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user), ...$this->ownPayslipData($user)],
             Role::MunicipalMayor, Role::DepartmentHead => [
@@ -60,7 +69,7 @@ class DashboardController extends Controller
                 'pendingEndorsements' => $this->endorsements->awaitingEndorsementBy($user)->count(),
             ],
             Role::Employee => [...$this->employeeData($user), ...$this->ownAttendanceData($user), ...$this->ownLeaveData($user), ...$this->ownPayslipData($user)],
-        });
+        }]);
     }
 
     /**
@@ -151,6 +160,17 @@ class DashboardController extends Controller
             'inactiveUsers' => $totalUsers - $activeUsers,
             'usersPerRole' => $usersPerRole,
             'devices' => BiometricDevice::query()->orderBy('name')->get(),
+            'latestBackup' => $this->backups->all()->first(),
+            'backupEnabled' => $this->settings->isBackupEnabled(),
+            'backupTime' => $this->settings->backupTime(),
+            'failedSignIns' => AuditLog::query()
+                ->whereIn('event', [AuditEvent::LoginFailed, AuditEvent::LockedOut])
+                ->where('created_at', '>=', now()->subDay())
+                ->count(),
+            'deniedRequests' => AuditLog::query()
+                ->where('event', AuditEvent::AccessDenied)
+                ->where('created_at', '>=', now()->subDay())
+                ->count(),
         ];
     }
 

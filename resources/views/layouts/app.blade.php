@@ -91,6 +91,7 @@
                             @empty
                                 <p class="px-4 py-3 text-sm text-gray-500">{{ __('You have no notifications.') }}</p>
                             @endforelse
+                            <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-center text-sm font-medium text-brand-700 hover:bg-gray-50">{{ __('View all notifications') }}</a>
                         </x-slot>
                     </x-dropdown>
 

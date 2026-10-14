@@ -39,6 +39,15 @@ return [
             'report' => false,
         ],
 
+        // Database and file backups (zip archives); downloaded only by the System Administrator.
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ContributionType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,16 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable(['type', 'effective_from', 'employee_rate', 'employer_rate', 'salary_floor', 'salary_ceiling', 'legal_basis'])]
 class DeductionRate extends Model
 {
+    use Auditable;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->type->label().' rate from '.$this->effective_from->toDateString();
+    }
+
     /**
      * @return array<string, string>
      */

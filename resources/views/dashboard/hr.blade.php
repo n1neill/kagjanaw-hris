@@ -92,9 +92,7 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         @include('dashboard.partials.my-payslip')
-        <x-upcoming-module :title="__('Announcements')" icon="megaphone">
-            {{ __('Post announcements to all employees (Phase 6).') }}
-        </x-upcoming-module>
+        @include('dashboard.partials.announcements')
     </div>
 
     <x-card :title="__('Reference data')" :description="__('Keep offices, positions and employment types up to date before encoding employee records.')">

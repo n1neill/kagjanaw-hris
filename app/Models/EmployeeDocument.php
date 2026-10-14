@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DocumentType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\EmployeeDocumentFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,7 +20,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmployeeDocument extends Model
 {
     /** @use HasFactory<EmployeeDocumentFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->title.' of employee '.$this->employee?->employee_number;
+    }
 
     public const DISK = 'local';
 

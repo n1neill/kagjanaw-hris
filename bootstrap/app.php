@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\AuditEvent;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Services\Audit\AuditLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -9,6 +11,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -32,4 +35,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Refused requests are recorded in the audit log, then rendered as usual.
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request): null {
+            if ($exception->getStatusCode() === 403) {
+                app(AuditLogger::class)->record(AuditEvent::AccessDenied, $request->method().' /'.ltrim($request->path(), '/'));
+            }
+
+            return null;
+        });
     })->create();

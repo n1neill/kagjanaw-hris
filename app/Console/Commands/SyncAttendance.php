@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
 
 /**
  * Pulls new punches from every active biometric device. Run by the scheduler
- * every few minutes (config/attendance.php: sync_interval_minutes).
+ * every few minutes (the sync interval in System Settings).
  */
 #[Signature('attendance:sync {--device=* : Only sync these device IDs}')]
 #[Description('Pull attendance logs from biometric devices and update Daily Time Records')]

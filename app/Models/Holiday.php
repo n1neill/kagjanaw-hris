@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\HolidayType;
+use App\Models\Concerns\Auditable;
 use Database\Factories\HolidayFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 class Holiday extends Model
 {
     /** @use HasFactory<HolidayFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /**
      * @return array<string, string>

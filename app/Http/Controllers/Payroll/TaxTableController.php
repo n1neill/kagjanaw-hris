@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Payroll;
 
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\NewEffectivityRequest;
 use App\Http\Requests\Payroll\TaxTableRequest;
 use App\Models\TaxBracket;
+use App\Services\Audit\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,7 @@ use Illuminate\View\View;
  */
 class TaxTableController extends Controller
 {
-    public function store(NewEffectivityRequest $request): RedirectResponse
+    public function store(NewEffectivityRequest $request, AuditLogger $audit): RedirectResponse
     {
         $effectiveFrom = $request->effectiveFrom()->toDateString();
 
@@ -41,6 +43,8 @@ class TaxTableController extends Controller
                 ]));
         });
 
+        $audit->record(AuditEvent::Created, __('Withholding tax table effective :date', ['date' => $effectiveFrom]), newValues: $this->brackets($effectiveFrom));
+
         return redirect()->route('payroll.rates.tax.edit', $effectiveFrom)
             ->with('status', __('New tax table created as a copy of the table in force. Enter the new brackets.'));
     }
@@ -58,9 +62,11 @@ class TaxTableController extends Controller
         ]);
     }
 
-    public function update(TaxTableRequest $request, string $effectiveFrom): RedirectResponse
+    public function update(TaxTableRequest $request, string $effectiveFrom, AuditLogger $audit): RedirectResponse
     {
         abort_unless($this->dates()->contains($effectiveFrom), 404);
+
+        $before = $this->brackets($effectiveFrom);
 
         DB::transaction(function () use ($request, $effectiveFrom): void {
             TaxBracket::query()->whereDate('effective_from', $effectiveFrom)->delete();
@@ -70,7 +76,24 @@ class TaxTableController extends Controller
             }
         });
 
+        $audit->record(AuditEvent::Updated, __('Withholding tax table effective :date', ['date' => $effectiveFrom]), oldValues: $before, newValues: $this->brackets($effectiveFrom));
+
         return redirect()->route('payroll.rates.index')->with('status', __('Tax table saved.'));
+    }
+
+    /**
+     * The table's brackets in words, plus its legal basis, for the audit log.
+     *
+     * @return array<string, ?string>
+     */
+    private function brackets(string $effectiveFrom): array
+    {
+        $brackets = TaxBracket::query()->whereDate('effective_from', $effectiveFrom)->orderBy('over')->get();
+
+        return [
+            'legal_basis' => $brackets->first()?->legal_basis,
+            ...$brackets->mapWithKeys(fn (TaxBracket $bracket): array => ['over '.$bracket->over => $bracket->base_tax.' + '.$bracket->rate.'%'])->all(),
+        ];
     }
 
     /**

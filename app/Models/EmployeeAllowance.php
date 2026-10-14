@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Carbon\CarbonInterface;
 use Database\Factories\EmployeeAllowanceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -17,7 +18,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmployeeAllowance extends Model
 {
     /** @use HasFactory<EmployeeAllowanceFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * How the record is named in the audit log.
+     */
+    public function auditLabel(): string
+    {
+        return $this->allowanceType?->name.' of employee '.$this->employee?->employee_number;
+    }
 
     /**
      * @return array<string, string>
