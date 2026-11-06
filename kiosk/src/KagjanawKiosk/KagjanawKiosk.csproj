@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyTitle>HRIS Fingerprint Kiosk</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- 64-bit, like the installed DigitalPersona reader driver (dp*x64.dll). -->
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
+    <PackageReference Include="SourceAFIS" Version="3.14.0" />
+    <!--
+      SourceAFIS uses ImageSharp only to decode encoded images (its
+      FingerprintImage(byte[]) constructor). The kiosk never calls that: it
+      gives SourceAFIS raw grayscale pixels. ImageSharp 2.x has unfixed
+      vulnerabilities, so its DLL is left out of the build entirely; any
+      attempt to decode through it fails instead of running vulnerable code.
+      The audit warnings for the excluded package are suppressed below.
+    -->
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" ExcludeAssets="all" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-gwg2-r3hj-4w44" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-j3p4-wp97-rph4" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-j9gm-c75j-xc9q" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-jjfr-hcj7-qf5w" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-wmxv-xphr-5c9g" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="KagjanawKiosk.Tests" />
+  </ItemGroup>
+
+</Project>

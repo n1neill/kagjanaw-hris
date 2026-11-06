@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+
+# DigitalPersona SDK files are licensed by HID; copy them here locally, never commit them.
+lib/
+
+# Sample fingerprint images used with the folder scanner.
+samples/
