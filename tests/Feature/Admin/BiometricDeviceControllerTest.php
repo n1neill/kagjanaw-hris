@@ -126,6 +126,61 @@ describe('actions', function () {
     });
 });
 
+describe('fingerprint kiosks', function () {
+    it('issues a token that replaces the previous one and works only once shown', function () {
+        $admin = User::factory()->systemAdministrator()->create();
+        $device = BiometricDevice::factory()->kiosk('old-token')->create();
+
+        $response = $this->actingAs($admin)->from(route('admin.devices.show', $device))->post(route('admin.devices.token', $device));
+
+        $token = session('kioskToken');
+        $response->assertRedirect(route('admin.devices.show', $device));
+        expect($token)->toHaveLength(48)
+            ->and($device->refresh()->api_token_hash)->toBe(hash('sha256', $token));
+        $this->actingAs($admin)->get(route('admin.devices.show', $device))->assertSee($token);
+        $this->actingAs($admin)->get(route('admin.devices.show', $device))->assertDontSee($token);
+
+        $this->withToken('old-token')->getJson(route('kiosk.heartbeat'))->assertUnauthorized();
+        $this->withToken($token)->getJson(route('kiosk.heartbeat'))->assertOk();
+    });
+
+    it('issues tokens only to kiosk devices', function () {
+        $admin = User::factory()->systemAdministrator()->create();
+        $device = BiometricDevice::factory()->create(['driver' => 'mock']);
+
+        $this->actingAs($admin)->post(route('admin.devices.token', $device))->assertNotFound();
+
+        expect($device->refresh()->api_token_hash)->toBeNull();
+    });
+
+    it('reports the kiosk online only while it keeps checking in', function () {
+        $this->travelTo(CarbonImmutable::parse('2026-11-06 08:00:00'));
+        $admin = User::factory()->systemAdministrator()->create();
+        $device = BiometricDevice::factory()->kiosk()->create(['name' => 'Lobby Kiosk']);
+
+        $this->actingAs($admin)->post(route('admin.devices.test', $device))
+            ->assertSessionHas('error', 'Connection failed: Kiosk Lobby Kiosk has never checked in. Generate a kiosk token and enter it in the kiosk app.');
+
+        $device->forceFill(['last_seen_at' => now()->subMinute()])->save();
+        $this->actingAs($admin)->post(route('admin.devices.test', $device))
+            ->assertSessionHas('status', 'Connected to DigitalPersona U.are.U kiosk (serial KIOSK'.sprintf('%06d', $device->id).', firmware checked in 1 minute ago): 0 users enrolled, 0 logs stored.');
+
+        $this->travel(10)->minutes();
+        $this->actingAs($admin)->post(route('admin.devices.test', $device))
+            ->assertSessionHas('error', 'Connection failed: Kiosk Lobby Kiosk last checked in 11 minutes ago.');
+    });
+
+    it('does not pull from a kiosk on demand', function () {
+        $admin = User::factory()->systemAdministrator()->create();
+        $device = BiometricDevice::factory()->kiosk()->create(['name' => 'Lobby Kiosk']);
+
+        $this->actingAs($admin)->post(route('admin.devices.sync', $device))
+            ->assertSessionHas('error', 'Lobby Kiosk sends its punches as they happen; there is nothing to sync.');
+
+        expect($device->syncRuns()->count())->toBe(0);
+    });
+});
+
 describe('scheduled sync command', function () {
     it('syncs only active devices and fails when any device fails', function () {
         $active = BiometricDevice::factory()->create(['driver' => 'fake', 'name' => 'Lobby']);

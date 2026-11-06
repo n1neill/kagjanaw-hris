@@ -15,8 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Pulls punches from biometric devices into attendance_logs and refreshes
- * the affected Daily Time Records.
+ * Pulls punches from biometric devices (or receives those a kiosk sends) into
+ * attendance_logs and refreshes the affected Daily Time Records.
  *
  * Synchronization is idempotent: each run re-reads a window that overlaps the
  * previous successful run, and duplicates are skipped by the unique index on
@@ -44,14 +44,36 @@ class AttendanceSyncService
         $until = CarbonImmutable::now();
         $since ??= $this->defaultSince($device, $until);
 
+        return $this->recordRun(
+            $device,
+            $triggeredBy,
+            fn (): iterable => $this->drivers->driverFor($device)->fetchLogs($device, $since, $until),
+        );
+    }
+
+    /**
+     * Store punches a kiosk sent, recorded in its sync log like a pulled sync.
+     *
+     * @param  iterable<RawPunch>  $punches
+     */
+    public function receive(BiometricDevice $device, iterable $punches): DeviceSyncRun
+    {
+        return $this->recordRun($device, null, fn (): iterable => $punches);
+    }
+
+    /**
+     * @param  callable(): iterable<RawPunch>  $readPunches
+     */
+    private function recordRun(BiometricDevice $device, ?User $triggeredBy, callable $readPunches): DeviceSyncRun
+    {
         $run = $device->syncRuns()->create([
             'triggered_by' => $triggeredBy?->id,
             'status' => SyncStatus::Running,
-            'started_at' => $until,
+            'started_at' => CarbonImmutable::now(),
         ]);
 
         try {
-            $punches = collect($this->drivers->driverFor($device)->fetchLogs($device, $since, $until));
+            $punches = collect($readPunches());
 
             $counts = $this->store($punches, AttendanceSource::Device, $device);
 

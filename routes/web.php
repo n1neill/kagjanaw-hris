@@ -19,6 +19,7 @@ use App\Http\Controllers\Attendance\MyAttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\EmployeeDocumentController;
+use App\Http\Controllers\Employees\EmployeeFingerprintController;
 use App\Http\Controllers\Employees\MyRecordController;
 use App\Http\Controllers\Leave\LeaveAdjustmentController;
 use App\Http\Controllers\Leave\LeaveCardController;
@@ -82,6 +83,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('employees/{employee}/documents/{document}', [EmployeeDocumentController::class, 'destroy'])
             ->scopeBindings()
             ->name('employees.documents.destroy');
+        Route::delete('employees/{employee}/fingerprints/{finger}', [EmployeeFingerprintController::class, 'destroy'])
+            ->name('employees.fingerprints.destroy');
     });
 
     // Reachable by HR, the employee's department head and the employee; the policy decides.
@@ -261,6 +264,9 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::resource('devices', BiometricDeviceController::class)->except(['destroy']);
             Route::post('devices/{device}/test', [BiometricDeviceActionController::class, 'testConnection'])->name('devices.test');
+            Route::post('devices/{device}/token', [BiometricDeviceActionController::class, 'issueToken'])
+                ->middleware('throttle:10,1')
+                ->name('devices.token');
             Route::post('devices/{device}/sync', [BiometricDeviceActionController::class, 'sync'])
                 ->middleware('throttle:10,1')
                 ->name('devices.sync');

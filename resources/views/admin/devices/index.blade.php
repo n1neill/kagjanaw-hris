@@ -1,7 +1,7 @@
 <x-app-layout :title="__('Biometric Devices')">
     <x-slot name="header">{{ __('Biometric Devices') }}</x-slot>
 
-    <x-card :title="__('Time clocks')" :description="__('Active devices are synchronized automatically every :minutes minutes while the scheduler is running.', ['minutes' => $syncInterval])">
+    <x-card :title="__('Time clocks')" :description="__('Active devices are synchronized automatically every :minutes minutes while the scheduler is running. Fingerprint kiosks send their punches as they happen.', ['minutes' => $syncInterval])">
         <x-slot name="actions">
             <x-button-link :href="route('admin.devices.create')">
                 <x-icon name="plus" class="size-4" />

@@ -50,6 +50,7 @@ class BiometricDeviceController extends Controller
     {
         return view('admin.devices.show', [
             'device' => $device,
+            'hasKioskToken' => $device->api_token_hash !== null,
             'runs' => $device->syncRuns()->with('triggeredBy')->latest('started_at')->latest('id')->paginate(25),
         ]);
     }

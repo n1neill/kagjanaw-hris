@@ -11,7 +11,8 @@ use Illuminate\Console\Command;
 
 /**
  * Pulls new punches from every active biometric device. Run by the scheduler
- * every few minutes (the sync interval in System Settings).
+ * every few minutes (the sync interval in System Settings). Kiosks send their
+ * punches themselves, so they are left out.
  */
 #[Signature('attendance:sync {--device=* : Only sync these device IDs}')]
 #[Description('Pull attendance logs from biometric devices and update Daily Time Records')]
@@ -25,7 +26,8 @@ class SyncAttendance extends Command
         $devices = BiometricDevice::query()
             ->where('is_active', true)
             ->when($this->option('device'), fn ($query, array $ids) => $query->whereKey($ids))
-            ->get();
+            ->get()
+            ->reject(fn (BiometricDevice $device): bool => $device->receivesPushedPunches());
 
         if ($devices->isEmpty()) {
             $this->info('No active biometric devices to sync.');

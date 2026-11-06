@@ -140,6 +140,47 @@
                 <p class="mt-4 text-xs text-ink-muted">{{ __('Forgotten passwords are reset by the System Administrator under User Accounts.') }}</p>
             </x-card>
         @endif
+
+        @if ($canManage)
+            <x-card id="fingerprints" :title="__('Fingerprints')" :description="__('Enrolled at the fingerprint kiosk by HR. Only the matcher\'s template is stored (encrypted), never an image of the fingerprint.')">
+                @if ($fingerprints->isEmpty())
+                    <p class="text-sm text-ink-muted">
+                        @if (blank($employee->biometric_user_id))
+                            {{ __('Set a biometric user ID on this record first, then enroll the employee\'s fingers at the kiosk.') }}
+                        @else
+                            {{ __('No fingers enrolled yet. Sign in at the kiosk as HR to enroll them.') }}
+                        @endif
+                    </p>
+                @else
+                    <ul class="divide-y divide-line">
+                        @foreach ($fingerprints as $fingerprint)
+                            <li class="flex items-center justify-between gap-3 py-2">
+                                <div>
+                                    <span class="flex items-center gap-2 text-sm font-medium text-ink">
+                                        <x-icon name="finger-print" class="size-4 shrink-0 text-ink-subtle" />
+                                        {{ $fingerprint->finger->label() }}
+                                    </span>
+                                    <span class="block text-xs text-ink-muted">
+                                        {{ __('Enrolled :date', ['date' => $fingerprint->updated_at->format('M j, Y')]) }}
+                                        @if ($fingerprint->enrolledBy)
+                                            {{ __('by :name', ['name' => $fingerprint->enrolledBy->name]) }}
+                                        @endif
+                                        @if ($fingerprint->device)
+                                            · {{ $fingerprint->device->name }}
+                                        @endif
+                                    </span>
+                                </div>
+                                <form method="POST" action="{{ route('employees.fingerprints.destroy', [$employee, $fingerprint->finger]) }}" data-confirm="{{ __('Remove this fingerprint? The employee will need to enroll it again at the kiosk.') }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">{{ __('Remove') }}</button>
+                                </form>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-card>
+        @endif
     </div>
 
     @if ($canViewSensitive)

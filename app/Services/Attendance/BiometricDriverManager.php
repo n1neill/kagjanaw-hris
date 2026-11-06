@@ -24,6 +24,16 @@ class BiometricDriverManager
     }
 
     /**
+     * Whether devices using the named driver push their punches to the kiosk API.
+     */
+    public static function receivesPushedPunches(?string $driver): bool
+    {
+        $class = $driver === null ? null : config("attendance.drivers.{$driver}");
+
+        return is_string($class) && is_a($class, ReceivesPushedPunches::class, true);
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function options(): array
@@ -32,6 +42,7 @@ class BiometricDriverManager
             ->mapWithKeys(fn (string $name): array => [$name => match ($name) {
                 'mock' => 'Mock (no hardware, for testing)',
                 'zkteco' => 'ZKTeco (ZKLib, TCP/IP)',
+                'digitalpersona' => 'DigitalPersona U.are.U kiosk (fingerprint reader on a PC)',
                 default => $name,
             }])
             ->all();

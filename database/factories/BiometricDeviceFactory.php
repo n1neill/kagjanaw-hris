@@ -43,4 +43,18 @@ class BiometricDeviceFactory extends Factory
             'is_active' => false,
         ]);
     }
+
+    /**
+     * A DigitalPersona kiosk PC that pushes punches, signing in with the given token.
+     */
+    public function kiosk(string $token = 'test-kiosk-token', string $ipAddress = '127.0.0.1'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'Lobby Fingerprint Kiosk',
+            'driver' => 'digitalpersona',
+            'ip_address' => $ipAddress,
+            'port' => 443,
+            'api_token_hash' => hash('sha256', $token),
+        ]);
+    }
 }

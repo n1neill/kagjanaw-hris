@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Finger;
 use App\Enums\Role;
 use App\Models\AllowanceType;
 use App\Models\Announcement;
@@ -12,6 +13,7 @@ use App\Models\EmployeeAllowance;
 use App\Models\EmployeeDeduction;
 use App\Models\EmployeeDocument;
 use App\Models\EmploymentType;
+use App\Models\FingerprintTemplate;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
@@ -85,6 +87,7 @@ function routeAccessMatrix(): array
         'employees.documents.download' => $hr,
         'employees.documents.store' => $hr,
         'employees.documents.destroy' => $hr,
+        'employees.fingerprints.destroy' => $hr,
 
         'attendance.my' => $staff,
         'attendance.summary' => $supervisors,
@@ -211,6 +214,7 @@ function routeAccessMatrix(): array
         'admin.devices.edit' => $administrator,
         'admin.devices.update' => $administrator,
         'admin.devices.test' => $administrator,
+        'admin.devices.token' => $administrator,
         'admin.devices.sync' => $administrator,
         'admin.settings.edit' => $administrator,
         'admin.settings.update' => $administrator,
@@ -253,6 +257,7 @@ function routeAuthorizationFixtures(): array
     $colleague = Employee::factory()->withAccount()->create(['department_id' => $otherOffice->id]);
 
     $document = EmployeeDocument::factory()->for($colleague)->create();
+    FingerprintTemplate::factory()->for($colleague)->create(['finger' => Finger::RightIndex]);
     Storage::disk(EmployeeDocument::DISK)->put($document->path, '%PDF-1.4');
 
     $leaveRequest = LeaveRequest::factory()->for($colleague)->endorsed()->create([
@@ -288,6 +293,7 @@ function routeAuthorizationFixtures(): array
         'parameters' => [
             'employee' => $colleague->id,
             'document' => $document->id,
+            'finger' => Finger::RightIndex->value,
             'leaveRequest' => $leaveRequest->id,
             'payrollItem' => $payslip->id,
             'payrollRun' => $payslip->payroll_run_id,

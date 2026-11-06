@@ -23,13 +23,14 @@
                 </div>
                 <div>
                     <x-input-label for="ip_address" :value="__('IP address')" />
-                    <x-text-input id="ip_address" name="ip_address" class="mt-1 font-mono" placeholder="192.168.1.201" :value="old('ip_address', $device->ip_address)" required />
+                    <x-text-input id="ip_address" name="ip_address" class="mt-1 font-mono" placeholder="192.168.1.201" :value="old('ip_address', $device->ip_address)" required aria-describedby="ip-address-hint" />
+                    <p id="ip-address-hint" class="mt-1 text-xs text-ink-muted">{{ __('For a DigitalPersona kiosk, the kiosk PC\'s LAN address. The kiosk is only accepted from it.') }}</p>
                     <x-input-error :messages="$errors->get('ip_address')" class="mt-2" />
                 </div>
                 <div>
                     <x-input-label for="port" :value="__('Port')" />
                     <x-text-input id="port" name="port" type="number" min="1" max="65535" class="mt-1 font-mono" :value="old('port', $device->port)" required aria-describedby="port-hint" />
-                    <p id="port-hint" class="mt-1 text-xs text-ink-muted">{{ __('ZKTeco devices use 4370 by default.') }}</p>
+                    <p id="port-hint" class="mt-1 text-xs text-ink-muted">{{ __('ZKTeco devices use 4370 by default. Not used for a DigitalPersona kiosk.') }}</p>
                     <x-input-error :messages="$errors->get('port')" class="mt-2" />
                 </div>
                 <div class="sm:col-span-2">

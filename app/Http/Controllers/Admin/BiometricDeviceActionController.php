@@ -8,6 +8,7 @@ use App\Models\BiometricDevice;
 use App\Services\Attendance\AttendanceSyncService;
 use App\Services\Attendance\BiometricDriverManager;
 use App\Services\Attendance\DeviceConnectionException;
+use App\Services\Attendance\Kiosk\KioskTokenService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -33,8 +34,24 @@ class BiometricDeviceActionController extends Controller
         ]));
     }
 
+    /**
+     * Issue a new kiosk token, replacing the old one. It is shown only once.
+     */
+    public function issueToken(BiometricDevice $device, KioskTokenService $tokens): RedirectResponse
+    {
+        abort_unless($device->receivesPushedPunches(), 404);
+
+        return back()
+            ->with('kioskToken', $tokens->issue($device))
+            ->with('status', __('A new kiosk token was issued. The previous token no longer works.'));
+    }
+
     public function sync(Request $request, BiometricDevice $device, AttendanceSyncService $sync): RedirectResponse
     {
+        if ($device->receivesPushedPunches()) {
+            return back()->with('error', __(':name sends its punches as they happen; there is nothing to sync.', ['name' => $device->name]));
+        }
+
         $run = $sync->sync($device, $request->user());
 
         if ($run->status === SyncStatus::Failed) {

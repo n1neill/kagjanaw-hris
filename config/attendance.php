@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Attendance\Drivers\DigitalPersonaKioskDriver;
 use App\Services\Attendance\Drivers\MockBiometricDriver;
 
 return [
@@ -11,7 +12,9 @@ return [
     |
     | Each biometric device record names one of these drivers. "mock" generates
     | realistic punches so the whole attendance flow can be developed and
-    | demonstrated without hardware. A ZKTeco (ZKLib) driver is added here
+    | demonstrated without hardware. "digitalpersona" is a kiosk PC with a
+    | DigitalPersona U.are.U reader that pushes punches to the kiosk API (used
+    | until the ZKTeco device arrives). A ZKTeco (ZKLib) driver is added here
     | once a device is available; it must implement
     | App\Services\Attendance\BiometricDriver.
     |
@@ -21,6 +24,7 @@ return [
 
     'drivers' => [
         'mock' => MockBiometricDriver::class,
+        'digitalpersona' => DigitalPersonaKioskDriver::class,
     ],
 
     /*
@@ -54,5 +58,23 @@ return [
     */
 
     'duplicate_tap_minutes' => 5,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fingerprint Kiosk (DigitalPersona)
+    |--------------------------------------------------------------------------
+    |
+    | The kiosk checks in every 30 seconds; it is reported offline after this
+    | many minutes of silence. HR signs in at the kiosk to enroll fingerprints,
+    | and that sign-in lasts for the given number of minutes.
+    |
+    */
+
+    'kiosk' => [
+        'offline_after_minutes' => 5,
+        'enrollment_session_minutes' => 15,
+        'max_fingers_per_employee' => 2,
+        'max_punches_per_request' => 500,
+    ],
 
 ];

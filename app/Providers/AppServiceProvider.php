@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Console\ServeCommand;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +45,10 @@ class AppServiceProvider extends ServiceProvider
             ->symbols());
 
         URL::forceHttps(config('app.force_https'));
+
+        // A kiosk checks in twice a minute and sends a punch per scan; this
+        // leaves plenty of room for a morning queue while capping a runaway client.
+        RateLimiter::for('kiosk', fn (Request $request): Limit => Limit::perMinute(240)->by($request->ip()));
 
         $this->preventLazyLoading();
 

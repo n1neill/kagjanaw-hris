@@ -145,6 +145,14 @@ class Employee extends Model
     }
 
     /**
+     * @return HasMany<FingerprintTemplate, $this>
+     */
+    public function fingerprintTemplates(): HasMany
+    {
+        return $this->hasMany(FingerprintTemplate::class);
+    }
+
+    /**
      * @return HasMany<LeaveRequest, $this>
      */
     public function leaveRequests(): HasMany

@@ -21,11 +21,15 @@ trait RendersEmployeeRecord
         $employee->load(['department', 'position', 'employmentType', 'user']);
 
         $canViewSensitive = $viewer->can('viewSensitive', $employee);
+        $canManage = $viewer->can('update', $employee);
 
         return view('employees.show', [
             'employee' => $employee,
             'canViewSensitive' => $canViewSensitive,
-            'canManage' => $viewer->can('update', $employee),
+            'canManage' => $canManage,
+            'fingerprints' => $canManage
+                ? $employee->fingerprintTemplates()->with(['enrolledBy', 'device'])->orderBy('finger')->get()
+                : collect(),
             'canBrowseEmployees' => $viewer->can('viewAny', Employee::class),
             'isOwnRecord' => $employee->user_id === $viewer->id,
             'documents' => $canViewSensitive
