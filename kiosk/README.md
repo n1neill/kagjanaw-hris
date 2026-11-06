@@ -10,13 +10,16 @@ The U.are.U reader only captures images: it has no memory and no matcher. So thi
 
 The HRIS stores punches exactly like ZKTeco logs: duplicates are skipped, unknown IDs are flagged, and the DTR is rebuilt. The kiosk keeps working while the network is down and sends the queued punches when the HRIS is back.
 
-> **Status:** the DigitalPersona reader driver is not wired in yet (Phase 3, waiting for the DigitalPersona SDK). Until then, use the **folder scanner**: copying a fingerprint image into a folder counts as a scan.
-
 ## Requirements
 
 - Windows 10/11, 64-bit
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) to build (the .NET 9 Desktop Runtime is enough to run a published build)
 - The HRIS reachable from the PC over the office LAN
+- For the reader:
+  - The **DigitalPersona One Touch for Windows** SDK or RTE (1.6.1, 64-bit). It installs `DPFPApi.dll` in System32 and the *Biometric Authentication Service* (`DpHost`).
+  - The U.are.U reader plugged in.
+
+  The kiosk calls `DPFPApi.dll` directly. It builds without the SDK, and it doesn't ship or reference any DigitalPersona files.
 
 ## Build and test
 
@@ -33,7 +36,12 @@ dotnet run --project src/KagjanawKiosk -- --windowed   # a normal window, for de
    - Set the driver to **DigitalPersona U.are.U kiosk**.
    - Set the **IP address** to the kiosk PC's LAN address, or `127.0.0.1` if the HRIS runs on the same PC. The kiosk is only accepted from that address.
    - Open the device and click **Issue Kiosk Token**. Copy the token; it is shown once.
-2. **Kiosk PC:** start the app. On the first run it asks for the HRIS address (e.g. `http://192.168.1.10`), the token and the reader. It saves the settings only once the HRIS accepts the token.
+2. **Kiosk PC:** start the app. On the first run it asks for:
+   - the HRIS address (e.g. `http://192.168.1.10`),
+   - the token,
+   - the reader: **DigitalPersona U.are.U reader**.
+
+   It saves the settings only once the HRIS accepts the token. If the reader can't be opened, the settings screen reopens with the reason (see *Troubleshooting*).
 3. **HRIS:** give each employee a **Biometric user ID** on their record. Only employees with one can be enrolled.
 4. **Enroll:** at the kiosk, HR presses **Ctrl+Shift+E** and signs in with their HRIS username and password. Then they pick the employee and finger and scan it 3 times. Up to 2 fingers per employee.
    - The 3 scans must match each other.
@@ -57,6 +65,12 @@ Use Task Scheduler. Create a task that runs `KagjanawKiosk.exe`:
 - **Setting:** *Run only when user is logged on*.
 
 Windows should sign that account in automatically and keep its clock on Internet/domain time. The kiosk warns on screen when its clock is more than 2 minutes off the HRIS.
+
+**Reader access.** The DigitalPersona runtime gives exclusive access to the reader only to elevated programs. Without it, the reader's scans go only to the program in the foreground.
+- **Normal run:** the full-screen kiosk stays in front, so this works.
+- **Safer:** tick *Run with highest privileges* in the task. The kiosk then gets the reader exclusively, and a pop-up from another program can't take its scans.
+
+The log shows which access the kiosk got (`acquisition started at High/Normal priority`).
 
 ## Testing without the reader (folder scanner)
 
@@ -96,4 +110,9 @@ Real fingerprint images make the best test data, for example the [FVC2002](http:
 | *Kiosk not accepted by the HRIS* | The token was reissued, the device was deactivated, or the PC's IP address changed. Fix it in Admin → Biometric Devices, then press Ctrl+Shift+S. |
 | *Offline: punches are saved and sent later* | Check the network and the HRIS address. Punches wait in `punch-queue.db`. |
 | *This PC's clock is N min off* | Fix the Windows date and time; punches are stamped with the PC's clock. |
-| *Fingerprint not recognized* every time | Check the reader resolution in settings: 512 dpi for the U.are.U 4500, 500 for most sample images. |
+| *The DigitalPersona One Touch runtime (DPFPApi.dll) is not installed* | Install the One Touch for Windows SDK or RTE (64-bit), then start the kiosk again. |
+| *The Biometric Authentication Service (DpHost) is not running* | Start it in Windows Services (`services.msc`) and set it to Automatic. |
+| *No fingerprint reader is connected* / *was unplugged* | Plug the reader in. The kiosk retries every 5 seconds and picks it up by itself. |
+| *Could not start capturing* | Another program holds the reader exclusively. Close other fingerprint software, e.g. the SDK's sample apps. |
+| Scans do nothing | Without elevation, scans go only to the program in front. Bring the kiosk to the front, or run it with highest privileges (see *Start automatically*). |
+| *Fingerprint not recognized* every time | Press the finger flat in the middle of the reader, as at enrollment, or enroll that finger again. With the folder scanner, check the image resolution in settings (500 dpi for most sample sets). |

@@ -236,6 +236,24 @@ The header row is required, and columns may be in any order. Dates are `YYYY-MM-
 
 Add each time clock under **Administration → Biometric Devices** (IP address, port 4370, driver). The **mock** driver produces realistic punches for employees with a biometric user ID, so the whole flow can be demonstrated without hardware; a device at IP `0.0.0.0` behaves as unreachable. The real ZKTeco driver (ZKLib over TCP/IP) is added later by implementing `App\Services\Attendance\BiometricDriver` and registering it in `config/attendance.php`.
 
+### Fingerprint kiosk (DigitalPersona, interim)
+
+Until the ZKTeco time clock arrives, a **DigitalPersona U.are.U 4500** reader on a Windows PC serves as the time clock. The reader only captures images, so the **kiosk app** in [`kiosk/`](kiosk/README.md) (C#/.NET 9) does the rest:
+- It matches each scan against the enrolled fingers with SourceAFIS.
+- It sends the punch to the HRIS.
+- It keeps punches in a local queue while the network is down.
+
+Punches are stored exactly like time clock logs: same duplicate rule, same flagging, same DTR processing.
+
+- **Device type:** a *DigitalPersona U.are.U kiosk* device **pushes** its punches, so it has no sync schedule and **Sync Now** does not apply. **Test Connection** reports when the kiosk last checked in.
+- **Admin setup:** under **Administration → Biometric Devices**, the administrator sets the device's IP address to the kiosk PC's address. **Issue Kiosk Token** shows the token once, to be entered in the kiosk app. The token works only from that IP address, and issuing a new one locks out the old one.
+- **Enrollment:** HR enrolls up to two fingers per employee at the kiosk (**Ctrl+Shift+E**), signing in with their own HRIS account. Only employees with a biometric user ID can be enrolled.
+- **Removal:** enrolled fingers are listed on the employee's record, where HR can remove them. Enrollments, removals and kiosk sign-ins are recorded in the audit log.
+- **Templates:** only SourceAFIS templates, never fingerprint images, are stored, encrypted with the `APP_KEY`.
+- **API:** `/api/kiosk/v1` (`routes/kiosk.php`). Requests carry the kiosk token as a bearer token and are throttled to 240 per minute.
+
+When the ZKTeco arrives, register it as another device; the kiosk can be deactivated or kept.
+
 ### Office hours and holidays
 
 HR maintains these under **Work Calendar**. Adding, moving or removing a past or current holiday recomputes that day's DTRs immediately. The 2026 national holidays are seeded; check them against the presidential proclamation, and add movable holidays (Eid'l Fitr, Eid'l Adha) and Cagdianao or provincial local holidays.
@@ -528,7 +546,7 @@ The suite runs against the `kagjanaw_hris_test` database (see `phpunit.xml`) and
 - **Laravel 13 instead of 11.** The project was already scaffolded on Laravel 13. It runs on PHP 8.4 (Herd), because XAMPP's PHP 8.2 cannot run it. Only XAMPP's database is used.
 - **MariaDB 10.4 (XAMPP) instead of MySQL 8.0.** Migrations avoid MySQL-8-only features, so switching to MySQL 8.0 later only needs `DB_CONNECTION=mysql`.
 - **Breeze stubs, not the Breeze installer.** Breeze's Blade views were copied and restyled for Tailwind v4, because the installer would have downgraded the project to Tailwind v3.
-- **No biometric device yet.** Attendance runs on the mock driver and CSV import. The ZKTeco (ZKLib) driver will be added when a device is available.
+- **No ZKTeco device yet.** Attendance runs on the DigitalPersona fingerprint kiosk (see [Fingerprint kiosk](#fingerprint-kiosk-digitalpersona-interim)), the mock driver and CSV import. The ZKTeco (ZKLib) driver will be added when a device is available.
 - **Department Head scoping** comes from the head's own employee record (`employees.department_id`). A Department Head account without an employee record sees no employees.
 - **Employees are never deleted.** Separation is recorded with an employment status and separation date, which keeps the 201 file and later attendance, leave and payroll history intact.
 - **Government ID formats** are checked by digit count only: PhilHealth and Pag-IBIG 12 digits, TIN 9–12, GSIS 8–15. Dashes and spaces are removed. Because the numbers are encrypted, the database cannot enforce that they are unique.

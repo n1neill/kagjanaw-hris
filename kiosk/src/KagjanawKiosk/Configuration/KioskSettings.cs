@@ -9,7 +9,7 @@ public enum ScannerKind
     /// <summary>No hardware: fingerprint images dropped into a folder count as scans (testing and demos).</summary>
     Folder,
 
-    /// <summary>A DigitalPersona U.are.U reader through the vendor SDK.</summary>
+    /// <summary>A DigitalPersona U.are.U reader through the One Touch for Windows runtime.</summary>
     DigitalPersona,
 }
 
@@ -27,12 +27,12 @@ public sealed class KioskSettings
     /// <summary>The HRIS address, e.g. http://192.168.1.10 or https://kagjanaw-hris.test.</summary>
     public string HrisBaseUrl { get; set; } = "";
 
-    public ScannerKind Scanner { get; set; } = ScannerKind.Folder;
+    public ScannerKind Scanner { get; set; } = ScannerKind.DigitalPersona;
 
     /// <summary>The folder watched by the folder scanner.</summary>
     public string ScanInboxFolder { get; set; } = "";
 
-    /// <summary>Resolution of the reader's images. The U.are.U 4500 captures at 512 dpi; most sample databases are 500 dpi.</summary>
+    /// <summary>Resolution of the folder scanner's images (most sample databases are 500 dpi). The DigitalPersona reader states its own (512 dpi), so this is only its fallback.</summary>
     public int ScannerDpi { get; set; } = 500;
 
     public double MatchThreshold { get; set; } = DefaultMatchThreshold;

@@ -74,7 +74,7 @@ internal sealed class SetupForm : Form
         var inboxRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = Padding.Empty };
         inboxRow.Controls.AddRange([_inbox, browse]);
         AddRow(layout, "Test image folder", inboxRow, "Copying an image into this folder counts as a scan.");
-        AddRow(layout, "Reader resolution (dpi)", _dpi, "500 for most sample images; 512 for the U.are.U 4500.");
+        AddRow(layout, "Image resolution (dpi)", _dpi, "For test images (500 for most sample sets). The DigitalPersona reader reports its own.");
 
         var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, Margin = new Padding(0, 12, 0, 0) };
         buttons.Controls.AddRange([_save, cancel]);

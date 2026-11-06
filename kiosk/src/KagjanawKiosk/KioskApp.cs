@@ -41,7 +41,7 @@ public sealed class KioskApp : IAsyncDisposable
     /// <exception cref="ScannerUnavailableException">The configured reader cannot be opened.</exception>
     public static KioskApp Start(KioskPaths paths, KioskSettings settings, string token, KioskLog log)
     {
-        var app = new KioskApp(paths, settings, token, log, ScannerFactory.Create(settings));
+        var app = new KioskApp(paths, settings, token, log, ScannerFactory.Create(settings, log));
         app.Worker.LoadCachedTemplates();
         app.Worker.Start();
         log.Info($"Kiosk started: HRIS {settings.HrisBaseUrl}, {app.Scanner.Description}, match threshold {settings.MatchThreshold}.");

@@ -154,6 +154,22 @@ HR officers manage employee records, attendance, leave and payroll for every off
 
 To make an employee a department head or HR officer, ask the System Administrator to change the role of their account.
 
+### Fingerprints (fingerprint kiosk)
+
+Until the ZKTeco time clock is installed, employees clock in on the **fingerprint kiosk**: a PC with a DigitalPersona reader. An employee needs a **Biometric user ID** on their record before their fingerprints can be enrolled.
+
+**Enrolling an employee at the kiosk**
+
+1. Press **Ctrl+Shift+E** on the kiosk and sign in with your own HRIS username and password.
+2. Search for the employee, choose the finger (for example, Right index) and click **Scan finger**.
+3. The employee places the same finger on the reader **3 times**, lifting it in between. The kiosk refuses the scans if they don't match each other, or if that finger is already enrolled for someone else.
+4. Enroll a second finger in case the first one is injured. Each employee can have up to **2 fingers**.
+5. Click **Done (sign out)** when finished. Your kiosk sign-in also ends by itself after 15 minutes.
+
+The kiosk recognizes the new fingerprint within a few seconds. To clock in, the employee places the finger on the reader: the kiosk shows their name and the time, and the punch appears in **Attendance Logs**.
+
+**Removing a fingerprint.** On the employee's record, the **Fingerprints** card lists the enrolled fingers and when they were enrolled. Click **Remove** next to a finger, for example after an injury, and enroll another finger at the kiosk. A separated employee's fingerprints stop working automatically.
+
 ### Attendance
 
 **Daily routine**
@@ -238,6 +254,16 @@ You cannot change your own role or deactivate yourself.
 ### Biometric Devices
 
 Add each time clock with its IP address and port (4370). **Test Connection** checks it; **Sync Now** pulls punches immediately; the **Sync log** lists every attempt and its errors. Until a ZKTeco driver is installed, use the **mock** driver for demonstrations.
+
+**Fingerprint kiosk.** To connect the DigitalPersona fingerprint kiosk:
+
+1. Click **New Device**, choose the driver **DigitalPersona U.are.U kiosk**, and enter the **IP address** of the kiosk PC. Use `127.0.0.1` if the HRIS runs on that same PC.
+2. Open the device and click **Issue Kiosk Token**. Copy the token: it is shown only once.
+3. On the kiosk PC, enter the HRIS address and the token on the kiosk's settings screen. The settings screen opens on first start, or HR opens it with **Ctrl+Shift+S**.
+
+The kiosk sends punches as they happen, so there is nothing to sync. **Test Connection** shows when it last checked in (every 30 seconds), and **Received punches** lists what it sent.
+
+Issue a new token if the kiosk PC is replaced or the token may have leaked: the old token stops working at once. If the kiosk PC's IP address changes, update the device; the kiosk is refused until then. Setting up the kiosk PC itself is covered in `kiosk/README.md`.
 
 ### Backups
 
