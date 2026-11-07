@@ -78,6 +78,6 @@
         </tr>
     </table>
 
-    <div class="footer">Kagjanaw HRIS · Generated {{ now()->format('M j, Y g:i A') }}</div>
+    <div class="footer">Cagdianao HRIS · Generated {{ now()->format('M j, Y g:i A') }}</div>
 </body>
 </html>

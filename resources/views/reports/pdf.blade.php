@@ -61,6 +61,6 @@
         </table>
     @endforeach
 
-    <div class="footer">Generated {{ now()->format('F j, Y g:i A') }} · Kagjanaw HRIS</div>
+    <div class="footer">Generated {{ now()->format('F j, Y g:i A') }} · Cagdianao HRIS</div>
 </body>
 </html>

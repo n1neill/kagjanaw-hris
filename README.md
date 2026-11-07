@@ -1,4 +1,4 @@
-# Kagjanaw HRIS
+# Cagdianao HRIS
 
 A web-based, on-premise Human Resource Information System for the **Municipality of Cagdianao, Province of Dinagat Islands**. It replaces paper-based HR processes with one system for employee records, biometric attendance, leave management and payroll. It runs on the municipal office LAN and works in desktop and mobile browsers.
 

@@ -1,6 +1,6 @@
-# Kagjanaw HRIS — User Guide
+# Cagdianao HRIS — User Guide
 
-Kagjanaw HRIS is the Human Resource Information System of the Municipality of Cagdianao. It keeps employee records (201 files), attendance from the time clock, leave applications and leave cards, and payroll in one place. Open it in any browser on the municipal network, on a computer or a phone.
+Cagdianao HRIS is the Human Resource Information System of the Municipality of Cagdianao. It keeps employee records (201 files), attendance from the time clock, leave applications and leave cards, and payroll in one place. Open it in any browser on the municipal network, on a computer or a phone.
 
 This guide is organized by role. Read **Getting started** first, then the section for your role. Each account has exactly one role:
 

@@ -33,6 +33,6 @@ class ForcedPasswordChangeController extends Controller
 
         return redirect()
             ->route('dashboard')
-            ->with('status', __('Your password has been changed. Welcome to Kagjanaw HRIS!'));
+            ->with('status', __('Your password has been changed. Welcome to Cagdianao HRIS!'));
     }
 }

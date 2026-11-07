@@ -100,7 +100,7 @@
     @endif
 
     <div class="footer">
-        Computer-generated payslip from Kagjanaw HRIS · {{ $run->released_at ? 'Released '.$run->released_at->format('M j, Y') : 'Not yet released — for review only' }} · Generated {{ now()->format('M j, Y g:i A') }}
+        Computer-generated payslip from Cagdianao HRIS · {{ $run->released_at ? 'Released '.$run->released_at->format('M j, Y') : 'Not yet released — for review only' }} · Generated {{ now()->format('M j, Y g:i A') }}
     </div>
 </body>
 </html>
