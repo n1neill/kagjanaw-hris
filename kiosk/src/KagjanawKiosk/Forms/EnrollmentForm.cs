@@ -86,9 +86,14 @@ internal sealed class EnrollmentForm : Form
             signOut,
         ]);
 
-        var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 580, FixedPanel = FixedPanel.Panel2 };
-        split.Panel1.Controls.Add(left);
-        split.Panel2.Controls.Add(right);
+        // A fixed-width form column beside a flexible list; a SplitContainer's distance
+        // is unreliable before the form has its final size and left the form hidden.
+        var split = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        split.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500));
+        split.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        split.Controls.Add(left, 0, 0);
+        split.Controls.Add(right, 1, 0);
         Controls.Add(split);
 
         ShowSelected();

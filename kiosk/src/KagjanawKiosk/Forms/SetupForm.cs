@@ -32,12 +32,12 @@ internal sealed class SetupForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
-        MinimizeBox = false;
+        MinimizeBox = true;
+        ShowInTaskbar = true;
         AutoSize = true;
         AutoSizeMode = AutoSizeMode.GrowAndShrink;
         Padding = new Padding(16);
         Font = KioskTheme.Font(10);
-        TopMost = true;
 
         _url.Text = settings.HrisBaseUrl;
         _token.PlaceholderText = _hasToken ? "Leave blank to keep the current token" : "Paste the token from the HRIS";

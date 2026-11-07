@@ -10,7 +10,7 @@ namespace KagjanawKiosk.Forms;
 /// just place a finger; the HRIS works out whether it is a time-in or out.
 ///
 /// HR shortcuts: Ctrl+Shift+E enroll fingerprints, Ctrl+Shift+S settings,
-/// Ctrl+Shift+Q exit. Each asks for an HR sign-in first.
+/// Ctrl+Shift+W leave/return to full screen, Ctrl+Shift+Q exit. Each asks for an HR sign-in first.
 /// </summary>
 internal sealed class ClockInForm : Form
 {
@@ -33,6 +33,7 @@ internal sealed class ClockInForm : Form
     private Task? _captureLoop;
     private DateTimeOffset _resetResultAt = DateTimeOffset.MaxValue;
     private bool _allowClose;
+    private bool _isFullScreen;
 
     public ClockInForm(KioskApp app)
     {
@@ -44,16 +45,9 @@ internal sealed class ClockInForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(900, 640);
 
-        if (app.Settings.FullScreen)
-        {
-            FormBorderStyle = FormBorderStyle.None;
-            WindowState = FormWindowState.Maximized;
-            TopMost = true;
-        }
-        else
-        {
-            Size = new Size(1100, 760);
-        }
+        Size = new Size(1100, 760);
+        _isFullScreen = app.Settings.FullScreen;
+        ApplyScreenMode();
 
         var center = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5 };
         center.RowStyles.Add(new RowStyle(SizeType.Percent, 12));
@@ -123,13 +117,56 @@ internal sealed class ClockInForm : Form
                 e.Handled = true;
                 await ExitAsync();
                 break;
+            case Keys.W:
+                e.Handled = true;
+                await ToggleWindowedAsync();
+                break;
         }
+    }
+
+    /// <summary>
+    /// Leaves full screen so HR can reach other apps (it asks for a sign-in),
+    /// or returns to full screen. Only lasts until the kiosk is restarted.
+    /// </summary>
+    private async Task ToggleWindowedAsync()
+    {
+        if (_isFullScreen)
+        {
+            var session = SignIn("Sign in as HR to leave full screen.");
+
+            if (session is null)
+            {
+                return;
+            }
+
+            await EndSessionAsync(session);
+        }
+
+        _isFullScreen = !_isFullScreen;
+        ApplyScreenMode();
+    }
+
+    private void ApplyScreenMode()
+    {
+        if (_isFullScreen)
+        {
+            WindowState = FormWindowState.Normal;
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+            TopMost = true;
+
+            return;
+        }
+
+        TopMost = false;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        WindowState = FormWindowState.Normal;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         // Full screen, Alt+F4 must not close the kiosk; HR uses Ctrl+Shift+Q.
-        if (_app.Settings.FullScreen && !_allowClose && e.CloseReason == CloseReason.UserClosing)
+        if (_isFullScreen && !_allowClose && e.CloseReason == CloseReason.UserClosing)
         {
             e.Cancel = true;
 
@@ -266,7 +303,7 @@ internal sealed class ClockInForm : Form
 
         try
         {
-            using var enrollment = new EnrollmentForm(_app, session);
+            using var enrollment = new EnrollmentForm(_app, session) { TopMost = TopMost };
             enrollment.ShowDialog(this);
         }
         finally
@@ -280,7 +317,7 @@ internal sealed class ClockInForm : Form
     private async Task OpenSettingsAsync()
     {
         // A rejected token cannot sign anyone in, so settings open without HR then.
-        var needsSignIn = _app.Settings.FullScreen && !_app.Worker.Status.IsKioskRejected;
+        var needsSignIn = _isFullScreen && !_app.Worker.Status.IsKioskRejected;
 
         if (needsSignIn)
         {
@@ -312,7 +349,7 @@ internal sealed class ClockInForm : Form
 
     private async Task ExitAsync()
     {
-        if (_app.Settings.FullScreen && !_app.Worker.Status.IsKioskRejected)
+        if (_isFullScreen && !_app.Worker.Status.IsKioskRejected)
         {
             var session = SignIn("Sign in as HR to close the kiosk.");
 
