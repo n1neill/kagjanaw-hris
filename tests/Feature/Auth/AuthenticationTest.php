@@ -125,3 +125,27 @@ test('self-registration is not available', function () {
 
     $response->assertNotFound();
 });
+
+test('ticking remember me sets the remember cookie and token', function () {
+    $user = User::factory()->employee()->create();
+
+    $response = $this->post('/login', [
+        'username' => $user->username,
+        'password' => 'password',
+        'remember' => 'on',
+    ]);
+
+    $response->assertCookie(Auth::guard('web')->getRecallerName());
+    expect($user->fresh()->remember_token)->not->toBeEmpty();
+});
+
+test('login without remember me sets no remember cookie', function () {
+    $user = User::factory()->employee()->create();
+
+    $response = $this->post('/login', [
+        'username' => $user->username,
+        'password' => 'password',
+    ]);
+
+    $response->assertCookieMissing(Auth::guard('web')->getRecallerName());
+});

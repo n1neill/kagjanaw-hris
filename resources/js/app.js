@@ -67,7 +67,8 @@ document.querySelectorAll('table[data-datatable]').forEach((table) => {
         pageLength: 25,
         order: [],
         language: {
-            search: 'Search:',
+            search: '',
+            searchPlaceholder: 'Search…',
             emptyTable: table.dataset.empty ?? 'No records found.',
         },
     });

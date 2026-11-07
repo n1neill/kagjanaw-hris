@@ -33,7 +33,7 @@
             </div>
             <div class="sm:col-span-2 lg:col-span-4">
                 <x-input-label for="search" :value="__('Record')" />
-                <x-text-input id="search" name="search" class="mt-1" :placeholder="__('Employee number, name, or record')" :value="$filters['search'] ?? null" />
+                <x-text-input id="search" name="search" type="search" class="search-field mt-1 !w-full" :placeholder="__('Employee number, name, or record')" :value="$filters['search'] ?? null" />
             </div>
             <div class="flex items-center gap-3 lg:col-span-2">
                 <x-secondary-button type="submit">{{ __('Filter') }}</x-secondary-button>

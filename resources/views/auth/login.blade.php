@@ -1,5 +1,6 @@
 <x-guest-layout>
-    <h2 class="text-xl font-semibold tracking-tight text-ink">{{ __('Sign in to your account') }}</h2>
+    <h2 class="text-4xl font-semibold tracking-tight text-ink">{{ __("Welcome back") }}</h2>
+    <p class="mt-1 text-sm text-ink-muted">{{ __("Sign in to your account to continue.") }}</p>
 
     <x-auth-session-status class="mt-4" :status="session('status')" />
 
