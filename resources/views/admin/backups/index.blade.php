@@ -18,27 +18,27 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                        <th class="py-2 pr-3">{{ __('Created') }}</th>
-                        <th class="px-2 py-2">{{ __('Type') }}</th>
-                        <th class="px-2 py-2">{{ __('By') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('Files') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('Size') }}</th>
-                        <th class="px-2 py-2"><span class="sr-only">{{ __('Actions') }}</span></th>
+                    <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <th class="px-3 py-2.5">{{ __('Created') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Type') }}</th>
+                        <th class="px-3 py-2.5">{{ __('By') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('Files') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('Size') }}</th>
+                        <th class="px-3 py-2.5"><span class="sr-only">{{ __('Actions') }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($backups as $index => $backup)
-                        <tr class="border-b border-line">
-                            <td class="py-2 pr-3">
+                        <tr class="border-b border-line transition-colors hover:bg-surface-muted/60">
+                            <td class="px-3 py-2.5">
                                 <span class="block font-medium text-ink">{{ $backup->createdAt->format('M j, Y g:i A') }}</span>
                                 <span class="block font-mono text-xs text-ink-muted">{{ $backup->name }}</span>
                             </td>
-                            <td class="px-2 py-2">{{ $backup->trigger?->label() ?? '—' }}</td>
-                            <td class="px-2 py-2">{{ $backup->createdBy ?? __('System') }}</td>
-                            <td class="px-2 py-2 text-right tabular-nums">{{ $backup->fileCount }}</td>
-                            <td class="whitespace-nowrap px-2 py-2 text-right tabular-nums">{{ $backup->readableSize() }}</td>
-                            <td class="px-2 py-2">
+                            <td class="px-3 py-2.5">{{ $backup->trigger?->label() ?? '—' }}</td>
+                            <td class="px-3 py-2.5">{{ $backup->createdBy ?? __('System') }}</td>
+                            <td class="px-3 py-2.5 text-right tabular-nums">{{ $backup->fileCount }}</td>
+                            <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{{ $backup->readableSize() }}</td>
+                            <td class="px-3 py-2.5">
                                 <div class="flex flex-wrap justify-end gap-2">
                                     <x-button-link :href="route('admin.backups.download', $backup->name)" variant="secondary">{{ __('Download') }}</x-button-link>
                                     <x-secondary-button type="button" x-data="" x-on:click.prevent="$dispatch('open-modal', 'restore-{{ $index }}')">{{ __('Restore') }}</x-secondary-button>

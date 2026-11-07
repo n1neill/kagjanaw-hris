@@ -12,8 +12,8 @@
 
     <div class="grid gap-4 sm:grid-cols-3">
         <x-stat-card :label="__('User accounts')" :value="$totalUsers" icon="users" />
-        <x-stat-card :label="__('Active')" :value="$activeUsers" icon="check-circle" />
-        <x-stat-card :label="__('Deactivated')" :value="$inactiveUsers" icon="key" />
+        <x-stat-card :label="__('Active')" :value="$activeUsers" icon="check-circle" :progress="$totalUsers > 0 ? $activeUsers / $totalUsers * 100 : 0" :trend="$totalUsers > 0 ? round($activeUsers / $totalUsers * 100).'%' : null" trendTone="up" />
+        <x-stat-card :label="__('Deactivated')" :value="$inactiveUsers" icon="key" :trend="$inactiveUsers > 0 ? __('Review these accounts') : null" />
     </div>
 
     <div class="grid gap-6 lg:grid-cols-3">

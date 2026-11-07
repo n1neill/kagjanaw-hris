@@ -3,6 +3,40 @@ import DataTable from 'datatables.net-dt';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 window.Alpine = Alpine;
+
+/**
+ * State of the signed-in app shell: the mobile navigation drawer and the
+ * desktop sidebar, which collapses to an icon rail. The collapsed choice is
+ * remembered in this browser only; the page works when storage is blocked.
+ */
+Alpine.data('appShell', () => ({
+    sidebarOpen: false,
+    sidebarCollapsed: false,
+    sidebarReady: false,
+
+    init() {
+        try {
+            this.sidebarCollapsed = localStorage.getItem('sidebar-collapsed') === '1';
+        } catch (error) {
+            // Storage is unavailable; start expanded.
+        }
+
+        this.$watch('sidebarCollapsed', (collapsed) => {
+            try {
+                localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0');
+            } catch (error) {
+                // The choice just won't be remembered.
+            }
+        });
+
+        // Enable width transitions only after the first paint so a restored
+        // collapsed state does not animate on page load.
+        requestAnimationFrame(() => {
+            this.sidebarReady = true;
+        });
+    },
+}));
+
 Alpine.start();
 
 /**

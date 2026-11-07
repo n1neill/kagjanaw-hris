@@ -46,29 +46,29 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                        <th class="py-2 pr-3">{{ __('Time') }}</th>
-                        <th class="px-2 py-2">{{ __('User') }}</th>
-                        <th class="px-2 py-2">{{ __('Action') }}</th>
-                        <th class="px-2 py-2">{{ __('Record') }}</th>
-                        <th class="px-2 py-2">{{ __('IP address') }}</th>
-                        <th class="px-2 py-2"><span class="sr-only">{{ __('Details') }}</span></th>
+                    <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <th class="px-3 py-2.5">{{ __('Time') }}</th>
+                        <th class="px-3 py-2.5">{{ __('User') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Action') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Record') }}</th>
+                        <th class="px-3 py-2.5">{{ __('IP address') }}</th>
+                        <th class="px-3 py-2.5"><span class="sr-only">{{ __('Details') }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($entries as $entry)
-                        <tr class="border-b border-line align-top">
-                            <td class="whitespace-nowrap py-2 pr-3 font-mono text-xs">{{ $entry->created_at->format('Y-m-d H:i:s') }}</td>
-                            <td class="px-2 py-2">{{ $entry->user?->name ?? __('System or visitor') }}</td>
-                            <td class="px-2 py-2"><x-badge :color="$entry->event->badgeColor()">{{ $entry->event->label() }}</x-badge></td>
-                            <td class="px-2 py-2">
+                        <tr class="border-b border-line align-top transition-colors hover:bg-surface-muted/60">
+                            <td class="whitespace-nowrap px-3 py-2.5 font-mono text-xs">{{ $entry->created_at->format('Y-m-d H:i:s') }}</td>
+                            <td class="px-3 py-2.5">{{ $entry->user?->name ?? __('System or visitor') }}</td>
+                            <td class="px-3 py-2.5"><x-badge :color="$entry->event->badgeColor()">{{ $entry->event->label() }}</x-badge></td>
+                            <td class="px-3 py-2.5">
                                 @if ($entry->subjectType())
                                     <span class="text-xs text-ink-muted">{{ $entry->subjectType() }}</span><br>
                                 @endif
                                 {{ $entry->description }}
                             </td>
-                            <td class="px-2 py-2 font-mono text-xs text-ink-muted">{{ $entry->ip_address ?? '—' }}</td>
-                            <td class="px-2 py-2 text-right">
+                            <td class="px-3 py-2.5 font-mono text-xs text-ink-muted">{{ $entry->ip_address ?? '—' }}</td>
+                            <td class="px-3 py-2.5 text-right">
                                 <a href="{{ route('admin.audit-logs.show', $entry) }}" class="text-brand-700 dark:text-brand-400 hover:underline">{{ __('Details') }}</a>
                             </td>
                         </tr>

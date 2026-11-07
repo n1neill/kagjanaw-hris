@@ -32,28 +32,28 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                        <th class="py-2 pr-3">{{ __('Time') }}</th>
-                        <th class="px-2 py-2">{{ __('Biometric ID') }}</th>
-                        <th class="px-2 py-2">{{ __('Employee') }}</th>
-                        <th class="px-2 py-2">{{ __('Source') }}</th>
-                        <th class="px-2 py-2">{{ __('Status') }}</th>
+                    <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <th class="px-3 py-2.5">{{ __('Time') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Biometric ID') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Employee') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Source') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Status') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($logs as $log)
-                        <tr class="border-b border-line">
-                            <td class="whitespace-nowrap py-2 pr-3 font-mono">{{ $log->logged_at->format('Y-m-d H:i:s') }}</td>
-                            <td class="px-2 py-2 font-mono">{{ $log->biometric_user_id }}</td>
-                            <td class="px-2 py-2">
+                        <tr class="border-b border-line transition-colors hover:bg-surface-muted/60">
+                            <td class="whitespace-nowrap px-3 py-2.5 font-mono">{{ $log->logged_at->format('Y-m-d H:i:s') }}</td>
+                            <td class="px-3 py-2.5 font-mono">{{ $log->biometric_user_id }}</td>
+                            <td class="px-3 py-2.5">
                                 @if ($log->employee)
                                     <a href="{{ route('attendance.dtr.show', [$log->employee, 'month' => $log->logged_at->format('Y-m')]) }}" class="text-brand-700 dark:text-brand-400 hover:underline">{{ $log->employee->sortable_name }}</a>
                                 @else
                                     <span class="text-ink-subtle">—</span>
                                 @endif
                             </td>
-                            <td class="px-2 py-2 text-ink-muted">{{ $log->device?->name ?? $log->source->label() }}</td>
-                            <td class="px-2 py-2">
+                            <td class="px-3 py-2.5 text-ink-muted">{{ $log->device?->name ?? $log->source->label() }}</td>
+                            <td class="px-3 py-2.5">
                                 <x-badge :color="$log->status === \App\Enums\AttendanceLogStatus::Valid ? 'green' : 'yellow'">{{ $log->status->label() }}</x-badge>
                             </td>
                         </tr>

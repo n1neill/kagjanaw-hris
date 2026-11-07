@@ -69,31 +69,31 @@
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                        <th class="py-2 pr-3">{{ $isKiosk ? __('Received') : __('Started') }}</th>
-                        <th class="px-2 py-2">{{ __('By') }}</th>
-                        <th class="px-2 py-2">{{ __('Result') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('Read') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('New') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('Duplicates') }}</th>
-                        <th class="px-2 py-2 text-right">{{ __('Flagged') }}</th>
+                    <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                        <th class="px-3 py-2.5">{{ $isKiosk ? __('Received') : __('Started') }}</th>
+                        <th class="px-3 py-2.5">{{ __('By') }}</th>
+                        <th class="px-3 py-2.5">{{ __('Result') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('Read') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('New') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('Duplicates') }}</th>
+                        <th class="px-3 py-2.5 text-right">{{ __('Flagged') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($runs as $run)
-                        <tr class="border-b border-line align-top">
-                            <td class="whitespace-nowrap py-2 pr-3">{{ $run->started_at->format('M j, Y g:i:s A') }}</td>
-                            <td class="px-2 py-2 text-ink-muted">{{ $run->triggeredBy?->name ?? ($isKiosk ? __('Kiosk') : __('Scheduler')) }}</td>
-                            <td class="px-2 py-2">
+                        <tr class="border-b border-line align-top transition-colors hover:bg-surface-muted/60">
+                            <td class="whitespace-nowrap px-3 py-2.5">{{ $run->started_at->format('M j, Y g:i:s A') }}</td>
+                            <td class="px-3 py-2.5 text-ink-muted">{{ $run->triggeredBy?->name ?? ($isKiosk ? __('Kiosk') : __('Scheduler')) }}</td>
+                            <td class="px-3 py-2.5">
                                 <x-badge :color="$run->status->badgeColor()">{{ $run->status->label() }}</x-badge>
                                 @if ($run->error_message)
                                     <span class="mt-1 block text-xs text-red-700 dark:text-red-300">{{ $run->error_message }}</span>
                                 @endif
                             </td>
-                            <td class="px-2 py-2 text-right">{{ $run->fetched_count }}</td>
-                            <td class="px-2 py-2 text-right">{{ $run->inserted_count }}</td>
-                            <td class="px-2 py-2 text-right">{{ $run->duplicate_count }}</td>
-                            <td class="px-2 py-2 text-right">{{ $run->flagged_count }}</td>
+                            <td class="px-3 py-2.5 text-right tabular-nums">{{ $run->fetched_count }}</td>
+                            <td class="px-3 py-2.5 text-right tabular-nums">{{ $run->inserted_count }}</td>
+                            <td class="px-3 py-2.5 text-right tabular-nums">{{ $run->duplicate_count }}</td>
+                            <td class="px-3 py-2.5 text-right tabular-nums">{{ $run->flagged_count }}</td>
                         </tr>
                     @empty
                         <tr>

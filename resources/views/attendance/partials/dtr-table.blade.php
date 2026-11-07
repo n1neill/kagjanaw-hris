@@ -8,8 +8,8 @@
 <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead>
-            <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                <th class="py-2 pr-3">{{ __('Date') }}</th>
+            <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                <th class="px-3 py-2.5">{{ __('Date') }}</th>
                 <th class="px-2 py-2 text-center" colspan="2">{{ __('Morning') }}<span class="block font-normal normal-case">{{ __('In · Out') }}</span></th>
                 <th class="px-2 py-2 text-center" colspan="2">{{ __('Afternoon') }}<span class="block font-normal normal-case">{{ __('In · Out') }}</span></th>
                 <th class="px-2 py-2 text-right">{{ __('Late') }}</th>
@@ -27,8 +27,8 @@
                     $record = $day['record'];
                     $isOffDay = $day['holiday'] !== null || ($record?->status && ! $record->status->isWorkingDay());
                 @endphp
-                <tr @class(['border-b border-line', 'bg-surface-muted text-ink-muted' => $isOffDay, 'bg-yellow-50/60 dark:bg-yellow-500/5' => $record?->status === \App\Enums\DtrStatus::Incomplete])>
-                    <td class="whitespace-nowrap py-2 pr-3">
+                <tr @class(['border-b border-line transition-colors hover:bg-surface-muted/60', 'bg-surface-muted text-ink-muted' => $isOffDay, 'bg-yellow-50/60 dark:bg-yellow-500/5' => $record?->status === \App\Enums\DtrStatus::Incomplete])>
+                    <td class="whitespace-nowrap px-3 py-2">
                         <span class="font-medium text-ink">{{ $day['date']->format('j') }}</span>
                         <span class="text-ink-muted">{{ $day['date']->format('D') }}</span>
                     </td>
@@ -42,8 +42,8 @@
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->pm_in) }}</td>
                         <td class="px-2 py-2 text-center font-mono">{{ DailyTimeRecord::displayTime($record?->pm_out) }}</td>
                     @endif
-                    <td class="px-2 py-2 text-right">{{ $record?->late_minutes ? Report::formatMinutes($record->late_minutes) : '' }}</td>
-                    <td class="px-2 py-2 text-right">{{ $record?->undertime_minutes ? Report::formatMinutes($record->undertime_minutes) : '' }}</td>
+                    <td class="px-2 py-2 text-right tabular-nums">{{ $record?->late_minutes ? Report::formatMinutes($record->late_minutes) : '' }}</td>
+                    <td class="px-2 py-2 text-right tabular-nums">{{ $record?->undertime_minutes ? Report::formatMinutes($record->undertime_minutes) : '' }}</td>
                     <td class="px-2 py-2">
                         @if ($record)
                             <x-badge :color="$record->status->badgeColor()">{{ $record->status->label() }}</x-badge>

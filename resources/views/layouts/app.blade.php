@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name', 'Kagjanaw HRIS') }}</title>
+        <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name', 'Cagdianao HRIS') }}</title>
 
         @fonts
 
@@ -16,7 +16,7 @@
             {{ __('Skip to main content') }}
         </a>
 
-        <div x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false" class="min-h-full">
+        <div x-data="appShell" @keydown.escape.window="sidebarOpen = false" class="min-h-full">
             {{-- Mobile sidebar drawer --}}
             <div x-cloak x-show="sidebarOpen" class="relative z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="{{ __('Navigation') }}">
                 <div x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 bg-gray-950/50 backdrop-blur-xs" @click="sidebarOpen = false"></div>
@@ -41,18 +41,25 @@
             </div>
 
             {{-- Desktop sidebar --}}
-            <aside class="hidden lg:fixed lg:inset-y-0 lg:z-30 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-line lg:bg-surface">
-                <div class="flex h-16 shrink-0 items-center border-b border-line px-5">
+            <aside id="desktop-sidebar"
+                   :class="[sidebarCollapsed && 'lg:w-16!', sidebarReady && 'transition-[width] duration-300 ease-in-out']"
+                   class="hidden overflow-hidden lg:fixed lg:inset-y-0 lg:z-30 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-line lg:bg-surface">
+                <div :class="sidebarCollapsed && 'lg:px-3.5!'" class="flex h-16 shrink-0 items-center border-b border-line px-5">
                     @include('layouts.partials.brand')
                 </div>
                 @include('layouts.partials.sidebar-nav')
             </aside>
 
-            <div class="lg:pl-64">
+            <div :class="[sidebarCollapsed && 'lg:pl-16!', sidebarReady && 'transition-[padding] duration-300 ease-in-out']" class="lg:pl-64">
                 {{-- Top bar --}}
                 <div class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
                     <button type="button" class="-ml-2 rounded-lg p-2 text-ink-muted hover:bg-surface-muted hover:text-ink lg:hidden" @click="sidebarOpen = true">
                         <span class="sr-only">{{ __('Open navigation') }}</span>
+                        <x-icon name="menu" class="size-6" />
+                    </button>
+
+                    <button type="button" class="-ml-2 hidden rounded-lg p-2 text-ink-muted hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-brand-500 lg:inline-flex" aria-controls="desktop-sidebar" :aria-expanded="(! sidebarCollapsed).toString()" @click="sidebarCollapsed = ! sidebarCollapsed">
+                        <span class="sr-only" x-text="sidebarCollapsed ? @js(__('Expand sidebar')) : @js(__('Collapse sidebar'))">{{ __('Collapse sidebar') }}</span>
                         <x-icon name="menu" class="size-6" />
                     </button>
 

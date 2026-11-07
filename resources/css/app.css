@@ -26,7 +26,7 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Kagjanaw brand: fresh emerald. Text and button fills use 700 or darker for contrast. */
+    /* Cagdianao brand: fresh emerald. Text and button fills use 700 or darker for contrast. */
     --color-brand-50: #ecfdf5;
     --color-brand-100: #d1fae5;
     --color-brand-200: #a7f3d0;
@@ -141,7 +141,17 @@
 }
 
 .dt-container .dt-length select {
-    padding-right: 2rem;
+    box-sizing: border-box;
+    width: auto;
+    min-width: 5rem;
+    margin-right: 0.5rem;
+    padding-right: 2.25rem;
+    color-scheme: inherit;
+}
+
+.dt-container .dt-length select option {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
 }
 
 .dt-container .dt-info,

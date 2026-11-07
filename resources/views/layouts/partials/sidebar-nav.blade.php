@@ -1,7 +1,7 @@
 @use('App\Enums\Permission')
 
 {{-- Menu items are shown per permission; routes enforce the same permissions server-side. --}}
-<nav class="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-5" aria-label="{{ __('Main') }}">
+<nav :class="sidebarCollapsed && 'lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden'" class="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-3 py-5" aria-label="{{ __('Main') }}">
     <div class="space-y-1">
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="home">
             {{ __('Dashboard') }}
@@ -43,7 +43,7 @@
 
     @can(Permission::ManageEmployees)
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Human Resources') }}</p>
+            <x-sidebar-heading>{{ __('Human Resources') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('Employees') }}
@@ -61,7 +61,7 @@
         </div>
     @elsecan(Permission::ViewDepartmentEmployees)
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Department') }}</p>
+            <x-sidebar-heading>{{ __('Department') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
                     {{ __('My Department') }}
@@ -77,7 +77,7 @@
 
     @canany([Permission::ApproveLeave, Permission::ManageLeaveCredits])
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Leave') }}</p>
+            <x-sidebar-heading>{{ __('Leave') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 @can(Permission::ApproveLeave)
                     <x-sidebar-link :href="route('leave.requests.index')" :active="request()->routeIs('leave.requests.index', 'leave.requests.show')" icon="inbox">
@@ -104,7 +104,7 @@
 
     @can(Permission::ProcessPayroll)
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Payroll') }}</p>
+            <x-sidebar-heading>{{ __('Payroll') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('payroll.runs.index')" :active="request()->routeIs('payroll.runs.*', 'payroll.employees.*')" icon="banknotes">
                     {{ __('Payroll Runs') }}
@@ -127,7 +127,7 @@
 
     @can(Permission::ManageWorkCalendar)
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Work Calendar') }}</p>
+            <x-sidebar-heading>{{ __('Work Calendar') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('work-calendar.schedule.edit')" :active="request()->routeIs('work-calendar.schedule.*')" icon="clock">
                     {{ __('Office Hours') }}
@@ -141,7 +141,7 @@
 
     @can(Permission::ManageReferenceData)
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Reference Data') }}</p>
+            <x-sidebar-heading>{{ __('Reference Data') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 <x-sidebar-link :href="route('reference-data.departments.index')" :active="request()->routeIs('reference-data.departments.*')" icon="building">
                     {{ __('Departments') }}
@@ -158,7 +158,7 @@
 
     @canany([Permission::ManageUsers, Permission::ManageBiometricDevices, Permission::ManageSettings, Permission::ManageBackups, Permission::ViewAuditLogs])
         <div>
-            <p class="px-3 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-subtle">{{ __('Administration') }}</p>
+            <x-sidebar-heading>{{ __('Administration') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
                 @can(Permission::ManageUsers)
                     <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" icon="users">
@@ -195,9 +195,9 @@
         </x-sidebar-link>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:bg-red-500/10 dark:hover:text-red-300">
+            <button type="submit" :title="sidebarCollapsed ? @js(__('Log Out')) : null" class="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:bg-red-500/10 dark:hover:text-red-300">
                 <x-icon name="logout" class="size-5 shrink-0 text-ink-subtle group-hover:text-current" />
-                <span>{{ __('Log Out') }}</span>
+                <span :class="sidebarCollapsed && 'lg:sr-only'">{{ __('Log Out') }}</span>
             </button>
         </form>
     </div>

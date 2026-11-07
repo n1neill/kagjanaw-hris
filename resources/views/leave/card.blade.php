@@ -21,7 +21,7 @@
     <x-card :title="__('Vacation and sick leave ledger')" :description="__('Every credit earned, used, deducted or adjusted, with the balance after each entry.')">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
-                <thead>
+                <thead class="bg-surface-muted/50">
                     <tr class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                         <th rowspan="2" class="border-b border-line py-2 pr-3 text-left align-bottom">{{ __('Date') }}</th>
                         <th rowspan="2" class="border-b border-line px-2 py-2 text-left align-bottom">{{ __('Particulars') }}</th>
@@ -51,7 +51,7 @@
                             ];
                             $isVacation = $entry->leave_type_id === $vacationTypeId;
                         @endphp
-                        <tr class="border-b border-line">
+                        <tr class="border-b border-line transition-colors hover:bg-surface-muted/60">
                             <td class="whitespace-nowrap py-1.5 pr-3">{{ $entry->entry_date->format('M j, Y') }}</td>
                             <td class="px-2 py-1.5">
                                 @if ($entry->leave_request_id)

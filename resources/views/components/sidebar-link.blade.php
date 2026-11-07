@@ -1,5 +1,6 @@
 @props(['active' => false, 'icon' => null])
 
+{{-- Inside the app shell's Alpine scope: when the desktop sidebar is collapsed the label is visually hidden (kept for screen readers) and shown as a tooltip. --}}
 @php
 $classes = $active
     ? 'bg-brand-50 text-brand-800 dark:bg-brand-500/10 dark:text-brand-300'
@@ -10,9 +11,9 @@ $iconClasses = $active
     : 'text-ink-subtle group-hover:text-ink-muted';
 @endphp
 
-<a {{ $attributes->merge(['class' => 'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500 '.$classes]) }} @if ($active) aria-current="page" @endif>
+<a {{ $attributes->merge(['class' => 'group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand-500 '.$classes]) }} :title="sidebarCollapsed ? @js(trim(strip_tags($slot))) : null" @if ($active) aria-current="page" @endif>
     @if ($icon)
         <x-icon :name="$icon" class="size-5 shrink-0 {{ $iconClasses }}" />
     @endif
-    <span class="truncate">{{ $slot }}</span>
+    <span class="truncate" :class="sidebarCollapsed && 'lg:sr-only'">{{ $slot }}</span>
 </a>

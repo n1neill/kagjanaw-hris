@@ -30,9 +30,9 @@
         </div>
     @endif
 
-    <section class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-surface p-4 shadow-xs sm:p-6">
+    <section class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-line bg-linear-to-r from-brand-50 via-surface to-surface p-4 shadow-xs sm:p-6 dark:from-brand-500/10">
         <div class="flex items-center gap-4">
-            <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-500/15 text-xl font-semibold text-brand-800 dark:text-brand-300" aria-hidden="true">
+            <span class="flex size-16 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xl font-semibold text-brand-800 ring-4 ring-surface dark:bg-brand-500/15 dark:text-brand-300" aria-hidden="true">
                 {{ mb_substr($employee->first_name, 0, 1) }}{{ mb_substr($employee->last_name, 0, 1) }}
             </span>
             <div>

@@ -49,7 +49,12 @@
                     @foreach ($employees as $employee)
                         <tr>
                             <td class="font-mono text-xs">{{ $employee->employee_number }}</td>
-                            <td class="font-medium text-ink" data-order="{{ $employee->sortable_name }}">{{ $employee->sortable_name }}</td>
+                            <td class="font-medium text-ink" data-order="{{ $employee->sortable_name }}">
+                                <span class="flex items-center gap-2.5">
+                                    <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-800 dark:bg-brand-500/15 dark:text-brand-300" aria-hidden="true">{{ mb_substr($employee->first_name, 0, 1) }}{{ mb_substr($employee->last_name, 0, 1) }}</span>
+                                    {{ $employee->sortable_name }}
+                                </span>
+                            </td>
                             <td>{{ $employee->position->title }}</td>
                             @if ($canManage)
                                 <td>{{ $employee->department->code }}</td>

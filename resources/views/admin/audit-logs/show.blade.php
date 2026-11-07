@@ -33,25 +33,25 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b border-line text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                            <th class="py-2 pr-3">{{ __('Field') }}</th>
+                        <tr class="border-b border-line bg-surface-muted/50 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                            <th class="px-3 py-2.5">{{ __('Field') }}</th>
                             @if ($entry->old_values !== null)
-                                <th class="px-2 py-2">{{ __('Before') }}</th>
+                                <th class="px-3 py-2.5">{{ __('Before') }}</th>
                             @endif
                             @if ($entry->new_values !== null)
-                                <th class="px-2 py-2">{{ __('After') }}</th>
+                                <th class="px-3 py-2.5">{{ __('After') }}</th>
                             @endif
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($changes as $change)
-                            <tr class="border-b border-line align-top">
-                                <td class="py-2 pr-3 font-mono text-xs text-ink-muted">{{ $change['field'] }}</td>
+                            <tr class="border-b border-line align-top transition-colors hover:bg-surface-muted/60">
+                                <td class="px-3 py-2.5 font-mono text-xs text-ink-muted">{{ $change['field'] }}</td>
                                 @if ($entry->old_values !== null)
-                                    <td class="break-all px-2 py-2">{{ $display($change['old']) }}</td>
+                                    <td class="break-all px-3 py-2.5">{{ $display($change['old']) }}</td>
                                 @endif
                                 @if ($entry->new_values !== null)
-                                    <td class="break-all px-2 py-2">{{ $display($change['new']) }}</td>
+                                    <td class="break-all px-3 py-2.5">{{ $display($change['new']) }}</td>
                                 @endif
                             </tr>
                         @endforeach

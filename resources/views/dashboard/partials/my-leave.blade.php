@@ -12,8 +12,19 @@
         </x-slot>
 
         <div class="grid gap-4 sm:grid-cols-3">
-            <x-stat-card :label="__('Vacation leave')" :value="LeaveDays::format($myLeave['vacation']['balance'])" icon="calendar" />
-            <x-stat-card :label="__('Sick leave')" :value="LeaveDays::format($myLeave['sick']['balance'])" icon="calendar" />
+            @foreach (['vacation' => __('Vacation leave'), 'sick' => __('Sick leave')] as $type => $typeLabel)
+                @php
+                    $balance = $myLeave[$type]['balance'];
+                    $pending = $myLeave[$type]['pending'];
+                @endphp
+                <x-stat-card
+                    :label="$typeLabel"
+                    :value="LeaveDays::format($balance)"
+                    icon="calendar"
+                    :hint="$pending > 0 ? __(':days days reserved by pending applications', ['days' => LeaveDays::format($pending)]) : __('Days available')"
+                    :progress="$balance > 0 ? min($pending / $balance * 100, 100) : null"
+                />
+            @endforeach
             <x-stat-card :label="__('Applications in progress')" :value="$myOpenLeaveRequests" icon="inbox" />
         </div>
     </x-card>
