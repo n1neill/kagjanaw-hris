@@ -10,6 +10,9 @@
             <x-sidebar-link :href="route('my-record')" :active="request()->routeIs('my-record')" icon="identification">
                 {{ __('My Record') }}
             </x-sidebar-link>
+            <x-sidebar-link :href="route('my-service-record')" :active="request()->routeIs('my-service-record')" icon="briefcase">
+                {{ __('My Service Record') }}
+            </x-sidebar-link>
         @endcan
         @can(Permission::ViewOwnAttendance)
             <x-sidebar-link :href="route('attendance.my')" :active="request()->routeIs('attendance.my')" icon="clock">

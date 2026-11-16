@@ -129,6 +129,14 @@ class Employee extends Model
     }
 
     /**
+     * @return HasMany<EmployeeServiceRecord, $this>
+     */
+    public function serviceRecords(): HasMany
+    {
+        return $this->hasMany(EmployeeServiceRecord::class);
+    }
+
+    /**
      * @return HasMany<DailyTimeRecord, $this>
      */
     public function dailyTimeRecords(): HasMany

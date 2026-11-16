@@ -12,6 +12,7 @@ use App\Models\Employee;
 use App\Models\EmployeeAllowance;
 use App\Models\EmployeeDeduction;
 use App\Models\EmployeeDocument;
+use App\Models\EmployeeServiceRecord;
 use App\Models\EmploymentType;
 use App\Models\FingerprintTemplate;
 use App\Models\Holiday;
@@ -77,6 +78,7 @@ function routeAccessMatrix(): array
         'announcements.destroy' => $hr,
 
         'my-record' => $staff,
+        'my-service-record' => $staff,
         'employees.index' => $supervisors,
         'employees.show' => $hr,
         'employees.create' => $hr,
@@ -88,6 +90,13 @@ function routeAccessMatrix(): array
         'employees.documents.store' => $hr,
         'employees.documents.destroy' => $hr,
         'employees.fingerprints.destroy' => $hr,
+        'employees.service-record.show' => $hr,
+        'employees.service-record.pdf' => $hr,
+        'employees.service-record.create' => $hr,
+        'employees.service-record.store' => $hr,
+        'employees.service-record.edit' => $hr,
+        'employees.service-record.update' => $hr,
+        'employees.service-record.destroy' => $hr,
 
         'attendance.my' => $staff,
         'attendance.summary' => $supervisors,
@@ -293,6 +302,7 @@ function routeAuthorizationFixtures(): array
         'parameters' => [
             'employee' => $colleague->id,
             'document' => $document->id,
+            'serviceRecord' => EmployeeServiceRecord::factory()->for($colleague)->create()->id,
             'finger' => Finger::RightIndex->value,
             'leaveRequest' => $leaveRequest->id,
             'payrollItem' => $payslip->id,

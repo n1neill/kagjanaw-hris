@@ -98,6 +98,24 @@ class EmployeePolicy
         return $allowed ? Response::allow() : Response::denyAsNotFound();
     }
 
+    /**
+     * The CSC service record, which shows salary history: HR and the employee.
+     */
+    public function viewServiceRecord(User $user, Employee $employee): Response
+    {
+        return $this->viewSensitive($user, $employee)
+            ? Response::allow()
+            : Response::denyAsNotFound();
+    }
+
+    /**
+     * Adding, correcting and removing service record entries: HR only.
+     */
+    public function manageServiceRecord(User $user, Employee $employee): bool
+    {
+        return $user->can(Permission::ManageEmployees);
+    }
+
     private function isOwnRecord(User $user, Employee $employee): bool
     {
         return $employee->user_id !== null

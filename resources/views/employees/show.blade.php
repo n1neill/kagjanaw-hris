@@ -56,6 +56,12 @@
                     {{ __('Attendance') }}
                 </x-button-link>
             @endcan
+            @can('viewServiceRecord', $employee)
+                <x-button-link :href="$isOwnRecord ? route('my-service-record') : route('employees.service-record.show', $employee)" variant="secondary">
+                    <x-icon name="briefcase" class="size-4" />
+                    {{ __('Service Record') }}
+                </x-button-link>
+            @endcan
             @can(Permission::ProcessPayroll)
                 <x-button-link :href="route('payroll.employees.show', $employee)" variant="secondary">
                     <x-icon name="banknotes" class="size-4" />

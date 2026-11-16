@@ -34,14 +34,16 @@ test('access to an employee record follows role and relationship', function (str
         'manageDocuments' => $user->can('manageDocuments', $record),
         'viewAttendance' => $user->can('viewAttendance', $record),
         'manageAttendance' => $user->can('manageAttendance', $record),
+        'viewServiceRecord' => $user->can('viewServiceRecord', $record),
+        'manageServiceRecord' => $user->can('manageServiceRecord', $record),
     ])->toBe($expected);
 })->with([
-    'hr officer' => ['hr officer', ['viewAny' => true, 'view' => true, 'viewSensitive' => true, 'viewDocuments' => true, 'update' => true, 'manageDocuments' => true, 'viewAttendance' => true, 'manageAttendance' => true]],
-    'head of the same department' => ['head of the same department', ['viewAny' => true, 'view' => true, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => true, 'manageAttendance' => false]],
-    'head of another department' => ['head of another department', ['viewAny' => true, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false]],
-    'the employee' => ['the employee', ['viewAny' => false, 'view' => true, 'viewSensitive' => true, 'viewDocuments' => true, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => true, 'manageAttendance' => false]],
-    'a colleague in the same department' => ['a colleague in the same department', ['viewAny' => false, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false]],
-    'system administrator' => ['system administrator', ['viewAny' => false, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false]],
+    'hr officer' => ['hr officer', ['viewAny' => true, 'view' => true, 'viewSensitive' => true, 'viewDocuments' => true, 'update' => true, 'manageDocuments' => true, 'viewAttendance' => true, 'manageAttendance' => true, 'viewServiceRecord' => true, 'manageServiceRecord' => true]],
+    'head of the same department' => ['head of the same department', ['viewAny' => true, 'view' => true, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => true, 'manageAttendance' => false, 'viewServiceRecord' => false, 'manageServiceRecord' => false]],
+    'head of another department' => ['head of another department', ['viewAny' => true, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false, 'viewServiceRecord' => false, 'manageServiceRecord' => false]],
+    'the employee' => ['the employee', ['viewAny' => false, 'view' => true, 'viewSensitive' => true, 'viewDocuments' => true, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => true, 'manageAttendance' => false, 'viewServiceRecord' => true, 'manageServiceRecord' => false]],
+    'a colleague in the same department' => ['a colleague in the same department', ['viewAny' => false, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false, 'viewServiceRecord' => false, 'manageServiceRecord' => false]],
+    'system administrator' => ['system administrator', ['viewAny' => false, 'view' => false, 'viewSensitive' => false, 'viewDocuments' => false, 'update' => false, 'manageDocuments' => false, 'viewAttendance' => false, 'manageAttendance' => false, 'viewServiceRecord' => false, 'manageServiceRecord' => false]],
 ]);
 
 test('denied record access is reported as not found', function () {

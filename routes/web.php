@@ -21,6 +21,8 @@ use App\Http\Controllers\Employees\EmployeeController;
 use App\Http\Controllers\Employees\EmployeeDocumentController;
 use App\Http\Controllers\Employees\EmployeeFingerprintController;
 use App\Http\Controllers\Employees\MyRecordController;
+use App\Http\Controllers\Employees\MyServiceRecordController;
+use App\Http\Controllers\Employees\ServiceRecordController;
 use App\Http\Controllers\Leave\LeaveAdjustmentController;
 use App\Http\Controllers\Leave\LeaveCardController;
 use App\Http\Controllers\Leave\LeaveCertificateController;
@@ -72,6 +74,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-record', MyRecordController::class)
         ->middleware(PermissionMiddleware::using(Permission::ViewOwnRecords))
         ->name('my-record');
+    Route::get('/my-service-record', MyServiceRecordController::class)
+        ->middleware(PermissionMiddleware::using(Permission::ViewOwnRecords))
+        ->name('my-service-record');
 
     Route::get('employees', [EmployeeController::class, 'index'])
         ->middleware(PermissionMiddleware::using([Permission::ManageEmployees, Permission::ViewDepartmentEmployees]))
@@ -85,6 +90,19 @@ Route::middleware('auth')->group(function () {
             ->name('employees.documents.destroy');
         Route::delete('employees/{employee}/fingerprints/{finger}', [EmployeeFingerprintController::class, 'destroy'])
             ->name('employees.fingerprints.destroy');
+        Route::get('employees/{employee}/service-record/create', [ServiceRecordController::class, 'create'])
+            ->name('employees.service-record.create');
+        Route::post('employees/{employee}/service-record', [ServiceRecordController::class, 'store'])
+            ->name('employees.service-record.store');
+        Route::get('employees/{employee}/service-record/{serviceRecord}/edit', [ServiceRecordController::class, 'edit'])
+            ->scopeBindings()
+            ->name('employees.service-record.edit');
+        Route::put('employees/{employee}/service-record/{serviceRecord}', [ServiceRecordController::class, 'update'])
+            ->scopeBindings()
+            ->name('employees.service-record.update');
+        Route::delete('employees/{employee}/service-record/{serviceRecord}', [ServiceRecordController::class, 'destroy'])
+            ->scopeBindings()
+            ->name('employees.service-record.destroy');
     });
 
     // Reachable by HR, the employee's department head and the employee; the policy decides.
