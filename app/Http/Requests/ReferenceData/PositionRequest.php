@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ReferenceData;
 
 use App\Enums\Permission;
+use App\Models\Department;
 use App\Models\Position;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -40,6 +41,7 @@ class PositionRequest extends FormRequest
 
         return [
             'title' => ['required', 'string', 'max:255', Rule::unique(Position::class)->ignore($position)],
+            'department_id' => ['nullable', 'integer', Rule::exists(Department::class, 'id')],
             'salary_grade' => ['nullable', 'integer', 'between:1,33'],
             'description' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['required', 'boolean'],

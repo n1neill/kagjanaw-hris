@@ -51,8 +51,8 @@ class EnrollFingerprintRequest extends FormRequest
                 $finger = $this->route('finger');
                 $maxFingers = (int) config('attendance.kiosk.max_fingers_per_employee');
 
-                if (! $employee->employment_status->isInService() || blank($employee->biometric_user_id)) {
-                    $validator->errors()->add('employee', __(':name is not in service or has no biometric user ID in the HRIS.', ['name' => $employee->full_name]));
+                if (! $employee->employment_status->isInService()) {
+                    $validator->errors()->add('employee', __(':name is not in service in the HRIS.', ['name' => $employee->full_name]));
 
                     return;
                 }

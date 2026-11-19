@@ -62,11 +62,8 @@
 
         <div class="grid gap-6 lg:grid-cols-2">
             @foreach ($taxTables as $effectiveFrom => $brackets)
-                <div class="rounded-lg border border-line p-4">
-                    <div class="flex items-center justify-between gap-3">
-                        <h3 class="text-sm font-semibold text-ink">{{ __('Effective :date', ['date' => $brackets->first()->effective_from->format('F j, Y')]) }}</h3>
-                        <a href="{{ route('payroll.rates.tax.edit', $effectiveFrom) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
-                    </div>
+                <div class="flex flex-col rounded-lg border border-line p-4">
+                    <h3 class="text-sm font-semibold text-ink">{{ __('Effective :date', ['date' => $brackets->first()->effective_from->format('F j, Y')]) }}</h3>
                     @if ($brackets->first()->legal_basis)
                         <p class="mt-1 text-xs text-ink-muted">{{ $brackets->first()->legal_basis }}</p>
                     @endif
@@ -88,6 +85,14 @@
                             @endforeach
                         </tbody>
                     </table>
+                    <div class="mt-auto flex items-center justify-end gap-2 border-t border-line pt-4">
+                        <form method="POST" action="{{ route('payroll.rates.tax.destroy', $effectiveFrom) }}" data-confirm="{{ __('Remove the tax table effective :date?', ['date' => $brackets->first()->effective_from->format('F j, Y')]) }}">
+                            @csrf
+                            @method('DELETE')
+                            <x-danger-button>{{ __('Remove') }}</x-danger-button>
+                        </form>
+                        <x-button-link variant="secondary" href="{{ route('payroll.rates.tax.edit', $effectiveFrom) }}">{{ __('Edit') }}</x-button-link>
+                    </div>
                 </div>
             @endforeach
         </div>

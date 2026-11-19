@@ -25,6 +25,13 @@
             </div>
 
             <div>
+                <x-input-label for="department_id" :value="__('Department')" />
+                <x-select-input id="department_id" name="department_id" class="mt-1" :options="$departments" :selected="old('department_id', $position->department_id)" :placeholder="__('Any department (general position)')" />
+                <p class="mt-1 text-xs text-ink-muted">{{ __('Leave blank for general positions (e.g. Administrative Aide) that any department can use.') }}</p>
+                <x-input-error :messages="$errors->get('department_id')" class="mt-2" />
+            </div>
+
+            <div>
                 <x-input-label for="description" :value="__('Description (optional)')" />
                 <x-textarea-input id="description" name="description" class="mt-1">{{ old('description', $position->description) }}</x-textarea-input>
                 <x-input-error :messages="$errors->get('description')" class="mt-2" />

@@ -200,6 +200,19 @@ describe('contribution rates and tax table', function () {
 
         expect(TaxBracket::query()->whereDate('effective_from', '2027-01-01')->count())->toBe(6);
     });
+
+    it('removes a tax table but never the only one', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $this->actingAs($hrOfficer)->post(route('payroll.rates.tax.store'), ['effective_from' => '2027-01-01']);
+
+        $this->actingAs($hrOfficer)->delete(route('payroll.rates.tax.destroy', '2027-01-01'))
+            ->assertRedirect(route('payroll.rates.index'))->assertSessionHas('status');
+        expect(TaxBracket::query()->whereDate('effective_from', '2027-01-01')->count())->toBe(0);
+
+        $this->actingAs($hrOfficer)->delete(route('payroll.rates.tax.destroy', '2023-01-01'))
+            ->assertSessionHasErrors('effective_from');
+        expect(TaxBracket::query()->whereDate('effective_from', '2023-01-01')->count())->toBe(6);
+    });
 });
 
 describe('allowances', function () {

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Employees;
 
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
+use App\Enums\PayBasis;
 use App\Enums\Sex;
 use App\Models\Department;
 use App\Models\Employee;
@@ -51,15 +52,33 @@ class EmployeeRequest extends FormRequest
             }
         }
 
-        if (filled($this->input('employee_number'))) {
-            $normalized['employee_number'] = mb_strtoupper(trim((string) $this->input('employee_number')));
-        }
-
         if (filled($this->input('email'))) {
             $normalized['email'] = mb_strtolower(trim((string) $this->input('email')));
         }
 
+        $payBasis = $this->payBasis();
+
+        if ($payBasis === PayBasis::SalaryGrade) {
+            $normalized['daily_rate'] = null;
+        } elseif ($payBasis === PayBasis::DailyRate) {
+            $normalized['salary_grade'] = null;
+            $normalized['salary_step'] = null;
+        }
+
         $this->merge($normalized);
+    }
+
+    /**
+     * How the selected employment type is paid, which decides whether the
+     * salary grade and step or the daily rate applies.
+     */
+    private function payBasis(): ?PayBasis
+    {
+        $employmentTypeId = $this->input('employment_type_id');
+
+        return is_numeric($employmentTypeId)
+            ? EmploymentType::query()->find($employmentTypeId)?->pay_basis
+            : null;
     }
 
     /**
@@ -71,14 +90,10 @@ class EmployeeRequest extends FormRequest
     {
         $employee = $this->employee();
         $linkedUserId = $employee?->user_id;
+        $payBasis = $this->payBasis();
         $philippineMobile = 'regex:/^(09|\+639)\d{9}$/';
 
         return [
-            'employee_number' => [
-                'required', 'string', 'max:30', 'regex:/^[A-Z0-9-]+$/',
-                Rule::unique(Employee::class)->ignore($employee),
-                Rule::unique(User::class, 'username')->ignore($linkedUserId),
-            ],
             'last_name' => ['required', 'string', 'max:100'],
             'first_name' => ['required', 'string', 'max:100'],
             'middle_name' => ['nullable', 'string', 'max:100'],
@@ -95,11 +110,13 @@ class EmployeeRequest extends FormRequest
             'emergency_contact_number' => ['nullable', 'string', $philippineMobile],
 
             'department_id' => ['required', 'integer', Rule::exists(Department::class, 'id')],
-            'position_id' => ['required', 'integer', Rule::exists(Position::class, 'id')],
+            'position_id' => ['required', 'integer', Rule::exists(Position::class, 'id')->where(
+                fn ($query) => $query->whereNull('department_id')->orWhere('department_id', $this->input('department_id'))
+            )],
             'employment_type_id' => ['required', 'integer', Rule::exists(EmploymentType::class, 'id')],
-            'salary_grade' => ['nullable', 'integer', 'between:1,33', 'required_with:salary_step'],
-            'salary_step' => ['nullable', 'integer', 'between:1,8', 'required_with:salary_grade'],
-            'daily_rate' => ['nullable', 'decimal:0,2', 'min:0', 'max:100000'],
+            'salary_grade' => [Rule::requiredIf($payBasis === PayBasis::SalaryGrade), 'nullable', 'integer', 'between:1,33', 'required_with:salary_step'],
+            'salary_step' => [Rule::requiredIf($payBasis === PayBasis::SalaryGrade), 'nullable', 'integer', 'between:1,8', 'required_with:salary_grade'],
+            'daily_rate' => [Rule::requiredIf($payBasis === PayBasis::DailyRate), 'nullable', 'decimal:0,2', 'min:0.01', 'max:100000'],
             'date_hired' => ['required', 'date', 'after:birth_date'],
             'employment_status' => ['required', Rule::enum(EmploymentStatus::class)],
             'separation_date' => [
@@ -122,12 +139,11 @@ class EmployeeRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'employee_number.regex' => __('The employee ID may only contain letters, numbers and dashes.'),
-            'employee_number.unique' => __('This employee ID is already in use.'),
             'birth_date.before' => __('The employee must be at least 15 years old.'),
             'mobile_number.regex' => __('Enter a Philippine mobile number, e.g. 09171234567.'),
             'emergency_contact_number.regex' => __('Enter a Philippine mobile number, e.g. 09171234567.'),
             'separation_date.required' => __('Enter the separation date for a separated employee.'),
+            'position_id.exists' => __('The selected position does not belong to the selected department.'),
             'separation_date.prohibited' => __('An active employee cannot have a separation date.'),
             'philhealth_number.digits' => __('The PhilHealth number must have 12 digits.'),
             'pagibig_number.digits' => __('The Pag-IBIG MID number must have 12 digits.'),

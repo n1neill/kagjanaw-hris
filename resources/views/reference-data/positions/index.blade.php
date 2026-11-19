@@ -13,6 +13,7 @@
             <thead>
                 <tr>
                     <th>{{ __('Title') }}</th>
+                    <th>{{ __('Department') }}</th>
                     <th>{{ __('Salary Grade') }}</th>
                     <th>{{ __('Status') }}</th>
                     <th data-orderable="false" class="text-right"><span class="sr-only">{{ __('Actions') }}</span></th>
@@ -22,6 +23,7 @@
                 @foreach ($positions as $position)
                     <tr>
                         <td class="font-medium text-ink">{{ $position->title }}</td>
+                        <td>{{ $position->department?->name ?? __('Any department') }}</td>
                         <td data-order="{{ $position->salary_grade ?? 0 }}">{{ $position->salary_grade ? 'SG '.$position->salary_grade : '—' }}</td>
                         <td><x-status-badge :active="$position->is_active" /></td>
                         <td class="text-right">

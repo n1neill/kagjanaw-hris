@@ -1,6 +1,11 @@
 @php
     $isNew = ! $employee->exists;
     $positionGrades = $positions->pluck('salary_grade', 'id');
+    $positionOptions = $positions->map(fn ($position) => [
+        'id' => (string) $position->id,
+        'title' => $position->title,
+        'department_id' => $position->department_id === null ? null : (string) $position->department_id,
+    ])->values();
 @endphp
 
 <x-app-layout :title="$isNew ? __('New Employee') : __('Edit Employee')">
@@ -9,11 +14,47 @@
     <form method="POST" action="{{ $isNew ? route('employees.store') : route('employees.update', $employee) }}" class="space-y-6"
           x-data="{
               grades: @js($positionGrades),
+              positions: @js($positionOptions),
+              departmentId: @js((string) old('department_id', $employee->department_id)),
+              positionId: @js((string) old('position_id', $employee->position_id)),
+              get availablePositions() {
+                  return this.positions.filter((position) => position.department_id === null || position.department_id === this.departmentId);
+              },
+              departmentChanged() {
+                  if (! this.availablePositions.some((position) => position.id === this.positionId)) {
+                      this.positionId = '';
+                  }
+              },
+              salaries: @js($monthlySalaries),
+              payBases: @js($payBases),
+              employmentTypeId: @js((string) old('employment_type_id', $employee->employment_type_id)),
+              get usesSalaryGrade() {
+                  return this.payBases[this.employmentTypeId] === 'salary-grade';
+              },
+              get usesDailyRate() {
+                  return this.payBases[this.employmentTypeId] === 'daily-rate';
+              },
+              employmentTypeChanged() {
+                  if (this.usesSalaryGrade) {
+                      this.dailyRate = '';
+                  } else if (this.usesDailyRate) {
+                      this.salaryGrade = '';
+                      this.salaryStep = '';
+                  }
+              },
+              dailyRate: @js((string) old('daily_rate', $employee->daily_rate)),
+              salaryGrade: @js((string) old('salary_grade', $employee->salary_grade)),
+              salaryStep: @js((string) old('salary_step', $employee->salary_step)),
+              get expectedSalary() {
+                  const amount = this.salaries[this.salaryGrade + '-' + this.salaryStep];
+                  return amount === undefined ? null : Number(amount).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              },
               status: @js(old('employment_status', $employee->employment_status?->value)),
-              fillGrade(event) {
-                  const grade = this.grades[event.target.value];
-                  if (grade && ! this.$refs.salaryGrade.value) {
+              fillGrade() {
+                  const grade = this.grades[this.positionId];
+                  if (grade && ! this.usesDailyRate && ! this.$refs.salaryGrade.value) {
                       this.$refs.salaryGrade.value = grade;
+                      this.salaryGrade = String(grade);
                   }
               },
           }">
@@ -107,41 +148,50 @@
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                     <x-input-label for="employee_number" :value="__('Employee ID')" />
-                    <x-text-input id="employee_number" name="employee_number" class="mt-1 font-mono uppercase" maxlength="30" placeholder="2026-0001" :value="old('employee_number', $employee->employee_number)" required aria-describedby="employee-number-hint" />
-                    <p id="employee-number-hint" class="mt-1 text-xs text-ink-muted">{{ __('Also the employee\'s username for signing in.') }}</p>
-                    <x-input-error :messages="$errors->get('employee_number')" class="mt-2" />
+                    <x-text-input id="employee_number" class="mt-1 font-mono" :value="$employee->employee_number" :placeholder="__('Generated on save')" readonly disabled aria-describedby="employee-number-hint" />
+                    <p id="employee-number-hint" class="mt-1 text-xs text-ink-muted">{{ __('Assigned automatically from the year hired (e.g. 2026-0001). Also the employee\'s username for signing in.') }}</p>
                 </div>
                 <div>
                     <x-input-label for="department_id" :value="__('Department')" />
-                    <x-select-input id="department_id" name="department_id" class="mt-1" :options="$departments" :selected="old('department_id', $employee->department_id)" :placeholder="__('Select department')" required />
+                    <x-select-input id="department_id" name="department_id" class="mt-1" :options="$departments" :selected="old('department_id', $employee->department_id)" :placeholder="__('Select department')" required x-model="departmentId" x-on:change="departmentChanged()" />
                     <x-input-error :messages="$errors->get('department_id')" class="mt-2" />
                 </div>
                 <div>
                     <x-input-label for="position_id" :value="__('Position')" />
-                    <x-select-input id="position_id" name="position_id" class="mt-1" :options="$positions->pluck('title', 'id')" :selected="old('position_id', $employee->position_id)" :placeholder="__('Select position')" required x-on:change="fillGrade($event)" />
+                    <select id="position_id" name="position_id" x-model="positionId" x-on:change="fillGrade()" required :disabled="! departmentId" class="mt-1 block w-full rounded-lg border-line-strong bg-surface text-sm text-ink shadow-xs focus:border-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted">
+                        <option value="" x-text="departmentId ? @js(__('Select position')) : @js(__('Select a department first'))"></option>
+                        <template x-for="position in availablePositions" :key="position.id">
+                            <option :value="position.id" x-text="position.title" :selected="position.id === positionId"></option>
+                        </template>
+                    </select>
                     <x-input-error :messages="$errors->get('position_id')" class="mt-2" />
                 </div>
                 <div>
                     <x-input-label for="employment_type_id" :value="__('Employment type')" />
-                    <x-select-input id="employment_type_id" name="employment_type_id" class="mt-1" :options="$employmentTypes" :selected="old('employment_type_id', $employee->employment_type_id)" :placeholder="__('Select type')" required />
+                    <x-select-input id="employment_type_id" name="employment_type_id" class="mt-1" :options="$employmentTypes" :selected="old('employment_type_id', $employee->employment_type_id)" :placeholder="__('Select type')" required x-model="employmentTypeId" x-on:change="employmentTypeChanged()" />
                     <x-input-error :messages="$errors->get('employment_type_id')" class="mt-2" />
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <x-input-label for="salary_grade" :value="__('Salary grade')" />
-                        <x-text-input id="salary_grade" name="salary_grade" type="number" min="1" max="33" class="mt-1" x-ref="salaryGrade" :value="old('salary_grade', $employee->salary_grade)" />
+                        <x-text-input id="salary_grade" name="salary_grade" type="number" min="1" max="33" class="mt-1" x-ref="salaryGrade" x-model="salaryGrade" x-bind:disabled="usesDailyRate" x-bind:required="usesSalaryGrade" :value="old('salary_grade', $employee->salary_grade)" />
                         <x-input-error :messages="$errors->get('salary_grade')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="salary_step" :value="__('Step')" />
-                        <x-text-input id="salary_step" name="salary_step" type="number" min="1" max="8" class="mt-1" :value="old('salary_step', $employee->salary_step)" />
+                        <x-text-input id="salary_step" name="salary_step" type="number" min="1" max="8" class="mt-1" x-model="salaryStep" x-bind:disabled="usesDailyRate" x-bind:required="usesSalaryGrade" :value="old('salary_step', $employee->salary_step)" />
                         <x-input-error :messages="$errors->get('salary_step')" class="mt-2" />
                     </div>
+                    <p class="col-span-2 text-sm text-ink-muted" aria-live="polite">
+                        <span class="font-medium">{{ __('Expected monthly salary:') }}</span>
+                        <template x-if="expectedSalary"><span class="font-semibold text-ink">₱<span x-text="expectedSalary"></span></span></template>
+                        <template x-if="! expectedSalary"><span x-text="salaryGrade && salaryStep ? @js(__('Not in the current salary schedule')) : '—'"></span></template>
+                    </p>
                 </div>
                 <div>
                     <x-input-label for="daily_rate" :value="__('Daily rate (Job Order / COS)')" />
-                    <x-text-input id="daily_rate" name="daily_rate" inputmode="decimal" class="mt-1" :value="old('daily_rate', $employee->daily_rate)" aria-describedby="daily-rate-hint" />
-                    <p id="daily-rate-hint" class="mt-1 text-xs text-ink-muted">{{ __('Only for workers paid by the day.') }}</p>
+                    <x-text-input id="daily_rate" name="daily_rate" inputmode="decimal" class="mt-1 read-only:cursor-not-allowed read-only:bg-surface-muted read-only:text-ink-muted" x-model="dailyRate" x-bind:readonly="! usesDailyRate" x-bind:required="usesDailyRate" :value="old('daily_rate', $employee->daily_rate)" aria-describedby="daily-rate-hint" />
+                    <p id="daily-rate-hint" class="mt-1 text-xs text-ink-muted" x-text="usesDailyRate ? @js(__('Required: this employment type is paid by the day.')) : (usesSalaryGrade ? @js(__('Locked: this employment type is paid by salary grade and step.')) : @js(__('Select an employment type first.')))"></p>
                     <x-input-error :messages="$errors->get('daily_rate')" class="mt-2" />
                 </div>
                 <div>

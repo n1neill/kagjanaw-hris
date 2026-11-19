@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Employees;
 use App\Enums\AuditEvent;
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
+use App\Enums\PayBasis;
 use App\Enums\Permission;
 use App\Enums\Sex;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,8 @@ use App\Models\EmploymentType;
 use App\Models\Position;
 use App\Services\Audit\AuditLogger;
 use App\Services\EmployeeService;
+use App\Services\Payroll\Money;
+use App\Services\Payroll\SalarySchedule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -120,13 +123,29 @@ class EmployeeController extends Controller
      */
     private function formOptions(?Employee $employee): array
     {
+        $schedule = app(SalarySchedule::class);
+        $today = now()->toImmutable();
+        $monthlySalaries = [];
+
+        foreach (range(1, 33) as $grade) {
+            foreach (range(1, 8) as $step) {
+                $centavos = $schedule->monthlySalary($grade, $step, $today);
+
+                if ($centavos !== null) {
+                    $monthlySalaries[$grade.'-'.$step] = Money::toDecimal($centavos);
+                }
+            }
+        }
+
         $activeOrCurrent = fn (string $column) => fn (Builder $query) => $query
             ->where('is_active', true)
             ->when($employee, fn (Builder $query) => $query->orWhere('id', $employee->{$column}));
 
         return [
+            'payBases' => EmploymentType::query()->pluck('pay_basis', 'id')->map(fn (PayBasis $basis): string => $basis->value),
+            'monthlySalaries' => $monthlySalaries,
             'departments' => Department::query()->where($activeOrCurrent('department_id'))->orderBy('name')->pluck('name', 'id'),
-            'positions' => Position::query()->where($activeOrCurrent('position_id'))->orderBy('title')->get(['id', 'title', 'salary_grade']),
+            'positions' => Position::query()->where($activeOrCurrent('position_id'))->orderBy('title')->get(['id', 'title', 'department_id', 'salary_grade']),
             'employmentTypes' => EmploymentType::query()->where($activeOrCurrent('employment_type_id'))->orderBy('name')->pluck('name', 'id'),
             'sexes' => Sex::options(),
             'civilStatuses' => CivilStatus::options(),

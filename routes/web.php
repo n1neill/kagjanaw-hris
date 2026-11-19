@@ -113,6 +113,9 @@ Route::middleware('auth')->group(function () {
     Route::get('employees/{employee}/documents/{document}/download', [EmployeeDocumentController::class, 'download'])
         ->scopeBindings()
         ->name('employees.documents.download');
+    // Reachable by HR and the employee (read-only); the policy decides.
+    Route::get('employees/{employee}/service-record', [ServiceRecordController::class, 'show'])->name('employees.service-record.show');
+    Route::get('employees/{employee}/service-record/pdf', [ServiceRecordController::class, 'pdf'])->name('employees.service-record.pdf');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -231,6 +234,9 @@ Route::middleware('auth')->group(function () {
             Route::put('rates/tax/{effectiveFrom}', [TaxTableController::class, 'update'])
                 ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
                 ->name('rates.tax.update');
+            Route::delete('rates/tax/{effectiveFrom}', [TaxTableController::class, 'destroy'])
+                ->where('effectiveFrom', '\d{4}-\d{2}-\d{2}')
+                ->name('rates.tax.destroy');
             Route::post('rates/tax', [TaxTableController::class, 'store'])->name('rates.tax.store');
         });
     });
@@ -262,6 +268,7 @@ Route::middleware('auth')->group(function () {
             Route::post('employees/{employee}/dtr/reprocess', [DtrMonthController::class, 'reprocess'])->name('dtr.reprocess');
 
             Route::get('logs', [AttendanceLogController::class, 'index'])->name('logs');
+            Route::delete('logs', [AttendanceLogController::class, 'destroy'])->name('logs.clear');
             Route::get('import', [AttendanceImportController::class, 'create'])->name('import.create');
             Route::post('import', [AttendanceImportController::class, 'store'])->name('import.store');
             Route::get('import/template', [AttendanceImportController::class, 'template'])->name('import.template');
@@ -280,7 +287,7 @@ Route::middleware('auth')->group(function () {
         ->name('admin.')
         ->middleware(PermissionMiddleware::using(Permission::ManageBiometricDevices))
         ->group(function () {
-            Route::resource('devices', BiometricDeviceController::class)->except(['destroy']);
+            Route::resource('devices', BiometricDeviceController::class);
             Route::post('devices/{device}/test', [BiometricDeviceActionController::class, 'testConnection'])->name('devices.test');
             Route::post('devices/{device}/token', [BiometricDeviceActionController::class, 'issueToken'])
                 ->middleware('throttle:10,1')

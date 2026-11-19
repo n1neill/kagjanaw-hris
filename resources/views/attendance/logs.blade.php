@@ -29,6 +29,19 @@
             @endif
         </form>
 
+        @if ($logs->total() > 0)
+            <form method="POST" action="{{ route('attendance.logs.clear') }}" class="mb-4 flex justify-end" data-confirm="{{ trans_choice('Clear :count punch? This cannot be undone, and the action is recorded in the audit log. DTRs already built are not changed.|Clear :count punches? This cannot be undone, and the action is recorded in the audit log. DTRs already built are not changed.', $logs->total(), ['count' => $logs->total()]) }}">
+                @csrf
+                @method('DELETE')
+                @foreach ($filters as $name => $value)
+                    <input type="hidden" name="{{ $name }}" value="{{ $value }}">
+                @endforeach
+                <x-danger-button>
+                    {{ $filters === [] ? __('Clear all logs') : __('Clear these :count logs', ['count' => $logs->total()]) }}
+                </x-danger-button>
+            </form>
+        @endif
+
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>

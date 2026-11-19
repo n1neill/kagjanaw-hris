@@ -8,7 +8,7 @@ use App\Models\Employee;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * Employees in service with a biometric user ID, for HR to pick at the
+ * Employees in service (a biometric user ID is assigned on first enrollment), for HR to pick at the
  * kiosk when enrolling fingerprints.
  */
 class KioskEmployeeController extends Controller
@@ -17,7 +17,6 @@ class KioskEmployeeController extends Controller
     {
         $employees = Employee::query()
             ->inService()
-            ->whereNotNull('biometric_user_id')
             ->with(['department:id,name', 'fingerprintTemplates:id,employee_id,finger'])
             ->orderBy('last_name')
             ->orderBy('first_name')

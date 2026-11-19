@@ -71,4 +71,17 @@ class BiometricDeviceController extends Controller
             ->route('admin.devices.show', $device)
             ->with('status', __(':name updated.', ['name' => $device->name]));
     }
+
+    /**
+     * Remove the device. Its sync history goes with it; punches already
+     * stored keep their records but lose the link to the device.
+     */
+    public function destroy(BiometricDevice $device): RedirectResponse
+    {
+        $device->delete();
+
+        return redirect()
+            ->route('admin.devices.index')
+            ->with('status', __(':name removed.', ['name' => $device->name]));
+    }
 }

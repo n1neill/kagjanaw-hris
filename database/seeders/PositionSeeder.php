@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Department;
 use App\Models\Position;
 use Illuminate\Database\Seeder;
 
@@ -18,30 +19,36 @@ class PositionSeeder extends Seeder
     public function run(): void
     {
         $positions = [
-            'Municipal Mayor' => 27,
-            'Municipal Vice Mayor' => 25,
-            'Sangguniang Bayan Member' => 24,
-            'Municipal Government Department Head I' => 24,
-            'Administrative Officer V' => 18,
-            'Administrative Officer IV' => 15,
-            'Administrative Officer II' => 11,
-            'Administrative Officer I' => 10,
-            'Administrative Assistant II' => 8,
-            'Administrative Assistant I' => 7,
-            'Administrative Aide IV' => 4,
-            'Administrative Aide III' => 3,
-            'Administrative Aide I' => 1,
-            'Human Resource Management Officer I' => 11,
-            'Revenue Collection Clerk I' => 5,
-            'Engineer I' => 12,
-            'Agricultural Technologist' => 10,
-            'Social Welfare Officer I' => 11,
-            'Nurse I' => 15,
-            'Midwife I' => 9,
+            'Municipal Mayor' => [27, 'OMM'],
+            'Municipal Vice Mayor' => [25, 'OMVM'],
+            'Sangguniang Bayan Member' => [24, 'SB'],
+            'Municipal Government Department Head I' => [24, null],
+            'Administrative Officer V' => [18, null],
+            'Administrative Officer IV' => [15, null],
+            'Administrative Officer II' => [11, null],
+            'Administrative Officer I' => [10, null],
+            'Administrative Assistant II' => [8, null],
+            'Administrative Assistant I' => [7, null],
+            'Administrative Aide IV' => [4, null],
+            'Administrative Aide III' => [3, null],
+            'Administrative Aide I' => [1, null],
+            'Human Resource Management Officer I' => [11, 'MHRMO'],
+            'Revenue Collection Clerk I' => [5, 'MTO'],
+            'Accountant I' => [11, 'MACCO'],
+            'Accounting Clerk I' => [5, 'MACCO'],
+            'Budget Officer I' => [11, 'MBO'],
+            'Engineer I' => [12, 'MEO'],
+            'Agricultural Technologist' => [10, 'MAO'],
+            'Social Welfare Officer I' => [11, 'MSWDO'],
+            'Nurse I' => [15, 'MHO'],
+            'Midwife I' => [9, 'MHO'],
         ];
 
-        foreach ($positions as $title => $salaryGrade) {
-            Position::updateOrCreate(['title' => $title], ['salary_grade' => $salaryGrade]);
+        foreach ($positions as $title => [$salaryGrade, $departmentCode]) {
+            Position::updateOrCreate(['title' => $title], [
+                'salary_grade' => $salaryGrade,
+                'department_id' => $departmentCode ? Department::query()->where('code', $departmentCode)->value('id') : null,
+            ]);
         }
     }
 }

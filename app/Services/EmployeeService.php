@@ -6,6 +6,7 @@ use App\Enums\EmploymentStatus;
 use App\Enums\Role;
 use App\Models\Employee;
 use App\Services\Attendance\AttendanceSyncService;
+use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -34,7 +35,8 @@ class EmployeeService
     public function create(array $data): array
     {
         return DB::transaction(function () use ($data): array {
-            $employee = new Employee(Arr::except($data, ['email']));
+            $employee = new Employee(Arr::except($data, ['email', 'employee_number']));
+            $employee->employee_number = $this->nextEmployeeNumber((string) $data['date_hired']);
 
             $temporaryPassword = $this->generateTemporaryPassword();
 
@@ -65,7 +67,7 @@ class EmployeeService
             $statusChanged = isset($data['employment_status'])
                 && EmploymentStatus::from($data['employment_status']) !== $employee->employment_status;
 
-            $employee->update(Arr::except($data, ['email']));
+            $employee->update(Arr::except($data, ['email', 'employee_number']));
 
             if ($employee->wasChanged('biometric_user_id')) {
                 $this->attendance->linkUnknownLogs($employee);
@@ -85,6 +87,25 @@ class EmployeeService
 
             return $employee;
         });
+    }
+
+    /**
+     * The next employee ID for the year of hire, formatted YYYY-NNNN. The
+     * sequence restarts each year; the latest row is locked so two employees
+     * added at once cannot receive the same number.
+     */
+    private function nextEmployeeNumber(string $dateHired): string
+    {
+        $year = Carbon::parse($dateHired)->year;
+
+        $latest = Employee::query()
+            ->where('employee_number', 'like', $year.'-%')
+            ->lockForUpdate()
+            ->pluck('employee_number')
+            ->map(fn (string $number): int => (int) substr($number, 5))
+            ->max() ?? 0;
+
+        return sprintf('%d-%04d', $year, $latest + 1);
     }
 
     /**

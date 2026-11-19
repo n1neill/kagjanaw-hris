@@ -37,6 +37,11 @@
                 <x-icon name="pencil" class="size-4" />
                 {{ __('Edit') }}
             </x-button-link>
+            <form method="POST" action="{{ route('admin.devices.destroy', $device) }}" data-confirm="{{ __('Remove this device? Its sync history is deleted and it stops syncing or accepting punches. Punches already recorded are kept.') }}">
+                @csrf
+                @method('DELETE')
+                <x-danger-button>{{ __('Remove') }}</x-danger-button>
+            </form>
         </x-slot>
 
         <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

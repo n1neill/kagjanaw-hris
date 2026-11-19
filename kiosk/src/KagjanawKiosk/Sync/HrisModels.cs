@@ -24,7 +24,7 @@ public sealed record EnrollableEmployee(
     string EmployeeNumber,
     string Name,
     string? Department,
-    string BiometricUserId,
+    string? BiometricUserId,
     IReadOnlyList<string> EnrolledFingers);
 
 public sealed record EnrollmentReceipt(int EmployeeId, string Finger, IReadOnlyList<string> EnrolledFingers);

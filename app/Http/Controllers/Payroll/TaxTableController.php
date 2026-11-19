@@ -81,6 +81,24 @@ class TaxTableController extends Controller
         return redirect()->route('payroll.rates.index')->with('status', __('Tax table saved.'));
     }
 
+    public function destroy(string $effectiveFrom, AuditLogger $audit): RedirectResponse
+    {
+        abort_unless($this->dates()->contains($effectiveFrom), 404);
+
+        if ($this->dates()->count() === 1) {
+            return redirect()->route('payroll.rates.index')
+                ->withErrors(['effective_from' => __('The only tax table cannot be removed. Add a replacement first.')]);
+        }
+
+        $before = $this->brackets($effectiveFrom);
+
+        TaxBracket::query()->whereDate('effective_from', $effectiveFrom)->delete();
+
+        $audit->record(AuditEvent::Deleted, __('Withholding tax table effective :date', ['date' => $effectiveFrom]), oldValues: $before);
+
+        return redirect()->route('payroll.rates.index')->with('status', __('Tax table removed.'));
+    }
+
     /**
      * The table's brackets in words, plus its legal basis, for the audit log.
      *

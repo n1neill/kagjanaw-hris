@@ -3,6 +3,7 @@
 use App\Enums\Role;
 use App\Enums\SyncStatus;
 use App\Enums\VerifyType;
+use App\Models\AttendanceLog;
 use App\Models\BiometricDevice;
 use App\Models\Employee;
 use App\Models\User;
@@ -11,6 +12,27 @@ use Carbon\CarbonImmutable;
 use Tests\Fakes\FakeBiometricDriver;
 
 describe('settings', function () {
+    it('removes a device but keeps its recorded punches', function () {
+        $admin = User::factory()->systemAdministrator()->create();
+        $device = BiometricDevice::factory()->create();
+        $log = AttendanceLog::factory()->create(['biometric_device_id' => $device->id]);
+
+        $this->actingAs($admin)->delete(route('admin.devices.destroy', $device))
+            ->assertRedirect(route('admin.devices.index'));
+
+        expect(BiometricDevice::count())->toBe(0)
+            ->and($log->fresh()->biometric_device_id)->toBeNull();
+    });
+
+    it('does not let HR remove a device', function () {
+        $hr = Employee::factory()->withAccount(Role::HrOfficer)->create()->user;
+        $device = BiometricDevice::factory()->create();
+
+        $this->actingAs($hr)->delete(route('admin.devices.destroy', $device))->assertForbidden();
+
+        expect(BiometricDevice::count())->toBe(1);
+    });
+
     it('adds a device', function () {
         $admin = User::factory()->systemAdministrator()->create();
 

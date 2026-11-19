@@ -108,6 +108,7 @@ function routeAccessMatrix(): array
         'attendance.dtr.validate' => $hr,
         'attendance.dtr.reprocess' => $hr,
         'attendance.logs' => $hr,
+        'attendance.logs.clear' => $hr,
         'attendance.import.create' => $hr,
         'attendance.import.store' => $hr,
         'attendance.import.template' => $hr,
@@ -178,6 +179,7 @@ function routeAccessMatrix(): array
         'payroll.rates.tax.edit' => $hr,
         'payroll.rates.tax.update' => $hr,
         'payroll.rates.tax.store' => $hr,
+        'payroll.rates.tax.destroy' => $hr,
 
         'reports.index' => $supervisors,
         'reports.employees' => $supervisors,
@@ -222,6 +224,7 @@ function routeAccessMatrix(): array
         'admin.devices.show' => $administrator,
         'admin.devices.edit' => $administrator,
         'admin.devices.update' => $administrator,
+        'admin.devices.destroy' => $administrator,
         'admin.devices.test' => $administrator,
         'admin.devices.token' => $administrator,
         'admin.devices.sync' => $administrator,

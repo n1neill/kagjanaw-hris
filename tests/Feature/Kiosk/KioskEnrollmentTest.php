@@ -84,17 +84,18 @@ describe('signing in', function () {
 });
 
 describe('enrolling', function () {
-    it('lists employees in service with a biometric ID and their enrolled fingers', function () {
+    it('lists employees in service, with or without a biometric ID, and their enrolled fingers', function () {
         $session = signInAtKiosk(User::factory()->hrOfficer()->create());
         $enrolled = Employee::factory()->create(['biometric_user_id' => '1024', 'last_name' => 'Abad']);
         FingerprintTemplate::factory()->for($enrolled)->create(['finger' => Finger::LeftIndex]);
         Employee::factory()->create(['biometric_user_id' => '2048', 'employment_status' => EmploymentStatus::Resigned]);
-        Employee::factory()->create(['biometric_user_id' => null]);
+        $new = Employee::factory()->create(['biometric_user_id' => null, 'last_name' => 'Zamora']);
 
         $response = $this->withHeader('X-Enrollment-Token', $session)->getJson(route('kiosk.employees'));
 
         $response->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.1.id', $new->id)
             ->assertJsonPath('data.0.id', $enrolled->id)
             ->assertJsonPath('data.0.biometric_user_id', '1024')
             ->assertJsonPath('data.0.enrolled_fingers', ['left-index']);
@@ -147,7 +148,7 @@ describe('enrolling', function () {
         expect($employee->fingerprintTemplates()->count())->toBe(2);
     });
 
-    it('refuses an employee who is separated or has no biometric ID', function (array $attributes) {
+    it('refuses an employee who is separated', function (array $attributes) {
         $session = signInAtKiosk(User::factory()->hrOfficer()->create());
         $employee = Employee::factory()->create($attributes);
 
@@ -158,8 +159,19 @@ describe('enrolling', function () {
         $this->assertDatabaseCount('fingerprint_templates', 0);
     })->with([
         'separated' => [['biometric_user_id' => '1024', 'employment_status' => EmploymentStatus::Retired]],
-        'no biometric ID' => [['biometric_user_id' => null]],
     ]);
+
+    it('assigns the next free biometric ID when enrolling an employee without one', function () {
+        $session = signInAtKiosk(User::factory()->hrOfficer()->create());
+        Employee::factory()->create(['biometric_user_id' => '1024']);
+        $employee = Employee::factory()->create(['biometric_user_id' => null]);
+
+        $this->withHeader('X-Enrollment-Token', $session)
+            ->putJson(route('kiosk.fingerprints.update', [$employee, Finger::RightIndex]), ['template' => 'QUJDRA=='])
+            ->assertCreated();
+
+        expect($employee->refresh()->biometric_user_id)->toBe('1025');
+    });
 
     it('rejects a template that is not base64', function () {
         $session = signInAtKiosk(User::factory()->hrOfficer()->create());

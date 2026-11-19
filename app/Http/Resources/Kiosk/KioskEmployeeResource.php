@@ -17,7 +17,7 @@ class KioskEmployeeResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @return array{id: int, employee_number: string, name: string, department: string|null, biometric_user_id: string, enrolled_fingers: list<string>}
+     * @return array{id: int, employee_number: string, name: string, department: string|null, biometric_user_id: string|null, enrolled_fingers: list<string>}
      */
     public function toArray(Request $request): array
     {

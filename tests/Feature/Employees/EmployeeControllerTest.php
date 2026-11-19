@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\EmploymentStatus;
+use App\Enums\PayBasis;
 use App\Enums\Role;
 use App\Models\Department;
 use App\Models\Employee;
@@ -19,7 +20,6 @@ use Illuminate\Support\Facades\Hash;
 function employeePayload(array $overrides = []): array
 {
     return [
-        'employee_number' => '2026-0001',
         'last_name' => 'Dela Cruz',
         'first_name' => 'Juan',
         'middle_name' => 'Garcia',
@@ -116,6 +116,59 @@ describe('index', function () {
 });
 
 describe('store', function () {
+    it('requires a salary grade and step, and discards a daily rate, for salary-grade employment types', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['salary_grade' => '', 'salary_step' => '']))
+            ->assertSessionHasErrors(['salary_grade', 'salary_step']);
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['daily_rate' => '650']))
+            ->assertSessionDoesntHaveErrors();
+
+        expect(Employee::sole()->daily_rate)->toBeNull();
+    });
+
+    it('requires a daily rate, and discards the salary grade and step, for daily-rate employment types', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $jobOrder = EmploymentType::factory()->create(['pay_basis' => PayBasis::DailyRate]);
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['employment_type_id' => $jobOrder->id]))
+            ->assertSessionHasErrors('daily_rate')
+            ->assertSessionDoesntHaveErrors(['salary_grade', 'salary_step']);
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['employment_type_id' => $jobOrder->id, 'daily_rate' => '650']))
+            ->assertSessionDoesntHaveErrors();
+
+        $employee = Employee::sole();
+        expect($employee->daily_rate)->toBe('650.00')
+            ->and($employee->salary_grade)->toBeNull()
+            ->and($employee->salary_step)->toBeNull();
+    });
+
+    it('only accepts a position of the selected department or a general position', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $accounting = Department::factory()->create();
+        $accountant = Position::factory()->create(['department_id' => $accounting->id]);
+        $general = Position::factory()->create(['department_id' => null]);
+        $engineer = Position::factory()->create(['department_id' => Department::factory()->create()->id]);
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['department_id' => $accounting->id, 'position_id' => $engineer->id]))
+            ->assertSessionHasErrors('position_id');
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['department_id' => $accounting->id, 'position_id' => $accountant->id]))
+            ->assertSessionDoesntHaveErrors();
+
+        $this->actingAs($hrOfficer)
+            ->post(route('employees.store'), employeePayload(['department_id' => $accounting->id, 'position_id' => $general->id, 'email' => 'other@cagdianao.local', 'biometric_user_id' => '2000']))
+            ->assertSessionDoesntHaveErrors();
+    });
+
     it('creates the employee and an Employee-role login account named after the employee ID', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
         $payload = employeePayload();
@@ -171,7 +224,6 @@ describe('store', function () {
         $response = $this->actingAs($hrOfficer)->post(route('employees.store'), []);
 
         $response->assertSessionHasErrors([
-            'employee_number' => 'The employee number field is required.',
             'last_name' => 'The last name field is required.',
             'first_name' => 'The first name field is required.',
             'sex' => 'The sex field is required.',
@@ -185,18 +237,33 @@ describe('store', function () {
         $this->assertDatabaseCount('users', 1);
     });
 
-    it('rejects an employee ID that is already an employee or a username', function (string $takenBy) {
+    it('numbers employees in sequence within the year hired', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
-        $takenBy === 'employee'
-            ? Employee::factory()->create(['employee_number' => '2026-0001'])
-            : User::factory()->create(['username' => '2026-0001']);
-        $employeeCount = Employee::count();
+        Employee::factory()->create(['employee_number' => '2026-0007']);
 
-        $response = $this->actingAs($hrOfficer)->post(route('employees.store'), employeePayload());
+        $this->actingAs($hrOfficer)->post(route('employees.store'), employeePayload(['email' => 'first@cagdianao.local']));
+        $this->actingAs($hrOfficer)->post(route('employees.store'), employeePayload(['email' => 'second@cagdianao.local', 'biometric_user_id' => '1025']));
 
-        $response->assertSessionHasErrors(['employee_number' => 'This employee ID is already in use.']);
-        expect(Employee::count())->toBe($employeeCount);
-    })->with(['employee', 'username']);
+        expect(Employee::where('last_name', 'Dela Cruz')->orderBy('id')->pluck('employee_number')->all())
+            ->toBe(['2026-0008', '2026-0009']);
+    });
+
+    it('restarts the numbering for each year of hire', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        Employee::factory()->create(['employee_number' => '2026-0042']);
+
+        $this->actingAs($hrOfficer)->post(route('employees.store'), employeePayload(['date_hired' => '2027-02-01']));
+
+        expect(Employee::where('last_name', 'Dela Cruz')->sole()->employee_number)->toBe('2027-0001');
+    });
+
+    it('ignores an employee ID typed into the form', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+
+        $this->actingAs($hrOfficer)->post(route('employees.store'), employeePayload(['employee_number' => 'HACKED-1']));
+
+        expect(Employee::where('last_name', 'Dela Cruz')->sole()->employee_number)->toBe('2026-0001');
+    });
 
     it('rejects malformed government ID and mobile numbers', function (string $field, string $value, string $message) {
         $hrOfficer = User::factory()->hrOfficer()->create();
@@ -293,8 +360,10 @@ describe('update', function () {
     it('records a Job Order worker\'s daily rate', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
         $employee = Employee::factory()->create();
+        $jobOrder = EmploymentType::factory()->create(['pay_basis' => PayBasis::DailyRate]);
 
         $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
+            'employment_type_id' => $jobOrder->id,
             'salary_grade' => '',
             'salary_step' => '',
             'daily_rate' => '550.50',
@@ -308,7 +377,6 @@ describe('update', function () {
         $employee = Employee::factory()->withAccount()->create();
 
         $response = $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
-            'employee_number' => '2026-0099',
             'first_name' => 'Juana',
             'last_name' => 'Santos',
             'middle_name' => '',
@@ -318,7 +386,7 @@ describe('update', function () {
 
         $response->assertRedirect(route('employees.show', $employee));
         $account = $employee->user->refresh();
-        expect($account->username)->toBe('2026-0099')
+        expect($account->username)->toBe($employee->employee_number)
             ->and($account->name)->toBe('Juana Santos')
             ->and($account->email)->toBe('juana@cagdianao.local');
     });
@@ -328,37 +396,42 @@ describe('update', function () {
         $employee = Employee::factory()->withAccount()->create();
 
         $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
-            'employee_number' => $employee->employee_number,
             'employment_status' => 'retired',
             'separation_date' => '2026-09-30',
         ]))->assertSessionHasNoErrors();
 
         expect($employee->user->refresh()->is_active)->toBeFalse();
 
-        $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
-            'employee_number' => $employee->employee_number,
-        ]))->assertSessionHasNoErrors();
+        $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload())->assertSessionHasNoErrors();
 
         expect($employee->user->refresh()->is_active)->toBeTrue();
     });
 
-    it('keeps its own employee ID and biometric ID when they are unchanged', function () {
+    it('keeps its own biometric ID when unchanged', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
-        $employee = Employee::factory()->withAccount()->create(['employee_number' => '2015-0101', 'biometric_user_id' => '77']);
+        $employee = Employee::factory()->withAccount()->create(['biometric_user_id' => '77']);
 
         $response = $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload([
-            'employee_number' => '2015-0101',
             'biometric_user_id' => '77',
         ]));
 
         $response->assertSessionHasNoErrors();
     });
 
+    it('never changes the employee ID or login username', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $employee = Employee::factory()->withAccount()->create(['employee_number' => '2015-0101']);
+
+        $this->actingAs($hrOfficer)->put(route('employees.update', $employee), employeePayload(['employee_number' => '2026-0099']));
+
+        expect($employee->refresh()->employee_number)->toBe('2015-0101')
+            ->and($employee->user->username)->toBe('2015-0101');
+    });
+
     it('forbids an employee from editing their own record', function () {
         $employee = Employee::factory()->withAccount()->create(['salary_grade' => 11]);
 
         $response = $this->actingAs($employee->user)->put(route('employees.update', $employee), employeePayload([
-            'employee_number' => $employee->employee_number,
             'salary_grade' => '33',
         ]));
 

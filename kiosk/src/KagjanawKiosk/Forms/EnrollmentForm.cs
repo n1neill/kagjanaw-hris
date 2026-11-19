@@ -119,7 +119,7 @@ internal sealed class EnrollmentForm : Form
         {
             _employees = await _app.Client.GetEmployeesAsync(_session);
             _progress.Text = _employees.Count == 0
-                ? "No employees in service have a biometric user ID yet. Set one on the employee's record in the HRIS first."
+                ? "No employees in service were found in the HRIS."
                 : "";
             Fill();
         }
