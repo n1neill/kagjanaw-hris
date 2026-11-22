@@ -50,8 +50,8 @@
                             @endif
                         </td>
                         <td class="whitespace-nowrap text-right">
-                            <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('DTR') }}</a>
-                            <a href="{{ route('leave.card', $row['employee']) }}" class="ml-3 text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Leave card') }}</a>
+                            <x-action-icon icon="calendar" :label="__('DTR')" href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" />
+                            <x-action-icon icon="book" :label="__('Leave card')" href="{{ route('leave.card', $row['employee']) }}" />
                         </td>
                     </tr>
                 @endforeach

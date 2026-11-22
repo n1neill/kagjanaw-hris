@@ -37,7 +37,7 @@
                                 <td class="px-3 py-2 text-right tabular-nums">{{ $rate->salary_ceiling !== null ? Money::format($rate->salary_ceiling) : '—' }}</td>
                                 <td class="px-3 py-2 text-xs text-ink-muted">{{ $rate->legal_basis }}</td>
                                 <td class="py-2 pl-3 text-right">
-                                    <a href="{{ route('payroll.rates.contributions.edit', $rate) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                                    <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('payroll.rates.contributions.edit', $rate) }}" />
                                 </td>
                             </tr>
                         @endforeach

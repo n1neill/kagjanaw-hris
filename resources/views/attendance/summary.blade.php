@@ -62,7 +62,7 @@
                                 @endif
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('DTR') }}</a>
+                                <x-action-icon icon="calendar" :label="__('DTR')" href="{{ route('attendance.dtr.show', [$row['employee'], 'month' => $month->format('Y-m')]) }}" />
                             </td>
                         </tr>
                     @endforeach

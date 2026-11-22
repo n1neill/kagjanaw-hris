@@ -62,7 +62,7 @@
                     @if ($canManage)
                         <td class="py-2 pl-2 text-right">
                             @if (! $day['date']->isFuture() && $employee->wasEmployedOn($day['date']))
-                                <a href="{{ route('attendance.dtr.edit', [$employee, $day['date']->toDateString()]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Correct') }}</a>
+                                <x-action-icon icon="pencil" :label="__('Correct')" href="{{ route('attendance.dtr.edit', [$employee, $day['date']->toDateString()]) }}" />
                             @endif
                         </td>
                     @endif

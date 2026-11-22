@@ -179,7 +179,7 @@
                                 <form method="POST" action="{{ route('employees.fingerprints.destroy', [$employee, $fingerprint->finger]) }}" data-confirm="{{ __('Remove this fingerprint? The employee will need to enroll it again at the kiosk.') }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">{{ __('Remove') }}</button>
+                                    <x-action-icon icon="trash" :label="__('Remove')" tone="danger" />
                                 </form>
                             </li>
                         @endforeach
@@ -246,14 +246,14 @@
                             <td class="text-right">
                                 <div class="flex items-center justify-end gap-3">
                                     @if ($document->isViewableInline())
-                                        <a href="{{ route('employees.documents.show', [$employee, $document]) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('View') }}</a>
+                                        <x-action-icon icon="eye" :label="__('View')" href="{{ route('employees.documents.show', [$employee, $document]) }}" target="_blank" rel="noopener" />
                                     @endif
-                                    <a href="{{ route('employees.documents.download', [$employee, $document]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Download') }}</a>
+                                    <x-action-icon icon="arrow-down-tray" :label="__('Download')" href="{{ route('employees.documents.download', [$employee, $document]) }}" />
                                     @if ($canManage)
                                         <form method="POST" action="{{ route('employees.documents.destroy', [$employee, $document]) }}" data-confirm="{{ __('Delete this document permanently?') }}">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">{{ __('Delete') }}</button>
+                                            <x-action-icon icon="trash" :label="__('Delete')" tone="danger" />
                                         </form>
                                     @endif
                                 </div>

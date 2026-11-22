@@ -145,8 +145,8 @@
                         <td class="text-right tabular-nums">{{ Money::format($item->total_deductions) }}</td>
                         <td class="text-right font-medium tabular-nums">{{ Money::format($item->net_pay) }}</td>
                         <td class="whitespace-nowrap text-right">
-                            <a href="{{ route('payroll.payslips.show', $item) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Payslip') }}</a>
-                            <a href="{{ route('payroll.employees.show', $item->employee) }}" class="ml-3 text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Pay setup') }}</a>
+                            <x-action-icon icon="document" :label="__('Payslip')" href="{{ route('payroll.payslips.show', $item) }}" target="_blank" rel="noopener" />
+                            <x-action-icon icon="cog" :label="__('Pay setup')" href="{{ route('payroll.employees.show', $item->employee) }}" />
                         </td>
                     </tr>
                 @endforeach

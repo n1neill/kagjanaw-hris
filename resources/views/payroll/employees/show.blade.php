@@ -61,7 +61,7 @@
                                     <form method="POST" action="{{ route('payroll.employees.allowances.destroy', [$employee, $assignment]) }}" data-confirm="{{ __('Remove this allowance?') }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-sm font-medium text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-300">{{ __('Remove') }}</button>
+                                        <x-action-icon icon="trash" :label="__('Remove')" tone="danger" />
                                     </form>
                                 </td>
                             </tr>
@@ -131,7 +131,7 @@
                                 <td class="px-3 py-2 whitespace-nowrap">{{ $deduction->starts_on->format('M j, Y') }} – {{ $deduction->ends_on?->format('M j, Y') ?? __('open') }}</td>
                                 <td class="px-3 py-2"><x-status-badge :active="$deduction->is_active" /></td>
                                 <td class="py-2 pl-3 text-right">
-                                    <a href="{{ route('payroll.employees.deductions.edit', [$employee, $deduction]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                                    <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('payroll.employees.deductions.edit', [$employee, $deduction]) }}" />
                                 </td>
                             </tr>
                         @endforeach
@@ -167,7 +167,7 @@
                             <td class="py-2"><a href="{{ route('payroll.runs.show', $payslip->run) }}" class="font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ $payslip->run->period->label() }}</a></td>
                             <td class="py-2"><x-badge :color="$payslip->run->status->badgeColor()">{{ $payslip->run->status->label() }}</x-badge></td>
                             <td class="py-2 text-right tabular-nums">{{ Money::format($payslip->net_pay) }}</td>
-                            <td class="py-2 text-right"><a href="{{ route('payroll.payslips.show', $payslip) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Payslip') }}</a></td>
+                            <td class="py-2 text-right"><x-action-icon icon="document" :label="__('Payslip')" href="{{ route('payroll.payslips.show', $payslip) }}" target="_blank" rel="noopener" /></td>
                         </tr>
                     @endforeach
                 </tbody>

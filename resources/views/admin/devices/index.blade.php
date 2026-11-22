@@ -37,7 +37,7 @@
                         </td>
                         <td><x-status-badge :active="$device->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('admin.devices.show', $device) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Open') }}</a>
+                            <x-action-icon icon="arrow-top-right" :label="__('Open')" href="{{ route('admin.devices.show', $device) }}" />
                         </td>
                     </tr>
                 @endforeach

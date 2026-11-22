@@ -31,7 +31,7 @@
                 <td><x-badge :color="$leaveRequest->status->badgeColor()">{{ $leaveRequest->status->label() }}</x-badge></td>
                 <td data-order="{{ $leaveRequest->created_at->timestamp }}" class="whitespace-nowrap">{{ $leaveRequest->created_at->format('M j, Y') }}</td>
                 <td class="text-right">
-                    <a href="{{ route('leave.requests.show', $leaveRequest) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('View') }}</a>
+                    <x-action-icon icon="eye" :label="__('View')" href="{{ route('leave.requests.show', $leaveRequest) }}" />
                 </td>
             </tr>
         @endforeach

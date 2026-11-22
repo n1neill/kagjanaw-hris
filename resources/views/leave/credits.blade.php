@@ -39,7 +39,7 @@
                             <td class="text-xs text-ink-muted">{{ __(':type: no leave credits', ['type' => $employee->employmentType?->name]) }}</td>
                         @endif
                         <td class="text-right">
-                            <a href="{{ route('leave.card', $employee) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Leave card') }}</a>
+                            <x-action-icon icon="book" :label="__('Leave card')" href="{{ route('leave.card', $employee) }}" />
                         </td>
                     </tr>
                 @endforeach

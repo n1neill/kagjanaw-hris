@@ -84,11 +84,11 @@
                         @if ($canManage)
                             <td class="text-right">
                                 <div class="flex items-center justify-end gap-3">
-                                    <a href="{{ route('employees.service-record.edit', [$employee, $entry]) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                                    <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('employees.service-record.edit', [$employee, $entry]) }}" />
                                     <form method="POST" action="{{ route('employees.service-record.destroy', [$employee, $entry]) }}" data-confirm="{{ __('Delete this service record entry?') }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-sm font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">{{ __('Delete') }}</button>
+                                        <x-action-icon icon="trash" :label="__('Delete')" tone="danger" />
                                     </form>
                                 </div>
                             </td>

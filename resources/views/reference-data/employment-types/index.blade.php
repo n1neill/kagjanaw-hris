@@ -33,7 +33,7 @@
                         <td>{{ $employmentType->pay_basis === PayBasis::DailyRate ? __('Daily rate') : __('Salary grade') }}</td>
                         <td><x-status-badge :active="$employmentType->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('reference-data.employment-types.edit', $employmentType) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                            <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('reference-data.employment-types.edit', $employmentType) }}" />
                         </td>
                     </tr>
                 @endforeach

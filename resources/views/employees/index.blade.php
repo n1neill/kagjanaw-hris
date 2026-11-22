@@ -64,7 +64,7 @@
                                 <x-badge :color="$employee->employment_status->isInService() ? 'green' : 'gray'">{{ $employee->employment_status->label() }}</x-badge>
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('employees.show', $employee) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('View') }}</a>
+                                <x-action-icon icon="eye" :label="__('View')" href="{{ route('employees.show', $employee) }}" />
                             </td>
                         </tr>
                     @endforeach

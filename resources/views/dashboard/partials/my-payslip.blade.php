@@ -11,7 +11,7 @@
         <p class="mt-1 text-2xl font-semibold text-ink">₱ {{ Money::format($myLatestPayslip->net_pay) }}</p>
         <p class="text-xs text-ink-muted">{{ __('Net pay') }}</p>
         <div class="mt-3 flex flex-wrap gap-4">
-            <a href="{{ route('payroll.payslips.show', $myLatestPayslip) }}" target="_blank" rel="noopener" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Download') }}</a>
+            <x-action-icon icon="arrow-down-tray" :label="__('Download')" href="{{ route('payroll.payslips.show', $myLatestPayslip) }}" target="_blank" rel="noopener" />
             <a href="{{ route('payroll.payslips.my') }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('All payslips') }}</a>
         </div>
     @else

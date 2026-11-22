@@ -40,16 +40,14 @@
                         </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-3">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                                <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('admin.users.edit', $user) }}" />
 
                                 @can('changeStatus', $user)
                                     <form method="POST" action="{{ route('admin.users.status', $user) }}">
                                         @csrf
                                         @method('PATCH')
                                         <input type="hidden" name="is_active" value="{{ $user->is_active ? 0 : 1 }}">
-                                        <button type="submit" class="text-sm font-medium {{ $user->is_active ? 'text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300' : 'text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-300' }}">
-                                            {{ $user->is_active ? __('Deactivate') : __('Activate') }}
-                                        </button>
+                                        <x-action-icon :icon="$user->is_active ? 'no-symbol' : 'check-circle'" :label="$user->is_active ? __('Deactivate') : __('Activate')" :tone="$user->is_active ? 'danger' : 'success'" />
                                     </form>
                                 @endcan
                             </div>

@@ -25,7 +25,7 @@
                         <td class="font-medium text-ink">{{ $department->name }}</td>
                         <td><x-status-badge :active="$department->is_active" /></td>
                         <td class="text-right">
-                            <a href="{{ route('reference-data.departments.edit', $department) }}" class="text-sm font-medium text-brand-700 dark:text-brand-400 hover:text-brand-900 dark:hover:text-brand-300">{{ __('Edit') }}</a>
+                            <x-action-icon icon="pencil" :label="__('Edit')" href="{{ route('reference-data.departments.edit', $department) }}" />
                         </td>
                     </tr>
                 @endforeach
