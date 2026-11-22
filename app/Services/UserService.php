@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AuditEvent;
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
@@ -80,6 +81,47 @@ class UserService
         $user->syncRoles([$role]);
 
         $this->audit->record(AuditEvent::Updated, $user->auditLabel(), $user, ['role' => $previous?->label()], ['role' => $role->label()]);
+    }
+
+    /**
+     * Replace the permissions given to the account on top of its role. Takes
+     * effect immediately; changes the account then makes with these
+     * permissions wait for an HR Officer's approval.
+     *
+     * @param  list<Permission>  $permissions
+     */
+    public function syncGrantedPermissions(User $user, array $permissions): User
+    {
+        $previous = $this->permissionLabels($user->grantedPermissions());
+
+        $user->syncPermissions(array_map(fn (Permission $permission): string => $permission->value, $permissions));
+        $user->unsetRelation('permissions');
+
+        $current = $this->permissionLabels($user->grantedPermissions());
+
+        if ($previous !== $current) {
+            $this->audit->record(
+                AuditEvent::Updated,
+                $user->auditLabel(),
+                $user,
+                ['additional_access' => $previous === [] ? null : implode(', ', $previous)],
+                ['additional_access' => $current === [] ? null : implode(', ', $current)],
+            );
+        }
+
+        return $user;
+    }
+
+    /**
+     * @param  list<Permission>  $permissions
+     * @return list<string>
+     */
+    private function permissionLabels(array $permissions): array
+    {
+        $labels = array_map(fn (Permission $permission): string => $permission->label(), $permissions);
+        sort($labels);
+
+        return $labels;
     }
 
     public function setActive(User $user, bool $isActive): User

@@ -2,19 +2,18 @@
 
 namespace App\Http\Controllers\Payroll;
 
-use App\Enums\AuditEvent;
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\NewEffectivityRequest;
 use App\Http\Requests\Payroll\SalaryTrancheRequest;
 use App\Models\SalaryGrade;
-use App\Services\Audit\AuditLogger;
-use App\Services\Payroll\Money;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Payroll\PayrollSettings;
 use App\Services\Payroll\SalarySchedule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -25,10 +24,12 @@ use Illuminate\View\View;
  */
 class SalaryScheduleController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function __construct(
         private SalarySchedule $schedule,
         private PayrollSettings $settings,
-        private AuditLogger $audit,
+        private ChangeRequestService $changes,
     ) {}
 
     public function index(Request $request): View
@@ -62,24 +63,11 @@ class SalaryScheduleController extends Controller
             throw ValidationException::withMessages(['effective_from' => __('A tranche effective on that date already exists.')]);
         }
 
-        $source = $this->schedule->effectiveDateOn($request->effectiveFrom()) ?? $this->schedule->effectivityDates()->first();
-        $now = now();
+        $outcome = $this->changes->perform($request->user(), ChangeAction::CreateSalaryTranche, ['effective_from' => $effectiveFrom]);
 
-        SalaryGrade::insert(SalaryGrade::query()
-            ->when($source, fn ($query) => $query->whereDate('effective_from', $source))
-            ->get()
-            ->map(fn (SalaryGrade $cell): array => [
-                'effective_from' => $effectiveFrom,
-                'grade' => $cell->grade,
-                'step' => $cell->step,
-                'amount' => $cell->amount,
-                'legal_basis' => null,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ])
-            ->all());
-
-        $this->audit->record(AuditEvent::Created, __('Salary Schedule tranche effective :date', ['date' => $effectiveFrom]), newValues: ['copied_from' => $source]);
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.salary-schedule.index'));
+        }
 
         return redirect()->route('payroll.salary-schedule.edit', $effectiveFrom)
             ->with('status', __('New tranche created as a copy of the schedule in force. Enter the new amounts.'));
@@ -100,60 +88,17 @@ class SalaryScheduleController extends Controller
     {
         abort_unless($this->schedule->effectivityDates()->contains($effectiveFrom), 404);
 
-        $before = $this->cells($effectiveFrom);
+        $outcome = $this->changes->perform($request->user(), ChangeAction::UpdateSalaryTranche, [
+            'effective_from' => $effectiveFrom,
+            'amounts' => $request->validated('amounts'),
+            'legal_basis' => $request->validated('legal_basis'),
+        ]);
 
-        DB::transaction(function () use ($request, $effectiveFrom): void {
-            SalaryGrade::query()->whereDate('effective_from', $effectiveFrom)->delete();
-            $now = now();
-            $rows = [];
-
-            foreach ($request->validated('amounts') as $grade => $steps) {
-                foreach ($steps as $step => $amount) {
-                    if ($amount === null || $amount === '' || (int) $grade < 1 || (int) $grade > 33 || (int) $step < 1 || (int) $step > 8) {
-                        continue;
-                    }
-
-                    $rows[] = [
-                        'effective_from' => $effectiveFrom,
-                        'grade' => (int) $grade,
-                        'step' => (int) $step,
-                        'amount' => Money::toDecimal(Money::toCentavos((string) $amount)),
-                        'legal_basis' => $request->validated('legal_basis'),
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }
-            }
-
-            SalaryGrade::insert($rows);
-        });
-
-        $after = $this->cells($effectiveFrom);
-        $changed = array_keys(array_diff_assoc($after, $before) + array_diff_assoc($before, $after));
-
-        $this->audit->record(
-            AuditEvent::Updated,
-            __('Salary Schedule tranche effective :date', ['date' => $effectiveFrom]),
-            oldValues: array_intersect_key($before, array_flip($changed)),
-            newValues: array_intersect_key($after, array_flip($changed)),
-        );
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.salary-schedule.index', ['effective' => $effectiveFrom]));
+        }
 
         return redirect()->route('payroll.salary-schedule.index', ['effective' => $effectiveFrom])->with('status', __('Salary Schedule saved.'));
-    }
-
-    /**
-     * The tranche as flat "SG grade-step" => amount pairs, plus its legal basis, for the audit log.
-     *
-     * @return array<string, ?string>
-     */
-    private function cells(string $effectiveFrom): array
-    {
-        $cells = SalaryGrade::query()->whereDate('effective_from', $effectiveFrom)->orderBy('grade')->orderBy('step')->get();
-
-        return [
-            'legal_basis' => $cells->first()?->legal_basis,
-            ...$cells->mapWithKeys(fn (SalaryGrade $cell): array => ['SG '.$cell->grade.'-'.$cell->step => (string) $cell->amount])->all(),
-        ];
     }
 
     /**

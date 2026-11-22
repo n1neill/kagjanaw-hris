@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Payroll;
 
 use App\Enums\AllowanceCoverage;
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\AllowanceTypeRequest;
 use App\Models\AllowanceType;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -15,6 +18,8 @@ use Illuminate\View\View;
  */
 class AllowanceTypeController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('payroll.allowances.index', [
@@ -27,9 +32,15 @@ class AllowanceTypeController extends Controller
         return $this->form(new AllowanceType(['coverage' => AllowanceCoverage::Assigned, 'is_active' => true]));
     }
 
-    public function store(AllowanceTypeRequest $request): RedirectResponse
+    public function store(AllowanceTypeRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $type = AllowanceType::create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateAllowanceType, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.allowances.index'));
+        }
+
+        $type = $outcome->result;
 
         return redirect()->route('payroll.allowances.index')->with('status', __(':name added.', ['name' => $type->name]));
     }
@@ -39,9 +50,13 @@ class AllowanceTypeController extends Controller
         return $this->form($allowanceType);
     }
 
-    public function update(AllowanceTypeRequest $request, AllowanceType $allowanceType): RedirectResponse
+    public function update(AllowanceTypeRequest $request, AllowanceType $allowanceType, ChangeRequestService $changes): RedirectResponse
     {
-        $allowanceType->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateAllowanceType, $request->validated(), $allowanceType);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.allowances.index'));
+        }
 
         return redirect()->route('payroll.allowances.index')->with('status', __(':name updated.', ['name' => $allowanceType->name]));
     }

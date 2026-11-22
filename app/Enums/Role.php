@@ -76,6 +76,7 @@ enum Role: string
                 Permission::ProcessPayroll,
                 Permission::GenerateReports,
                 Permission::ManageAnnouncements,
+                Permission::ApproveChanges,
                 ...$selfService,
             ],
             self::MunicipalMayor => [

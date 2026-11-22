@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\ReferenceData;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReferenceData\DepartmentRequest;
 use App\Models\Department;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -13,6 +16,8 @@ use Illuminate\View\View;
  */
 class DepartmentController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('reference-data.departments.index', [
@@ -25,9 +30,15 @@ class DepartmentController extends Controller
         return view('reference-data.departments.form', ['department' => new Department(['is_active' => true])]);
     }
 
-    public function store(DepartmentRequest $request): RedirectResponse
+    public function store(DepartmentRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $department = Department::create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateDepartment, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.departments.index'));
+        }
+
+        $department = $outcome->result;
 
         return redirect()
             ->route('reference-data.departments.index')
@@ -39,9 +50,13 @@ class DepartmentController extends Controller
         return view('reference-data.departments.form', ['department' => $department]);
     }
 
-    public function update(DepartmentRequest $request, Department $department): RedirectResponse
+    public function update(DepartmentRequest $request, Department $department, ChangeRequestService $changes): RedirectResponse
     {
-        $department->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateDepartment, $request->validated(), $department);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.departments.index'));
+        }
 
         return redirect()
             ->route('reference-data.departments.index')

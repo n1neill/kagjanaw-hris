@@ -4,12 +4,15 @@ namespace App\Services\Payroll;
 
 use App\Enums\PayBasis;
 use App\Enums\PayrollRunStatus;
+use App\Enums\Permission;
+use App\Enums\Role;
 use App\Jobs\ComputePayrollRun;
 use App\Models\Employee;
 use App\Models\PayrollItem;
 use App\Models\PayrollPeriod;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Notifications\PayrollReviewRequestedNotification;
 use App\Notifications\PayslipReleasedNotification;
 use App\Services\Leave\LeaveDays;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +62,15 @@ class PayrollRunService
         });
 
         ComputePayrollRun::dispatch($run)->afterCommit();
+
+        // Someone with granted (not role-based) payroll access prepared it:
+        // an HR Officer must review and approve it before release.
+        if ($user->needsApprovalFor(Permission::ProcessPayroll)) {
+            Notification::send(
+                User::role(Role::HrOfficer->value)->active()->whereKeyNot($user->id)->get(),
+                new PayrollReviewRequestedNotification($run->loadMissing('period'), $user),
+            );
+        }
 
         return $run;
     }

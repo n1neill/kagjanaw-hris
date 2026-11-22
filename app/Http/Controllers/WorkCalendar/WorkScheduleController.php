@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\WorkCalendar;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkCalendar\WorkScheduleRequest;
 use App\Models\WorkSchedule;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -15,6 +18,8 @@ use Illuminate\View\View;
  */
 class WorkScheduleController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function edit(): View
     {
         return view('work-calendar.schedule', [
@@ -23,12 +28,13 @@ class WorkScheduleController extends Controller
         ]);
     }
 
-    public function update(WorkScheduleRequest $request): RedirectResponse
+    public function update(WorkScheduleRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        WorkSchedule::current()->update([
-            ...$request->validated(),
-            'working_days' => array_map('intval', $request->validated('working_days')),
-        ]);
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateOfficeHours, $request->validated(), WorkSchedule::current());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('work-calendar.schedule.edit'));
+        }
 
         return redirect()
             ->route('work-calendar.schedule.edit')

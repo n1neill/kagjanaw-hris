@@ -28,11 +28,18 @@
                         <td class="font-mono text-xs">{{ $user->username }}</td>
                         <td>{{ $user->email ?? '—' }}</td>
                         <td>
-                            @if ($role = $user->primaryRole())
-                                <x-badge color="brand">{{ $role->label() }}</x-badge>
-                            @else
-                                <x-badge color="yellow">{{ __('No role') }}</x-badge>
-                            @endif
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                @if ($role = $user->primaryRole())
+                                    <x-badge color="brand">{{ $role->label() }}</x-badge>
+                                @else
+                                    <x-badge color="yellow">{{ __('No role') }}</x-badge>
+                                @endif
+                                @if ($user->permissions->isNotEmpty())
+                                    <x-badge color="blue" :title="$user->permissions->map(fn ($permission) => \App\Enums\Permission::tryFrom($permission->name)?->label())->filter()->implode(', ')">
+                                        {{ __('+:count access', ['count' => $user->permissions->count()]) }}
+                                    </x-badge>
+                                @endif
+                            </div>
                         </td>
                         <td><x-status-badge :active="$user->is_active" /></td>
                         <td data-order="{{ $user->last_login_at?->timestamp ?? 0 }}">

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\ReferenceData;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReferenceData\PositionRequest;
 use App\Models\Department;
 use App\Models\Position;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -15,6 +18,8 @@ use Illuminate\View\View;
  */
 class PositionController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('reference-data.positions.index', [
@@ -30,9 +35,15 @@ class PositionController extends Controller
         ]);
     }
 
-    public function store(PositionRequest $request): RedirectResponse
+    public function store(PositionRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $position = Position::create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreatePosition, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.positions.index'));
+        }
+
+        $position = $outcome->result;
 
         return redirect()
             ->route('reference-data.positions.index')
@@ -47,9 +58,13 @@ class PositionController extends Controller
         ]);
     }
 
-    public function update(PositionRequest $request, Position $position): RedirectResponse
+    public function update(PositionRequest $request, Position $position, ChangeRequestService $changes): RedirectResponse
     {
-        $position->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdatePosition, $request->validated(), $position);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.positions.index'));
+        }
 
         return redirect()
             ->route('reference-data.positions.index')

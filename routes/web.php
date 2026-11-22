@@ -7,8 +7,11 @@ use App\Http\Controllers\Admin\BiometricDeviceActionController;
 use App\Http\Controllers\Admin\BiometricDeviceController;
 use App\Http\Controllers\Admin\SystemSettingsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserPermissionController;
 use App\Http\Controllers\Admin\UserStatusController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\Approvals\ChangeRequestActionController;
+use App\Http\Controllers\Approvals\ChangeRequestController;
 use App\Http\Controllers\Attendance\AttendanceImportController;
 use App\Http\Controllers\Attendance\AttendanceLogController;
 use App\Http\Controllers\Attendance\AttendanceSummaryController;
@@ -125,6 +128,19 @@ Route::middleware('auth')->group(function () {
 
     // Everyone reads the announcements addressed to them; HR manages them. The policy decides.
     Route::resource('announcements', AnnouncementController::class);
+
+    // Changes made through granted permissions: HR Officers review them,
+    // submitters follow their own. The policy decides.
+    Route::prefix('approvals')->name('approvals.')->group(function () {
+        Route::get('/', [ChangeRequestController::class, 'index'])->name('index');
+        Route::get('{changeRequest}', [ChangeRequestController::class, 'show'])->name('show');
+        Route::get('{changeRequest}/files/{key}', [ChangeRequestController::class, 'file'])
+            ->where('key', '[a-z_]+')
+            ->name('file');
+        Route::post('{changeRequest}/approve', [ChangeRequestActionController::class, 'approve'])->name('approve');
+        Route::post('{changeRequest}/reject', [ChangeRequestActionController::class, 'reject'])->name('reject');
+        Route::post('{changeRequest}/cancel', [ChangeRequestActionController::class, 'cancel'])->name('cancel');
+    });
 
     Route::prefix('leave')->name('leave.')->group(function () {
         Route::middleware(PermissionMiddleware::using(Permission::FileLeave))->group(function () {
@@ -281,6 +297,7 @@ Route::middleware('auth')->group(function () {
         ->group(function () {
             Route::resource('users', UserController::class)->except(['show', 'destroy']);
             Route::patch('users/{user}/status', [UserStatusController::class, 'update'])->name('users.status');
+            Route::put('users/{user}/permissions', [UserPermissionController::class, 'update'])->name('users.permissions');
         });
 
     Route::prefix('admin')

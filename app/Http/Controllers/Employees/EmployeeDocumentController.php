@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Enums\AuditEvent;
-use App\Enums\DocumentType;
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employees\StoreEmployeeDocumentRequest;
 use App\Models\Employee;
 use App\Models\EmployeeDocument;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Audit\AuditLogger;
-use App\Services\EmployeeDocumentService;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,6 +24,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class EmployeeDocumentController extends Controller
 {
+    use SendsChangesForApproval;
+
     /**
      * Headers that stop browsers and proxies from sniffing or caching personal files.
      *
@@ -32,15 +36,21 @@ class EmployeeDocumentController extends Controller
         'Cache-Control' => 'private, no-store, max-age=0',
     ];
 
-    public function store(StoreEmployeeDocumentRequest $request, Employee $employee, EmployeeDocumentService $documents): RedirectResponse
+    public function store(StoreEmployeeDocumentRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
     {
-        $document = $documents->store(
-            $employee,
-            $request->file('file'),
-            DocumentType::from($request->validated('document_type')),
-            $request->validated('title'),
+        $outcome = $changes->perform(
             $request->user(),
+            ChangeAction::UploadEmployeeDocument,
+            $request->safe()->only(['document_type', 'title']),
+            $employee,
+            ['file' => $request->file('file')],
         );
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.show', $employee).'#documents');
+        }
+
+        $document = $outcome->result;
 
         return redirect()
             ->to(route('employees.show', $employee).'#documents')
@@ -72,11 +82,15 @@ class EmployeeDocumentController extends Controller
         return $this->diskContaining($document)->download($document->path, $document->original_name, self::PRIVATE_FILE_HEADERS);
     }
 
-    public function destroy(Employee $employee, EmployeeDocument $document, EmployeeDocumentService $documents): RedirectResponse
+    public function destroy(Request $request, Employee $employee, EmployeeDocument $document, ChangeRequestService $changes): RedirectResponse
     {
         Gate::authorize('manageDocuments', $employee);
 
-        $documents->delete($document);
+        $outcome = $changes->perform($request->user(), ChangeAction::DeleteEmployeeDocument, [], $document);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.show', $employee).'#documents');
+        }
 
         return redirect()
             ->to(route('employees.show', $employee).'#documents')

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AnnouncementAudience;
+use App\Enums\ChangeAction;
 use App\Enums\Permission;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Requests\AnnouncementRequest;
 use App\Models\Announcement;
 use App\Models\Department;
 use App\Services\AnnouncementService;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,7 +22,12 @@ use Illuminate\View\View;
  */
 class AnnouncementController extends Controller
 {
-    public function __construct(private AnnouncementService $announcements) {}
+    use SendsChangesForApproval;
+
+    public function __construct(
+        private AnnouncementService $announcements,
+        private ChangeRequestService $changes,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -62,7 +70,16 @@ class AnnouncementController extends Controller
 
     public function store(AnnouncementRequest $request): RedirectResponse
     {
-        $announcement = $this->announcements->create($request->announcement(), $request->shouldPublish(), $request->user());
+        $outcome = $this->changes->perform($request->user(), ChangeAction::CreateAnnouncement, [
+            ...$request->announcement(),
+            'publish' => $request->shouldPublish(),
+        ]);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('announcements.index'));
+        }
+
+        $announcement = $outcome->result;
 
         return redirect()->route('announcements.show', $announcement)
             ->with('status', $request->shouldPublish() ? __('Announcement published.') : __('Draft saved. It is not shown to employees until you publish it.'));
@@ -82,18 +99,27 @@ class AnnouncementController extends Controller
 
     public function update(AnnouncementRequest $request, Announcement $announcement): RedirectResponse
     {
-        $wasPublished = $announcement->published_at !== null;
+        $outcome = $this->changes->perform($request->user(), ChangeAction::UpdateAnnouncement, [
+            ...$request->announcement(),
+            'publish' => $request->shouldPublish(),
+        ], $announcement);
 
-        $this->announcements->update($announcement, $request->announcement(), $request->shouldPublish() || $wasPublished);
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('announcements.show', $announcement));
+        }
 
         return redirect()->route('announcements.show', $announcement)->with('status', __('Announcement saved.'));
     }
 
-    public function destroy(Announcement $announcement): RedirectResponse
+    public function destroy(Request $request, Announcement $announcement): RedirectResponse
     {
         Gate::authorize('delete', $announcement);
 
-        $announcement->delete();
+        $outcome = $this->changes->perform($request->user(), ChangeAction::DeleteAnnouncement, [], $announcement);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('announcements.show', $announcement));
+        }
 
         return redirect()->route('announcements.index')->with('status', __('Announcement deleted.'));
     }

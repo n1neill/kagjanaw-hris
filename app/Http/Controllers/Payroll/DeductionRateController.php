@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Payroll;
 
+use App\Enums\ChangeAction;
 use App\Enums\ContributionType;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\DeductionRateRequest;
 use App\Models\DeductionRate;
 use App\Models\TaxBracket;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -16,6 +19,8 @@ use Illuminate\View\View;
  */
 class DeductionRateController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('payroll.rates.index', [
@@ -31,9 +36,15 @@ class DeductionRateController extends Controller
         return $this->form(new DeductionRate(['type' => ContributionType::Gsis]));
     }
 
-    public function store(DeductionRateRequest $request): RedirectResponse
+    public function store(DeductionRateRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $rate = DeductionRate::create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateContributionRate, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.rates.index'));
+        }
+
+        $rate = $outcome->result;
 
         return redirect()->route('payroll.rates.index')->with('status', __(':type rate added.', ['type' => $rate->type->label()]));
     }
@@ -43,9 +54,13 @@ class DeductionRateController extends Controller
         return $this->form($deductionRate);
     }
 
-    public function update(DeductionRateRequest $request, DeductionRate $deductionRate): RedirectResponse
+    public function update(DeductionRateRequest $request, DeductionRate $deductionRate, ChangeRequestService $changes): RedirectResponse
     {
-        $deductionRate->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateContributionRate, $request->validated(), $deductionRate);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.rates.index'));
+        }
 
         return redirect()->route('payroll.rates.index')->with('status', __(':type rate updated.', ['type' => $deductionRate->type->label()]));
     }

@@ -32,6 +32,14 @@ class UserPolicy
         return $user->can(Permission::ManageUsers) && $user->isNot($account);
     }
 
+    /**
+     * Administrators may not grant extra access to their own account.
+     */
+    public function changePermissions(User $user, User $account): bool
+    {
+        return $user->can(Permission::ManageUsers) && $user->isNot($account);
+    }
+
     public function changeStatus(User $user, User $account): bool
     {
         return $user->can(Permission::ManageUsers) && $user->isNot($account);

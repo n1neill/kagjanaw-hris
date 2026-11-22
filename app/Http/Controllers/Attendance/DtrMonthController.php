@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Attendance;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\MonthRequest;
 use App\Models\Employee;
-use App\Services\Attendance\DtrCorrectionService;
-use App\Services\Leave\LeaveCreditPostingService;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Leave\LeaveDays;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -16,24 +17,30 @@ use Illuminate\Support\Facades\Gate;
  */
 class DtrMonthController extends Controller
 {
+    use SendsChangesForApproval;
+
     /**
      * Confirm the month's finished days as reviewed (required before payroll).
      * For a month that has ended, this also posts the month's leave credits
      * and deducts tardiness and undertime from vacation leave.
      */
-    public function validateMonth(MonthRequest $request, Employee $employee, DtrCorrectionService $corrections, LeaveCreditPostingService $posting): RedirectResponse
+    public function validateMonth(MonthRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
     {
         Gate::authorize('manageAttendance', $employee);
 
         $month = $request->month();
-        $count = $corrections->validateMonth($employee, $month, $request->user());
+        $outcome = $changes->perform($request->user(), ChangeAction::ValidateDtrMonth, ['month' => $month->format('Y-m')], $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('attendance.dtr.show', [$employee, 'month' => $month->format('Y-m')]));
+        }
+
+        ['count' => $count, 'posting' => $result] = $outcome->result;
 
         $message = trans_choice('{0} All days of :month were already validated.|{1} :count day of :month validated.|[2,*] :count days of :month validated.', $count, [
             'count' => $count,
             'month' => $month->format('F Y'),
         ]);
-
-        $result = $posting->postMonth($employee, $month, $request->user());
 
         if ($result->wasPosted()) {
             $message .= ' '.__('Leave credits posted: :earned days earned; :deducted days deducted from vacation leave for tardiness and undertime.', [
@@ -54,12 +61,16 @@ class DtrMonthController extends Controller
     /**
      * Recompute the month from raw logs; corrected days are kept.
      */
-    public function reprocess(MonthRequest $request, Employee $employee, DtrCorrectionService $corrections): RedirectResponse
+    public function reprocess(MonthRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
     {
         Gate::authorize('manageAttendance', $employee);
 
         $month = $request->month();
-        $corrections->reprocessMonth($employee, $month);
+        $outcome = $changes->perform($request->user(), ChangeAction::ReprocessDtrMonth, ['month' => $month->format('Y-m')], $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('attendance.dtr.show', [$employee, 'month' => $month->format('Y-m')]));
+        }
 
         return redirect()
             ->route('attendance.dtr.show', [$employee, 'month' => $month->format('Y-m')])

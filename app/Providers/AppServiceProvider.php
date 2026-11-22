@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Enums\Permission;
+use App\Models\ChangeRequest;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Console\ServeCommand;
@@ -12,6 +15,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
@@ -52,15 +56,46 @@ class AppServiceProvider extends ServiceProvider
 
         $this->preventLazyLoading();
 
-        // The notification bell in the main layout.
+        // The notification bell and the Approvals menu item in the main layout.
         View::composer('layouts.app', function (\Illuminate\View\View $view): void {
             $user = Auth::user();
+            $isReviewer = $user?->can(Permission::ApproveChanges) ?? false;
 
             $view->with([
                 'unreadNotificationCount' => $user?->unreadNotifications()->count() ?? 0,
                 'recentNotifications' => $user?->notifications()->latest()->limit(8)->get() ?? collect(),
+                'showApprovals' => $user?->can('viewAny', ChangeRequest::class) ?? false,
+                'pendingApprovalCount' => $isReviewer ? ChangeRequest::query()->pending()->where('requested_by', '!=', $user->id)->count() : 0,
+                'delegatedPermission' => $this->delegatedPermissionForPage($user),
             ]);
         });
+    }
+
+    /**
+     * The permission behind the current HR page when the user holds it only
+     * as a granted extra, so the layout can say their changes need approval.
+     */
+    private function delegatedPermissionForPage(?User $user): ?Permission
+    {
+        $routeName = request()->route()?->getName();
+
+        if ($user === null || $routeName === null) {
+            return null;
+        }
+
+        $permission = match (true) {
+            str_starts_with($routeName, 'employees.') => Permission::ManageEmployees,
+            str_starts_with($routeName, 'attendance.') && $routeName !== 'attendance.my' => Permission::ManageAttendance,
+            str_starts_with($routeName, 'leave.requests.') => Permission::ApproveLeave,
+            Str::startsWith($routeName, ['leave.credits', 'leave.card', 'leave.posting.', 'leave.opening-balances.', 'leave.types.']) => Permission::ManageLeaveCredits,
+            str_starts_with($routeName, 'payroll.') && ! str_starts_with($routeName, 'payroll.payslips.') => Permission::ProcessPayroll,
+            str_starts_with($routeName, 'work-calendar.') => Permission::ManageWorkCalendar,
+            str_starts_with($routeName, 'reference-data.') => Permission::ManageReferenceData,
+            str_starts_with($routeName, 'announcements.') => Permission::ManageAnnouncements,
+            default => null,
+        };
+
+        return $permission !== null && $user->needsApprovalFor($permission) ? $permission : null;
     }
 
     /**

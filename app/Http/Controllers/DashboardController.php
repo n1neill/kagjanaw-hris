@@ -14,6 +14,7 @@ use App\Models\Announcement;
 use App\Models\AttendanceLog;
 use App\Models\AuditLog;
 use App\Models\BiometricDevice;
+use App\Models\ChangeRequest;
 use App\Models\DailyTimeRecord;
 use App\Models\Department;
 use App\Models\DeviceSyncRun;
@@ -200,6 +201,7 @@ class DashboardController extends Controller
                 ->whereBetween('work_date', [now()->startOfMonth()->toDateString(), now()->toDateString()])
                 ->count(),
             'pendingApprovals' => LeaveRequest::query()->where('status', LeaveRequestStatus::Endorsed)->count(),
+            'pendingChangeRequests' => ChangeRequest::query()->pending()->count(),
             'unpostedLastMonth' => $this->unpostedLeaveCredits(),
             'recentPayrollRuns' => PayrollRun::query()
                 ->with('period')

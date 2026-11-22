@@ -37,6 +37,11 @@
         <x-sidebar-link :href="route('announcements.index')" :active="request()->routeIs('announcements.*')" icon="megaphone">
             {{ __('Announcements') }}
         </x-sidebar-link>
+        @if ($showApprovals ?? false)
+            <x-sidebar-link :href="route('approvals.index')" :active="request()->routeIs('approvals.*')" icon="check-circle" :badge="($pendingApprovalCount ?? 0) > 0 ? $pendingApprovalCount : null">
+                {{ Auth::user()->can(Permission::ApproveChanges) ? __('Approvals') : __('My Submissions') }}
+            </x-sidebar-link>
+        @endif
         @canany([Permission::GenerateReports, Permission::ViewDepartmentReports])
             <x-sidebar-link :href="route('reports.index')" :active="request()->routeIs('reports.*')" icon="chart">
                 {{ __('Reports') }}
@@ -44,22 +49,26 @@
         @endcanany
     </div>
 
-    @can(Permission::ManageEmployees)
+    @canany([Permission::ManageEmployees, Permission::ManageAttendance])
         <div>
             <x-sidebar-heading>{{ __('Human Resources') }}</x-sidebar-heading>
             <div class="mt-2 space-y-1">
-                <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
-                    {{ __('Employees') }}
-                </x-sidebar-link>
-                <x-sidebar-link :href="route('attendance.summary')" :active="request()->routeIs('attendance.summary', 'attendance.dtr.*')" icon="calendar">
-                    {{ __('Attendance Summary') }}
-                </x-sidebar-link>
-                <x-sidebar-link :href="route('attendance.logs')" :active="request()->routeIs('attendance.logs')" icon="clock">
-                    {{ __('Attendance Logs') }}
-                </x-sidebar-link>
-                <x-sidebar-link :href="route('attendance.import.create')" :active="request()->routeIs('attendance.import.*')" icon="document">
-                    {{ __('Import Attendance') }}
-                </x-sidebar-link>
+                @can(Permission::ManageEmployees)
+                    <x-sidebar-link :href="route('employees.index')" :active="request()->routeIs('employees.*')" icon="users">
+                        {{ __('Employees') }}
+                    </x-sidebar-link>
+                @endcan
+                @can(Permission::ManageAttendance)
+                    <x-sidebar-link :href="route('attendance.summary')" :active="request()->routeIs('attendance.summary', 'attendance.dtr.*')" icon="calendar">
+                        {{ __('Attendance Summary') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('attendance.logs')" :active="request()->routeIs('attendance.logs')" icon="clock">
+                        {{ __('Attendance Logs') }}
+                    </x-sidebar-link>
+                    <x-sidebar-link :href="route('attendance.import.create')" :active="request()->routeIs('attendance.import.*')" icon="document">
+                        {{ __('Import Attendance') }}
+                    </x-sidebar-link>
+                @endcan
             </div>
         </div>
     @elsecan(Permission::ViewDepartmentEmployees)

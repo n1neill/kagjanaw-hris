@@ -7,9 +7,11 @@ use App\Models\PayrollRun;
 use App\Services\Payroll\PayrollRunService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
- * Compute, approve, reopen or release a payroll run.
+ * Compute, approve, reopen or release a payroll run. Approving, reopening
+ * and releasing is limited to HR Officers (PayrollRunPolicy).
  */
 class PayrollRunActionController extends Controller
 {
@@ -24,6 +26,8 @@ class PayrollRunActionController extends Controller
 
     public function approve(Request $request, PayrollRun $payrollRun): RedirectResponse
     {
+        Gate::authorize('approve', $payrollRun);
+
         $this->payroll->approve($payrollRun, $request->user());
 
         return $this->backTo($payrollRun, __('The payroll was approved. Release it to make the payslips available.'));
@@ -31,6 +35,8 @@ class PayrollRunActionController extends Controller
 
     public function reopen(PayrollRun $payrollRun): RedirectResponse
     {
+        Gate::authorize('approve', $payrollRun);
+
         $this->payroll->reopen($payrollRun);
 
         return $this->backTo($payrollRun, __('The payroll was reopened for corrections.'));
@@ -38,6 +44,8 @@ class PayrollRunActionController extends Controller
 
     public function release(Request $request, PayrollRun $payrollRun): RedirectResponse
     {
+        Gate::authorize('approve', $payrollRun);
+
         $run = $this->payroll->release($payrollRun, $request->user());
 
         return $this->backTo($run, trans_choice('{0} The payroll was released.|{1} The payroll was released; :count employee was notified.|[2,*] The payroll was released; :count employees were notified.', $run->employee_count, [

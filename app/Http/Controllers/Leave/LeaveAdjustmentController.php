@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Leave;
 
-use App\Enums\LeaveLedgerEntryType;
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Leave\LeaveAdjustmentRequest;
 use App\Models\Employee;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Leave\LeaveDays;
-use App\Services\Leave\LeaveLedger;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -15,21 +16,17 @@ use Illuminate\Http\RedirectResponse;
  */
 class LeaveAdjustmentController extends Controller
 {
-    public function __invoke(LeaveAdjustmentRequest $request, Employee $employee, LeaveLedger $ledger): RedirectResponse
-    {
-        $days = LeaveDays::toThousandths($request->validated('days'));
-        $ledgerType = $request->ledgerType();
+    use SendsChangesForApproval;
 
-        $ledger->post(
-            $employee,
-            $ledgerType,
-            LeaveLedgerEntryType::Adjustment,
-            $days,
-            __('Adjustment'),
-            $request->entryDate(),
-            user: $request->user(),
-            remarks: $request->validated('reason'),
-        );
+    public function __invoke(LeaveAdjustmentRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
+    {
+        $outcome = $changes->perform($request->user(), ChangeAction::AdjustLeaveBalance, $request->validated(), $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('leave.card', $employee));
+        }
+
+        ['days' => $days, 'type' => $ledgerType] = $outcome->result;
 
         return redirect()
             ->route('leave.card', $employee)

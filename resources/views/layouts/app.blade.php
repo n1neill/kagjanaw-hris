@@ -154,6 +154,10 @@
                             <x-alert type="error">{{ session('error') }}</x-alert>
                         @endif
 
+                        @if ($delegatedPermission ?? null)
+                            <x-approval-notice :permission="$delegatedPermission" />
+                        @endif
+
                         {{ $slot }}
                     </div>
                 </main>

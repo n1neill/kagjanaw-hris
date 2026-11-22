@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Enums\AuditEvent;
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Employees\Concerns\RendersServiceRecord;
 use App\Http\Requests\Employees\ServiceRecordRequest;
 use App\Models\Employee;
 use App\Models\EmployeeServiceRecord;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Audit\AuditLogger;
 use App\Services\ServiceRecordService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,7 +26,7 @@ use Illuminate\View\View;
  */
 class ServiceRecordController extends Controller
 {
-    use RendersServiceRecord;
+    use RendersServiceRecord, SendsChangesForApproval;
 
     public function show(Request $request, Employee $employee, AuditLogger $audit): View
     {
@@ -64,10 +67,13 @@ class ServiceRecordController extends Controller
         ]);
     }
 
-    public function store(ServiceRecordRequest $request, Employee $employee): RedirectResponse
+    public function store(ServiceRecordRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
     {
-        $entry = $employee->serviceRecords()->make($request->validated());
-        $entry->forceFill(['created_by' => $request->user()->id])->save();
+        $outcome = $changes->perform($request->user(), ChangeAction::AddServiceRecord, $request->validated(), $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.service-record.show', $employee));
+        }
 
         return redirect()->route('employees.service-record.show', $employee)
             ->with('status', __('Service record entry added.'));
@@ -78,17 +84,25 @@ class ServiceRecordController extends Controller
         return view('employees.service-record-form', ['employee' => $employee, 'entry' => $serviceRecord]);
     }
 
-    public function update(ServiceRecordRequest $request, Employee $employee, EmployeeServiceRecord $serviceRecord): RedirectResponse
+    public function update(ServiceRecordRequest $request, Employee $employee, EmployeeServiceRecord $serviceRecord, ChangeRequestService $changes): RedirectResponse
     {
-        $serviceRecord->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateServiceRecord, $request->validated(), $serviceRecord);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.service-record.show', $employee));
+        }
 
         return redirect()->route('employees.service-record.show', $employee)
             ->with('status', __('Service record entry updated.'));
     }
 
-    public function destroy(Employee $employee, EmployeeServiceRecord $serviceRecord): RedirectResponse
+    public function destroy(Request $request, Employee $employee, EmployeeServiceRecord $serviceRecord, ChangeRequestService $changes): RedirectResponse
     {
-        $serviceRecord->delete();
+        $outcome = $changes->perform($request->user(), ChangeAction::DeleteServiceRecord, [], $serviceRecord);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.service-record.show', $employee));
+        }
 
         return redirect()->route('employees.service-record.show', $employee)
             ->with('status', __('Service record entry deleted.'));

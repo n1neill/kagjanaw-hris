@@ -35,6 +35,7 @@ test('each role is granted exactly its permissions', function (Role $role, array
         'announcements.manage',
         'attendance.manage',
         'attendance.view-own',
+        'changes.approve',
         'employees.manage',
         'leave-credits.manage',
         'leave.approve',

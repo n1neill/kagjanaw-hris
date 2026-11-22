@@ -40,7 +40,7 @@
     </div>
 
     <x-card :title="__('Needs attention')" :description="__('Work waiting on the HR Office.')">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div class="rounded-xl border border-line bg-surface p-4 shadow-xs">
                 <p class="text-sm font-medium text-ink-muted">{{ __('Last device sync') }}</p>
                 @if ($latestSync)
@@ -54,6 +54,7 @@
                 @endif
             </div>
             @foreach ([
+                ['href' => route('approvals.index'), 'label' => __('Changes awaiting approval'), 'value' => $pendingChangeRequests, 'hint' => __('Submitted by users with additional access')],
                 ['href' => route('attendance.logs', ['status' => 'unknown-user']), 'label' => __('Flagged punches'), 'value' => $flaggedLogs, 'hint' => __('Unknown biometric IDs or wrong device time')],
                 ['href' => route('leave.requests.index'), 'label' => __('Leave applications to decide'), 'value' => $pendingApprovals, 'hint' => __('Approve or reject them')],
                 ['href' => route('leave.posting.index'), 'label' => __('Leave credits not yet posted for :month', ['month' => now()->subMonthNoOverflow()->format('F')]), 'value' => $unpostedLastMonth, 'hint' => __('Validate their DTRs to post the credits')],

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Leave;
 
+use App\Enums\ChangeAction;
 use App\Enums\Permission;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Leave\ImportOpeningBalancesRequest;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Leave\OpeningBalanceImporter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -16,6 +19,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class OpeningBalanceImportController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function create(): View
     {
         Gate::authorize(Permission::ManageLeaveCredits);
@@ -27,9 +32,20 @@ class OpeningBalanceImportController extends Controller
         ]);
     }
 
-    public function store(ImportOpeningBalancesRequest $request, OpeningBalanceImporter $importer): RedirectResponse
+    public function store(ImportOpeningBalancesRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $result = $importer->import($request->file('file')->getRealPath(), $request->asOf(), $request->user());
+        $outcome = $changes->perform(
+            $request->user(),
+            ChangeAction::ImportOpeningBalances,
+            ['as_of' => $request->asOf()->toDateString(), 'filename' => $request->file('file')->getClientOriginalName()],
+            files: ['file' => $request->file('file')],
+        );
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('leave.opening-balances.create'));
+        }
+
+        $result = $outcome->result;
 
         return redirect()
             ->route('leave.opening-balances.create')

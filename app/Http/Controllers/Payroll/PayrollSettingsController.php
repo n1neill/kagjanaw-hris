@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Payroll;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\PayrollSettingsRequest;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Payroll\Money;
 use App\Services\Payroll\PayrollSettings;
 use Illuminate\Http\RedirectResponse;
@@ -14,6 +17,8 @@ use Illuminate\View\View;
  */
 class PayrollSettingsController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function __construct(private PayrollSettings $settings) {}
 
     public function edit(): View
@@ -29,9 +34,13 @@ class PayrollSettingsController extends Controller
         ]);
     }
 
-    public function update(PayrollSettingsRequest $request): RedirectResponse
+    public function update(PayrollSettingsRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $this->settings->update($request->settings(), $request->user());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdatePayrollSettings, $request->settings());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.settings.edit'));
+        }
 
         return redirect()->route('payroll.settings.edit')->with('status', __('Payroll settings saved. They apply to payrolls computed from now on.'));
     }

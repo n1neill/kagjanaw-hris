@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Leave;
 
+use App\Enums\ChangeAction;
 use App\Enums\LeaveLedgerEntryType;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Leave\LeavePostingRequest;
 use App\Models\Employee;
 use App\Models\LeaveLedgerEntry;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Leave\LeaveCreditPostingService;
 use App\Services\Leave\LeavePostingResult;
 use Illuminate\Http\RedirectResponse;
@@ -20,6 +23,8 @@ use Illuminate\View\View;
  */
 class LeavePostingController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function __construct(private LeaveCreditPostingService $posting) {}
 
     public function index(LeavePostingRequest $request): View
@@ -44,10 +49,16 @@ class LeavePostingController extends Controller
         return view('leave.posting', ['month' => $month, 'rows' => $rows]);
     }
 
-    public function store(LeavePostingRequest $request): RedirectResponse
+    public function store(LeavePostingRequest $request, ChangeRequestService $changes): RedirectResponse
     {
         $month = $request->month();
-        $results = $this->posting->postMonthForAll($month, $request->user());
+        $outcome = $changes->perform($request->user(), ChangeAction::PostLeaveCredits, ['month' => $month->format('Y-m')]);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('leave.posting.index', ['month' => $month->format('Y-m')]));
+        }
+
+        $results = $outcome->result;
 
         $posted = $results->filter(fn (array $row): bool => $row['result']->wasPosted())->count();
         $waiting = $results->filter(fn (array $row): bool => $row['result']->status === LeavePostingResult::SKIPPED)->count();

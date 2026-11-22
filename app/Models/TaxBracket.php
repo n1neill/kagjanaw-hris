@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 /**
  * One bracket of the BIR monthly withholding tax table.
@@ -22,5 +23,16 @@ class TaxBracket extends Model
             'base_tax' => 'decimal:2',
             'rate' => 'decimal:2',
         ];
+    }
+
+    /**
+     * The effectivity dates of the tax tables on file.
+     *
+     * @return Collection<int, string>
+     */
+    public static function effectivityDates(): Collection
+    {
+        return self::query()->select('effective_from')->distinct()->pluck('effective_from')
+            ->map(fn ($date): string => $date->toDateString());
     }
 }

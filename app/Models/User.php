@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Enums\ThemePreference;
 use App\Models\Concerns\Auditable;
@@ -90,6 +91,40 @@ class User extends Authenticatable
         }
 
         return null;
+    }
+
+    /**
+     * Whether the user holds this permission only as a direct grant (not
+     * through their role), so the changes they make with it must be approved
+     * by an HR Officer before they are saved.
+     */
+    public function needsApprovalFor(Permission $permission): bool
+    {
+        return $this->hasDirectPermission($permission)
+            && ! $this->getPermissionsViaRoles()->contains('name', $permission->value);
+    }
+
+    /**
+     * Whether any change this user can make waits for an HR Officer's approval.
+     */
+    public function hasDelegatedAccess(): bool
+    {
+        return collect(Permission::grantable())
+            ->contains(fn (Permission $permission): bool => $this->needsApprovalFor($permission));
+    }
+
+    /**
+     * The permissions given to this account directly, on top of its role.
+     *
+     * @return list<Permission>
+     */
+    public function grantedPermissions(): array
+    {
+        return $this->loadMissing('permissions')->permissions
+            ->map(fn ($permission): ?Permission => Permission::tryFrom($permission->name))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /**

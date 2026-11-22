@@ -1,4 +1,4 @@
-@props(['active' => false, 'icon' => null])
+@props(['active' => false, 'icon' => null, 'badge' => null])
 
 {{-- Inside the app shell's Alpine scope: when the desktop sidebar is collapsed the label is visually hidden (kept for screen readers) and shown as a tooltip. --}}
 @php
@@ -16,4 +16,9 @@ $iconClasses = $active
         <x-icon :name="$icon" class="size-5 shrink-0 {{ $iconClasses }}" />
     @endif
     <span class="truncate" :class="sidebarCollapsed && 'lg:sr-only'">{{ $slot }}</span>
+    @if ($badge)
+        <span class="ml-auto rounded-full bg-red-600 px-1.5 text-[0.6875rem] font-semibold leading-5 text-white" :class="sidebarCollapsed && 'lg:hidden'">
+            {{ $badge }}<span class="sr-only"> {{ __('waiting') }}</span>
+        </span>
+    @endif
 </a>

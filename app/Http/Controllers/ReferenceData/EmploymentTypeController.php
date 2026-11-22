@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\ReferenceData;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReferenceData\EmploymentTypeRequest;
 use App\Models\EmploymentType;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -13,6 +16,8 @@ use Illuminate\View\View;
  */
 class EmploymentTypeController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('reference-data.employment-types.index', [
@@ -25,9 +30,15 @@ class EmploymentTypeController extends Controller
         return view('reference-data.employment-types.form', ['employmentType' => new EmploymentType(['is_active' => true])]);
     }
 
-    public function store(EmploymentTypeRequest $request): RedirectResponse
+    public function store(EmploymentTypeRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $employmentType = EmploymentType::create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateEmploymentType, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.employment-types.index'));
+        }
+
+        $employmentType = $outcome->result;
 
         return redirect()
             ->route('reference-data.employment-types.index')
@@ -39,9 +50,13 @@ class EmploymentTypeController extends Controller
         return view('reference-data.employment-types.form', ['employmentType' => $employmentType]);
     }
 
-    public function update(EmploymentTypeRequest $request, EmploymentType $employmentType): RedirectResponse
+    public function update(EmploymentTypeRequest $request, EmploymentType $employmentType, ChangeRequestService $changes): RedirectResponse
     {
-        $employmentType->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateEmploymentType, $request->validated(), $employmentType);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('reference-data.employment-types.index'));
+        }
 
         return redirect()
             ->route('reference-data.employment-types.index')

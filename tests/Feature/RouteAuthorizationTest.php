@@ -6,6 +6,7 @@ use App\Models\AllowanceType;
 use App\Models\Announcement;
 use App\Models\AuditLog;
 use App\Models\BiometricDevice;
+use App\Models\ChangeRequest;
 use App\Models\DeductionRate;
 use App\Models\Department;
 use App\Models\Employee;
@@ -68,6 +69,15 @@ function routeAccessMatrix(): array
         'notifications.index' => $everyone,
         'notifications.read-all' => $everyone,
         'notifications.open' => $everyone,
+
+        // Changes submitted through granted permissions: HR Officers review
+        // them; only the submitter (here, a colleague) may withdraw one.
+        'approvals.index' => $hr,
+        'approvals.show' => $hr,
+        'approvals.file' => $hr,
+        'approvals.approve' => $hr,
+        'approvals.reject' => $hr,
+        'approvals.cancel' => $nobody,
 
         'announcements.index' => $everyone,
         'announcements.show' => $everyone,
@@ -218,6 +228,7 @@ function routeAccessMatrix(): array
         'admin.users.edit' => $administrator,
         'admin.users.update' => $administrator,
         'admin.users.status' => $administrator,
+        'admin.users.permissions' => $administrator,
         'admin.devices.index' => $administrator,
         'admin.devices.create' => $administrator,
         'admin.devices.store' => $administrator,
@@ -281,6 +292,12 @@ function routeAuthorizationFixtures(): array
     ]);
     Storage::disk(LeaveRequest::ATTACHMENT_DISK)->put('leave-attachments/certificate.pdf', '%PDF-1.4');
 
+    Storage::disk(ChangeRequest::DISK)->put('pending-changes/punches.csv', 'employee_number,logged_at');
+    $changeRequest = ChangeRequest::factory()->create([
+        'requested_by' => $colleague->user_id,
+        'files' => ['file' => ['path' => 'pending-changes/punches.csv', 'name' => 'punches.csv', 'mime' => 'text/csv']],
+    ]);
+
     $payslip = PayrollItem::factory()->create([
         'payroll_run_id' => PayrollRun::factory()->released(),
         'employee_id' => $colleague->id,
@@ -327,6 +344,8 @@ function routeAuthorizationFixtures(): array
             'leaveType' => LeaveType::vacation()->id,
             'announcement' => Announcement::factory()->create()->id,
             'format' => 'csv',
+            'changeRequest' => $changeRequest->id,
+            'key' => 'file',
         ],
         'taxTableDate' => (string) DB::table('tax_brackets')->min('effective_from'),
     ];

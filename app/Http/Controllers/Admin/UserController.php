@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Permission;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
@@ -19,7 +20,7 @@ class UserController extends Controller
         Gate::authorize('viewAny', User::class);
 
         $users = User::query()
-            ->with('roles')
+            ->with(['roles', 'permissions'])
             ->orderBy('name')
             ->orderBy('id')
             ->get();
@@ -47,10 +48,15 @@ class UserController extends Controller
     {
         Gate::authorize('update', $user);
 
+        $currentRole = $user->primaryRole();
+
         return view('admin.users.edit', [
             'user' => $user,
             'roles' => Role::options(),
-            'currentRole' => $user->primaryRole(),
+            'currentRole' => $currentRole,
+            'grantablePermissions' => Permission::grantable(),
+            'rolePermissions' => $currentRole?->permissions() ?? [],
+            'grantedPermissions' => $user->grantedPermissions(),
         ]);
     }
 

@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Payroll;
 
+use App\Enums\ChangeAction;
 use App\Enums\PayBasis;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Payroll\StorePayrollRunRequest;
 use App\Models\PayrollRun;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Payroll\PayrollRegister;
 use App\Services\Payroll\PayrollRunService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -17,6 +21,8 @@ use Illuminate\View\View;
  */
 class PayrollRunController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function __construct(private PayrollRunService $payroll) {}
 
     public function index(): View
@@ -58,10 +64,14 @@ class PayrollRunController extends Controller
         ]);
     }
 
-    public function destroy(PayrollRun $payrollRun): RedirectResponse
+    public function destroy(Request $request, PayrollRun $payrollRun, ChangeRequestService $changes): RedirectResponse
     {
         $title = $payrollRun->load('period')->title();
-        $this->payroll->delete($payrollRun);
+        $outcome = $changes->perform($request->user(), ChangeAction::DeletePayrollRun, [], $payrollRun);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('payroll.runs.show', $payrollRun));
+        }
 
         return redirect()->route('payroll.runs.index')->with('status', __(':payroll deleted.', ['payroll' => $title]));
     }

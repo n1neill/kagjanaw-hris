@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Attendance;
 
+use App\Enums\ChangeAction;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\CorrectDtrRequest;
 use App\Models\Employee;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Attendance\DtrCorrectionService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +19,8 @@ use Illuminate\View\View;
  */
 class DtrCorrectionController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function edit(Employee $employee, string $date, DtrCorrectionService $corrections): View
     {
         Gate::authorize('manageAttendance', $employee);
@@ -38,11 +43,19 @@ class DtrCorrectionController extends Controller
         ]);
     }
 
-    public function update(CorrectDtrRequest $request, Employee $employee, string $date, DtrCorrectionService $corrections): RedirectResponse
+    public function update(CorrectDtrRequest $request, Employee $employee, string $date, ChangeRequestService $changes): RedirectResponse
     {
         $day = $this->correctableDate($employee, $date);
 
-        $corrections->correct($employee, $day, $request->punches(), $request->validated('reason'), $request->user());
+        $outcome = $changes->perform($request->user(), ChangeAction::CorrectDtr, [
+            'date' => $day->toDateString(),
+            'punches' => $request->punches(),
+            'reason' => $request->validated('reason'),
+        ], $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('attendance.dtr.show', [$employee, 'month' => $day->format('Y-m')]));
+        }
 
         return redirect()
             ->route('attendance.dtr.show', [$employee, 'month' => $day->format('Y-m')])

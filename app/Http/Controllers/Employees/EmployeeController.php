@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Employees;
 
 use App\Enums\AuditEvent;
+use App\Enums\ChangeAction;
 use App\Enums\CivilStatus;
 use App\Enums\EmploymentStatus;
 use App\Enums\PayBasis;
 use App\Enums\Permission;
 use App\Enums\Sex;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Employees\Concerns\RendersEmployeeRecord;
 use App\Http\Requests\Employees\EmployeeIndexRequest;
@@ -16,8 +18,8 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\EmploymentType;
 use App\Models\Position;
+use App\Services\Approvals\ChangeRequestService;
 use App\Services\Audit\AuditLogger;
-use App\Services\EmployeeService;
 use App\Services\Payroll\Money;
 use App\Services\Payroll\SalarySchedule;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,7 +30,7 @@ use Illuminate\View\View;
 
 class EmployeeController extends Controller
 {
-    use RendersEmployeeRecord;
+    use RendersEmployeeRecord, SendsChangesForApproval;
 
     /**
      * HR officers see every employee; department heads see only their own department.
@@ -75,9 +77,15 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function store(EmployeeRequest $request, EmployeeService $employees): RedirectResponse
+    public function store(EmployeeRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        ['employee' => $employee, 'temporaryPassword' => $temporaryPassword] = $employees->create($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateEmployee, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.index'));
+        }
+
+        ['employee' => $employee, 'temporaryPassword' => $temporaryPassword] = $outcome->result;
 
         return redirect()
             ->route('employees.show', $employee)
@@ -106,9 +114,13 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function update(EmployeeRequest $request, Employee $employee, EmployeeService $employees): RedirectResponse
+    public function update(EmployeeRequest $request, Employee $employee, ChangeRequestService $changes): RedirectResponse
     {
-        $employees->update($employee, $request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateEmployee, $request->validated(), $employee);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('employees.show', $employee));
+        }
 
         return redirect()
             ->route('employees.show', $employee)

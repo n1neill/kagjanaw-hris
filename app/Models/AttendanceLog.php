@@ -7,6 +7,8 @@ use App\Enums\AttendanceSource;
 use App\Enums\VerifyType;
 use Database\Factories\AttendanceLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -47,5 +49,20 @@ class AttendanceLog extends Model
     public function device(): BelongsTo
     {
         return $this->belongsTo(BiometricDevice::class, 'biometric_device_id');
+    }
+
+    /**
+     * Punches matching the attendance log filters (status, date, biometric ID).
+     *
+     * @param  Builder<AttendanceLog>  $query
+     * @param  array{status?: ?string, date?: ?string, biometric_user_id?: ?string}  $filters
+     */
+    #[Scope]
+    protected function matchingFilters(Builder $query, array $filters): void
+    {
+        $query
+            ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when($filters['date'] ?? null, fn (Builder $query, string $date) => $query->whereBetween('logged_at', [$date.' 00:00:00', $date.' 23:59:59']))
+            ->when($filters['biometric_user_id'] ?? null, fn (Builder $query, string $id) => $query->where('biometric_user_id', $id));
     }
 }

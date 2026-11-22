@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\WorkCalendar;
 
+use App\Enums\ChangeAction;
 use App\Enums\HolidayType;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WorkCalendar\HolidayRequest;
 use App\Models\Holiday;
-use App\Services\Attendance\AttendanceProcessor;
-use Carbon\CarbonImmutable;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -17,7 +19,9 @@ use Illuminate\View\View;
  */
 class HolidayController extends Controller
 {
-    public function __construct(private AttendanceProcessor $processor) {}
+    use SendsChangesForApproval;
+
+    public function __construct(private ChangeRequestService $changes) {}
 
     public function index(): View
     {
@@ -33,9 +37,13 @@ class HolidayController extends Controller
 
     public function store(HolidayRequest $request): RedirectResponse
     {
-        $holiday = Holiday::create($request->validated());
+        $outcome = $this->changes->perform($request->user(), ChangeAction::CreateHoliday, $request->validated());
 
-        $this->recompute($holiday->date);
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('work-calendar.holidays.index'));
+        }
+
+        $holiday = $outcome->result;
 
         return redirect()->route('work-calendar.holidays.index')->with('status', __(':name added.', ['name' => $holiday->name]));
     }
@@ -47,33 +55,23 @@ class HolidayController extends Controller
 
     public function update(HolidayRequest $request, Holiday $holiday): RedirectResponse
     {
-        $previousDate = $holiday->date;
+        $outcome = $this->changes->perform($request->user(), ChangeAction::UpdateHoliday, $request->validated(), $holiday);
 
-        $holiday->update($request->validated());
-
-        $this->recompute($previousDate);
-        $this->recompute($holiday->date);
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('work-calendar.holidays.index'));
+        }
 
         return redirect()->route('work-calendar.holidays.index')->with('status', __(':name updated.', ['name' => $holiday->name]));
     }
 
-    public function destroy(Holiday $holiday): RedirectResponse
+    public function destroy(Request $request, Holiday $holiday): RedirectResponse
     {
-        $holiday->delete();
+        $outcome = $this->changes->perform($request->user(), ChangeAction::DeleteHoliday, [], $holiday);
 
-        $this->recompute($holiday->date);
-
-        return redirect()->route('work-calendar.holidays.index')->with('status', __(':name removed.', ['name' => $holiday->name]));
-    }
-
-    private function recompute(\DateTimeInterface $date): void
-    {
-        $day = CarbonImmutable::instance($date)->startOfDay();
-
-        if ($day->isFuture()) {
-            return;
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('work-calendar.holidays.index'));
         }
 
-        $this->processor->processAllEmployees($day, $day);
+        return redirect()->route('work-calendar.holidays.index')->with('status', __(':name removed.', ['name' => $holiday->name]));
     }
 }

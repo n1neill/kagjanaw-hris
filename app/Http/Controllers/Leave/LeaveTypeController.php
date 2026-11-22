@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Leave;
 
+use App\Enums\ChangeAction;
 use App\Enums\LeaveCreditSource;
 use App\Enums\Sex;
+use App\Http\Controllers\Concerns\SendsChangesForApproval;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Leave\LeaveTypeRequest;
 use App\Models\LeaveType;
+use App\Services\Approvals\ChangeRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -16,6 +19,8 @@ use Illuminate\View\View;
  */
 class LeaveTypeController extends Controller
 {
+    use SendsChangesForApproval;
+
     public function index(): View
     {
         return view('leave.types.index', ['types' => LeaveType::query()->ordered()->get()]);
@@ -31,12 +36,15 @@ class LeaveTypeController extends Controller
         ]));
     }
 
-    public function store(LeaveTypeRequest $request): RedirectResponse
+    public function store(LeaveTypeRequest $request, ChangeRequestService $changes): RedirectResponse
     {
-        $type = LeaveType::create([
-            ...$request->validated(),
-            'sort_order' => (int) LeaveType::max('sort_order') + 10,
-        ]);
+        $outcome = $changes->perform($request->user(), ChangeAction::CreateLeaveType, $request->validated());
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('leave.types.index'));
+        }
+
+        $type = $outcome->result;
 
         return redirect()->route('leave.types.index')->with('status', __(':name added.', ['name' => $type->name]));
     }
@@ -46,9 +54,13 @@ class LeaveTypeController extends Controller
         return $this->form($leaveType);
     }
 
-    public function update(LeaveTypeRequest $request, LeaveType $leaveType): RedirectResponse
+    public function update(LeaveTypeRequest $request, LeaveType $leaveType, ChangeRequestService $changes): RedirectResponse
     {
-        $leaveType->update($request->validated());
+        $outcome = $changes->perform($request->user(), ChangeAction::UpdateLeaveType, $request->validated(), $leaveType);
+
+        if ($outcome->isQueued()) {
+            return $this->sentForApproval(route('leave.types.index'));
+        }
 
         return redirect()->route('leave.types.index')->with('status', __(':name updated.', ['name' => $leaveType->name]));
     }

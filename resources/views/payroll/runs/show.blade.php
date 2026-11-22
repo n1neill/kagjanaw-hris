@@ -61,13 +61,18 @@
                     <x-secondary-button type="submit">{{ match ($status) { PayrollRunStatus::Draft => __('Compute'), PayrollRunStatus::Computing => __('Queue again'), default => __('Recompute') } }}</x-secondary-button>
                 </form>
             @endif
-            @if ($status === PayrollRunStatus::Computed)
+            @cannot('approve', $run)
+                @if (in_array($status, [PayrollRunStatus::Computed, PayrollRunStatus::Approved], true))
+                    <span class="text-sm text-ink-muted">{{ __('An HR Officer reviews, approves and releases this payroll.') }}</span>
+                @endif
+            @endcannot
+            @if ($status === PayrollRunStatus::Computed && Auth::user()->can('approve', $run))
                 <form method="POST" action="{{ route('payroll.runs.approve', $run) }}">
                     @csrf
                     <x-primary-button :disabled="$hasBlockingWarnings">{{ __('Approve') }}</x-primary-button>
                 </form>
             @endif
-            @if ($status === PayrollRunStatus::Approved)
+            @if ($status === PayrollRunStatus::Approved && Auth::user()->can('approve', $run))
                 <form method="POST" action="{{ route('payroll.runs.release', $run) }}" data-confirm="{{ __('Release this payroll? Payslips become available to employees and the payroll is locked.') }}">
                     @csrf
                     <x-primary-button>{{ __('Release payslips') }}</x-primary-button>
