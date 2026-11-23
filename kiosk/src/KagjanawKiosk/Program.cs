@@ -1,6 +1,7 @@
 using KagjanawKiosk.Configuration;
 using KagjanawKiosk.Forms;
 using KagjanawKiosk.Scanning;
+using KagjanawKiosk.Sync;
 
 namespace KagjanawKiosk;
 
@@ -31,6 +32,7 @@ internal static class Program
         var log = new KioskLog(paths.LogDirectory, TimeProvider.System);
         var forceSetup = args.Contains("--setup", StringComparer.OrdinalIgnoreCase);
         string? setupReason = null;
+        var connectionVerified = false;
 
         Application.ThreadException += (_, e) => log.Error("Unhandled UI error", e.Exception);
 
@@ -51,9 +53,21 @@ internal static class Program
 
                 forceSetup = false;
                 setupReason = null;
+                connectionVerified = true;
                 continue;
             }
 
+            if (!connectionVerified)
+            {
+                setupReason = CheckConnection(settings, token!, log);
+
+                if (setupReason is not null)
+                {
+                    continue;
+                }
+            }
+
+            connectionVerified = false;
             KioskApp app;
 
             try
@@ -81,6 +95,25 @@ internal static class Program
             {
                 return;
             }
+
+            // A restart follows saved settings, which the settings screen just tested.
+            connectionVerified = true;
         }
+    }
+
+    /// <returns>Why the kiosk cannot connect to the HRIS, or null when it can.</returns>
+    private static string? CheckConnection(KioskSettings settings, string token, KioskLog log)
+    {
+        using var client = new HrisClient(settings.HrisBaseUrl, token);
+
+        // Off the UI thread, as with DisposeAsync below.
+        var problem = Task.Run(() => ConnectionCheck.FindProblemAsync(client)).GetAwaiter().GetResult();
+
+        if (problem is not null)
+        {
+            log.Warning($"Opening the settings first: {problem}");
+        }
+
+        return problem;
     }
 }
