@@ -1,7 +1,8 @@
 <x-app-layout :title="__('Edit Account')">
     <x-slot name="header">{{ __('Edit Account') }}</x-slot>
 
-    <x-card class="max-w-2xl" :title="$user->name">
+    <div class="grid items-start gap-6 xl:grid-cols-2">
+    <x-card :title="$user->name">
         <x-slot name="actions">
             <x-status-badge :active="$user->is_active" />
         </x-slot>
@@ -20,7 +21,7 @@
     </x-card>
 
     @can('changePermissions', $user)
-        <x-card class="mt-6 max-w-2xl" :title="__('Additional access')" :description="__('Let this account do HR work beyond its role. Access takes effect as soon as you save, but every change the user makes with it is sent to an HR Officer for approval before it is recorded.')">
+        <x-card :title="__('Additional access')" :description="__('Let this account do HR work beyond its role. Access takes effect as soon as you save, but every change the user makes with it is sent to an HR Officer for approval before it is recorded.')">
             <form method="POST" action="{{ route('admin.users.permissions', $user) }}" class="space-y-5">
                 @csrf
                 @method('PUT')
@@ -62,4 +63,5 @@
             </form>
         </x-card>
     @endcan
+    </div>
 </x-app-layout>
