@@ -8,6 +8,7 @@
         'attachment' => $type->attachment_hint,
         'source' => $type->credit_source->label(),
         'calendar' => $type->counts_calendar_days,
+        'limits' => $limits[$type->id],
     ]]);
 @endphp
 
@@ -46,6 +47,11 @@
                                 <span x-show="info.calendar">· {{ __('counted in calendar days') }}</span>
                                 <span x-show="info.notice > 0" x-text="'· {{ __('file at least') }} ' + info.notice + ' {{ __('days ahead') }}'"></span>
                             </p>
+                            <ul class="mt-2 space-y-0.5 font-medium text-ink">
+                                <li x-show="info.limits.perApplication !== null" x-text="'{{ __('Maximum per application:') }} ' + info.limits.perApplication + ' {{ __('days') }}'"></li>
+                                <li x-show="info.limits.yearly !== null" x-text="'{{ __('Remaining for') }} {{ $year }}: ' + info.limits.yearRemaining + ' {{ __('of') }} ' + info.limits.yearly + ' {{ __('days') }}'"></li>
+                                <li x-show="info.limits.credits !== null" x-text="'{{ __('Leave credits available:') }} ' + info.limits.credits + ' {{ __('days') }}'"></li>
+                            </ul>
                         </div>
                     </template>
                 </div>
@@ -95,7 +101,7 @@
 
         <x-card :title="__('Your balances')">
             @include('leave.partials.balances')
-            <p class="mt-4 text-xs text-ink-muted">{{ __('If your credits are not enough, the excess days are leave without pay.') }}</p>
+            <p class="mt-4 text-xs text-ink-muted">{{ __('You cannot file leave that exceeds your available credits, the yearly allotment or the maximum days per application.') }}</p>
         </x-card>
     </div>
 </x-app-layout>

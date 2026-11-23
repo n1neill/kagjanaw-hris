@@ -115,6 +115,14 @@ describe('submitting', function () {
 
         $response->assertSee('You are using additional access (Manage the work calendar).');
     });
+
+    it('does not show the approval notice on the page where an employee files their own leave', function () {
+        $delegate = delegatedUser(Permission::ApproveLeave);
+
+        $this->actingAs($delegate)->get(route('leave.requests.create'))
+            ->assertOk()
+            ->assertDontSee('You are using additional access');
+    });
 });
 
 describe('approving', function () {

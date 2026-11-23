@@ -86,7 +86,7 @@ class AppServiceProvider extends ServiceProvider
         $permission = match (true) {
             str_starts_with($routeName, 'employees.') => Permission::ManageEmployees,
             str_starts_with($routeName, 'attendance.') && $routeName !== 'attendance.my' => Permission::ManageAttendance,
-            str_starts_with($routeName, 'leave.requests.') => Permission::ApproveLeave,
+            str_starts_with($routeName, 'leave.requests.') && ! in_array($routeName, ['leave.requests.create', 'leave.requests.store'], true) => Permission::ApproveLeave,
             Str::startsWith($routeName, ['leave.credits', 'leave.card', 'leave.posting.', 'leave.opening-balances.', 'leave.types.']) => Permission::ManageLeaveCredits,
             str_starts_with($routeName, 'payroll.') && ! str_starts_with($routeName, 'payroll.payslips.') => Permission::ProcessPayroll,
             str_starts_with($routeName, 'work-calendar.') => Permission::ManageWorkCalendar,

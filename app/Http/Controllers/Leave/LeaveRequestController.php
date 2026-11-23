@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Services\Leave\LeaveBalanceService;
+use App\Services\Leave\LeaveDays;
 use App\Services\Leave\LeaveRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,11 +63,23 @@ class LeaveRequestController extends Controller
             ->filter(fn (LeaveType $type): bool => $type->eligible_sex === null || $type->eligible_sex === $employee->sex)
             ->values();
 
+        $summary = $balances->summary($employee);
+        $limits = $types->mapWithKeys(fn (LeaveType $type): array => [$type->id => [
+            'perApplication' => $type->max_days_per_request !== null ? LeaveDays::format($type->max_days_per_request) : null,
+            'yearly' => $type->annual_days !== null ? LeaveDays::format($type->annual_days) : null,
+            'yearRemaining' => $type->annual_days !== null
+                ? LeaveDays::format(max(0, LeaveDays::toThousandths($type->annual_days) - $balances->usedInYear($employee, $type, now()->year)))
+                : null,
+            'credits' => ($credits = $balances->creditsAvailableFor($employee, $type)) !== null ? LeaveDays::format($credits) : null,
+        ]]);
+
         return view('leave.create', [
             'employee' => $employee,
             'types' => $types,
+            'limits' => $limits,
+            'year' => now()->year,
             'portions' => collect(LeavePortion::cases())->mapWithKeys(fn (LeavePortion $portion): array => [$portion->value => $portion->label()])->all(),
-            'summary' => $balances->summary($employee),
+            'summary' => $summary,
         ]);
     }
 

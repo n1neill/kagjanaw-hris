@@ -25,10 +25,13 @@ function leaveOffice(): array
 {
     $department = Department::factory()->create();
 
+    $employee = Employee::factory()->withAccount()->create(['department_id' => $department->id, 'date_hired' => '2020-01-06']);
+    grantLeaveCredits($employee);
+
     return [
         'department' => $department,
         'head' => Employee::factory()->withAccount(Role::DepartmentHead)->create(['department_id' => $department->id]),
-        'employee' => Employee::factory()->withAccount()->create(['department_id' => $department->id, 'date_hired' => '2020-01-06']),
+        'employee' => $employee,
         'colleague' => Employee::factory()->withAccount()->create(['department_id' => $department->id]),
     ];
 }
@@ -162,7 +165,6 @@ describe('who can see an application', function () {
 describe('acting on an application', function () {
     it('lets the department head endorse, and HR approve', function () {
         ['employee' => $employee, 'head' => $head] = leaveOffice();
-        grantLeaveCredits($employee);
         $hrOfficer = User::factory()->hrOfficer()->create();
         $request = LeaveRequest::factory()->for($employee)->between('2026-10-19', '2026-10-20')->create();
 

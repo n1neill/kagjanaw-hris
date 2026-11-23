@@ -71,6 +71,21 @@ class LeaveBalanceService
     }
 
     /**
+     * The leave credits, in thousandths, that a new application of this type
+     * can draw on, or null when the type is not charged to leave credits.
+     */
+    public function creditsAvailableFor(Employee $employee, LeaveType $type): ?int
+    {
+        $summary = $this->summary($employee);
+
+        return match ($type->credit_source) {
+            LeaveCreditSource::VacationCredits => max(0, $summary['vacation']['available']),
+            LeaveCreditSource::SickCredits => max(0, $summary['sick']['available']) + max(0, $summary['vacation']['available']),
+            default => null,
+        };
+    }
+
+    /**
      * Days of a leave type applied for (waiting or approved) that start in the
      * given year, in thousandths.
      */

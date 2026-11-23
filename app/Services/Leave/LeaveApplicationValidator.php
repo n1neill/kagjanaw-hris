@@ -107,6 +107,16 @@ class LeaveApplicationValidator
             }
         }
 
+        $credits = $this->balances->creditsAvailableFor($employee, $type);
+
+        if ($credits !== null && $total > $credits) {
+            return $result(['date_to' => __('You have :available days of leave credits available for :type; these dates cover :days.', [
+                'available' => LeaveDays::format($credits),
+                'type' => $type->name,
+                'days' => LeaveDays::format($total),
+            ])], $days);
+        }
+
         $overlap = LeaveRequestDay::query()
             ->where('employee_id', $employee->id)
             ->whereIn('date', array_map(fn (array $day): string => $day['date']->toDateString(), $days))

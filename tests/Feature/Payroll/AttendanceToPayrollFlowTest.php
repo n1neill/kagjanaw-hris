@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\DtrStatus;
+use App\Enums\LeaveLedgerEntryType;
 use App\Enums\Role;
 use App\Models\AttendanceLog;
 use App\Models\Department;
@@ -8,6 +9,7 @@ use App\Models\Employee;
 use App\Models\LeaveType;
 use App\Models\PayrollRun;
 use App\Models\User;
+use App\Services\Leave\LeaveLedger;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 
@@ -26,7 +28,7 @@ it('deducts last month\'s leave without pay and absences in the next payroll', f
     $employee = Employee::factory()->withAccount()->create([
         'department_id' => $department->id, 'date_hired' => '2020-01-06', 'salary_grade' => 11, 'salary_step' => 1,
     ]);
-    grantLeaveCredits($employee, vacation: '0.500', sick: '0.000', asOf: '2026-08-31');
+    grantLeaveCredits($employee, vacation: '1.000', sick: '0.000', asOf: '2026-08-31');
 
     // Every weekday of September punched in full, except the 15th (sick) and the 22nd (absent).
     foreach (CarbonPeriod::create('2026-09-01', '2026-09-30') as $date) {
@@ -46,6 +48,8 @@ it('deducts last month\'s leave without pay and absences in the next payroll', f
         'leave_type_id' => LeaveType::sick()->id, 'date_from' => '2026-09-15', 'portion' => 'full', 'details' => 'Flu.',
     ])->assertSessionHasNoErrors();
     $leaveRequest = $employee->leaveRequests()->sole();
+    // Half of the vacation credits are used up while the application waits, so the approval finds only half a day.
+    app(LeaveLedger::class)->post($employee, LeaveType::vacation(), LeaveLedgerEntryType::Adjustment, -500, 'Adjustment', CarbonImmutable::parse('2026-09-10'));
     $this->actingAs($head->user)->post(route('leave.requests.endorse', $leaveRequest))->assertSessionHasNoErrors();
     $this->actingAs($hrOfficer)->post(route('leave.requests.approve', $leaveRequest))->assertSessionHasNoErrors();
 

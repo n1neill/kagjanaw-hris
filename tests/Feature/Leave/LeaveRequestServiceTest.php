@@ -29,17 +29,24 @@ beforeEach(function () {
 });
 
 /**
- * An employee with an account in a department that has a department head.
+ * An employee with an account (and 10 days each of vacation and sick leave credits, unless
+ * the test grants its own) in a department that has a department head.
  *
  * @return array{employee: Employee, head: Employee}
  */
-function staffWithDepartmentHead(array $employeeAttributes = []): array
+function staffWithDepartmentHead(array $employeeAttributes = [], bool $withCredits = true): array
 {
     $department = Department::factory()->create();
 
+    $employee = Employee::factory()->withAccount()->create(['department_id' => $department->id, 'date_hired' => '2020-01-06', ...$employeeAttributes]);
+
+    if ($withCredits) {
+        grantLeaveCredits($employee);
+    }
+
     return [
         'head' => Employee::factory()->withAccount(Role::DepartmentHead)->create(['department_id' => $department->id]),
-        'employee' => Employee::factory()->withAccount()->create(['department_id' => $department->id, 'date_hired' => '2020-01-06', ...$employeeAttributes]),
+        'employee' => $employee,
     ];
 }
 
@@ -86,6 +93,7 @@ describe('filing', function () {
         ['head' => $head] = staffWithDepartmentHead();
         $mayor = Employee::factory()->withAccount(Role::MunicipalMayor)->create();
 
+        grantLeaveCredits($head);
         $request = fileLeave($head, 'VL', '2026-10-19', '2026-10-19');
 
         expect($request->endorsement_route)->toBe(LeaveEndorsementRoute::MunicipalMayor);
@@ -95,6 +103,7 @@ describe('filing', function () {
     it('sends leave from an office without a department head to the Municipal Mayor', function () {
         $employee = Employee::factory()->withAccount()->create(['date_hired' => '2020-01-06']);
         Employee::factory()->withAccount(Role::MunicipalMayor)->create();
+        grantLeaveCredits($employee);
 
         $request = fileLeave($employee, 'VL', '2026-10-19', '2026-10-19');
 
@@ -144,6 +153,10 @@ describe('filing', function () {
         'vacation leave in the past' => [
             fn (Employee $employee) => fileLeave($employee, 'VL', '2026-10-05', '2026-10-05'),
             'date_from', 'Vacation Leave must be filed before the leave starts.',
+        ],
+        'more vacation leave than the available credits' => [
+            fn (Employee $employee) => fileLeave($employee, 'VL', '2026-10-19', '2026-11-02'),
+            'date_to', 'You have 10.000 days of leave credits available for Vacation Leave; these dates cover 11.000.',
         ],
         'more special privilege leave than the yearly allotment' => [
             fn (Employee $employee) => fileLeave($employee, 'SPL', '2026-10-19', '2026-10-22'),
@@ -216,7 +229,7 @@ describe('endorsement and approval', function () {
     });
 
     it('charges vacation leave on approval and records it on the leave card', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
         grantLeaveCredits($employee, vacation: '10.000');
         $service = app(LeaveRequestService::class);
@@ -236,11 +249,13 @@ describe('endorsement and approval', function () {
     });
 
     it('charges sick leave to sick credits, then vacation credits, then without pay', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
-        grantLeaveCredits($employee, vacation: '1.000', sick: '1.500');
+        grantLeaveCredits($employee, vacation: '1.500', sick: '1.500');
         $service = app(LeaveRequestService::class);
         $request = $service->endorse(fileLeave($employee, 'SL', '2026-10-01', '2026-10-05'), $head->user, null);
+        // Half a day of vacation credits is used up before HR decides, so the approval finds only 2.5 days.
+        app(LeaveLedger::class)->post($employee, LeaveType::vacation(), LeaveLedgerEntryType::Adjustment, -500, 'Adjustment', CarbonImmutable::parse('2026-10-06'));
 
         $request = $service->approve($request, $hrOfficer, null);
 
@@ -253,7 +268,7 @@ describe('endorsement and approval', function () {
     });
 
     it('excuses approved past days on the DTR', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
         grantLeaveCredits($employee);
         DailyTimeRecord::factory()->for($employee)->absent()->create(['work_date' => '2026-10-05']);
@@ -268,7 +283,7 @@ describe('endorsement and approval', function () {
     });
 
     it('excuses leave on a day that HR corrected, keeping the corrected punches', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
         grantLeaveCredits($employee);
         DailyTimeRecord::factory()->for($employee)->create([
@@ -292,7 +307,7 @@ describe('endorsement and approval', function () {
     });
 
     it('restores the credits and the DTR when HR cancels an approved leave', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
         grantLeaveCredits($employee, sick: '5.000');
         DailyTimeRecord::factory()->for($employee)->absent()->create(['work_date' => '2026-10-05']);
@@ -309,7 +324,7 @@ describe('endorsement and approval', function () {
     });
 
     it('refuses to act on an application that someone else already decided', function () {
-        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead();
+        ['employee' => $employee, 'head' => $head] = staffWithDepartmentHead(withCredits: false);
         $hrOfficer = User::factory()->hrOfficer()->create();
         grantLeaveCredits($employee);
         $service = app(LeaveRequestService::class);
