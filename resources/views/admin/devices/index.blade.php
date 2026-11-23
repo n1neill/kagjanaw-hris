@@ -27,7 +27,7 @@
                             <span class="font-medium text-ink">{{ $device->name }}</span>
                             <span class="block text-xs text-ink-muted">{{ $device->location }}</span>
                         </td>
-                        <td class="font-mono text-xs">{{ $device->ip_address }}:{{ $device->port }}</td>
+                        <td class="font-mono text-xs">{{ $device->ip_address ? $device->ip_address.':'.$device->port : __('Any address') }}</td>
                         <td>{{ $device->driver }}</td>
                         <td data-order="{{ $device->last_synced_at?->timestamp ?? 0 }}">
                             {{ $device->last_synced_at?->diffForHumans() ?? __('Never') }}

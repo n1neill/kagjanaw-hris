@@ -39,9 +39,18 @@ it('refuses the token from another computer and audits it', function () {
         ->withToken('test-kiosk-token')
         ->getJson(route('kiosk.heartbeat'))
         ->assertForbidden()
-        ->assertJson(['message' => 'This kiosk token is not accepted from this computer\'s address.']);
+        ->assertJson(['message' => 'This kiosk token is not accepted from this computer\'s address. The HRIS sees this kiosk at 192.168.1.77, but the kiosk is registered for 192.168.1.50.']);
 
     expect(AuditLog::query()->where('event', AuditEvent::AccessDenied)->count())->toBe(1);
+});
+
+it('accepts the token from any computer when the kiosk has no address', function () {
+    BiometricDevice::factory()->kiosk(ipAddress: null)->create();
+
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.25'])
+        ->withToken('test-kiosk-token')
+        ->getJson(route('kiosk.heartbeat'))
+        ->assertOk();
 });
 
 it('records the check-in and tells the kiosk the server time', function () {

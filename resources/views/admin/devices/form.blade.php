@@ -23,8 +23,8 @@
                 </div>
                 <div>
                     <x-input-label for="ip_address" :value="__('IP address')" />
-                    <x-text-input id="ip_address" name="ip_address" class="mt-1 font-mono" placeholder="192.168.1.201" :value="old('ip_address', $device->ip_address)" required aria-describedby="ip-address-hint" />
-                    <p id="ip-address-hint" class="mt-1 text-xs text-ink-muted">{{ __('For a DigitalPersona kiosk, the kiosk PC\'s LAN address. The kiosk is only accepted from it.') }}</p>
+                    <x-text-input id="ip_address" name="ip_address" class="mt-1 font-mono" placeholder="192.168.1.201" :value="old('ip_address', $device->ip_address)" aria-describedby="ip-address-hint" />
+                    <p id="ip-address-hint" class="mt-1 text-xs text-ink-muted">{{ __('Required for a ZKTeco device. Optional for a DigitalPersona kiosk: enter the address the HRIS sees it at to accept it only from there, or leave blank to accept it from any address.') }}</p>
                     <x-input-error :messages="$errors->get('ip_address')" class="mt-2" />
                 </div>
                 <div>

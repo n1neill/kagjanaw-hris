@@ -47,7 +47,7 @@ class BiometricDeviceFactory extends Factory
     /**
      * A DigitalPersona kiosk PC that pushes punches, signing in with the given token.
      */
-    public function kiosk(string $token = 'test-kiosk-token', string $ipAddress = '127.0.0.1'): static
+    public function kiosk(string $token = 'test-kiosk-token', ?string $ipAddress = '127.0.0.1'): static
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'Lobby Fingerprint Kiosk',

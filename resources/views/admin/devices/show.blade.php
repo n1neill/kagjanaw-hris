@@ -46,7 +46,13 @@
 
         <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             @if ($isKiosk)
-                <x-detail :label="__('Kiosk PC address')"><span class="font-mono">{{ $device->ip_address }}</span></x-detail>
+                <x-detail :label="__('Kiosk PC address')">
+                    @if ($device->ip_address)
+                        <span class="font-mono">{{ $device->ip_address }}</span>
+                    @else
+                        {{ __('Any address') }}
+                    @endif
+                </x-detail>
                 <x-detail :label="__('Driver')">{{ $device->driver }}</x-detail>
                 <x-detail :label="__('Accepts punches')"><x-status-badge :active="$device->is_active" /></x-detail>
                 <x-detail :label="__('Last check-in')">{{ $device->last_seen_at?->format('M j, Y g:i A') ?? __('Never') }}</x-detail>

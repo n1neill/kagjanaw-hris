@@ -34,7 +34,9 @@ dotnet run --project src/KagjanawKiosk -- --windowed   # a normal window, for de
 
 1. **HRIS:** in **Admin → Biometric Devices → New Device**:
    - Set the driver to **DigitalPersona U.are.U kiosk**.
-   - Set the **IP address** to the kiosk PC's LAN address, or `127.0.0.1` if the HRIS runs on the same PC. The kiosk is only accepted from that address.
+   - **IP address** (optional): the address the HRIS sees the kiosk at. The kiosk is then only accepted from that address.
+     - HRIS on the office LAN: the kiosk PC's LAN address, or `127.0.0.1` if the HRIS runs on the same PC.
+     - HRIS on the internet (e.g. Laravel Cloud): the office's public IP. Leave it blank if that IP changes; the token alone then admits the kiosk.
    - Open the device and click **Issue Kiosk Token**. Copy the token; it is shown once.
 2. **Kiosk PC:** start the app. On the first run it asks for:
    - the HRIS address (e.g. `http://192.168.1.10`),
@@ -42,6 +44,8 @@ dotnet run --project src/KagjanawKiosk -- --windowed   # a normal window, for de
    - the reader: **DigitalPersona U.are.U reader**.
 
    It saves the settings only once the HRIS accepts the token. If the reader can't be opened, the settings screen reopens with the reason (see *Troubleshooting*).
+
+   On every start, the kiosk checks the HRIS before it opens the clock-in screen. If the HRIS is offline or doesn't accept the kiosk token, the settings screen opens first and shows the reason. Fix the problem, then click **Test connection and save**. Leave the token blank to keep the current one.
 3. **HRIS:** give each employee a **Biometric user ID** on their record. Only employees with one can be enrolled.
 4. **Enroll:** at the kiosk, HR presses **Ctrl+Shift+E** and signs in with their HRIS username and password. Then they pick the employee and finger and scan it 3 times. Up to 2 fingers per employee.
    - The 3 scans must match each other.
@@ -98,7 +102,7 @@ Real fingerprint images make the best test data, for example the [FVC2002](http:
 ## Privacy and security
 
 - **Templates only:** only SourceAFIS templates (minutiae) leave the kiosk, never fingerprint images. A template cannot be turned back into a fingerprint image. The HRIS stores templates encrypted.
-- **Locked to one PC:** the kiosk token works only from the registered IP address. Reissuing it in the HRIS locks out the old one.
+- **Locked to one PC:** when the device has an IP address, the kiosk token works only from that address. Without one, anyone holding the token is accepted, so keep it secret. Reissuing it in the HRIS locks out the old one.
 - **Audited HR sign-ins:** HR sign-ins at the kiosk are throttled and audited, and every enrollment or removal is recorded in the HRIS audit log under the HR officer's name.
 - **Match threshold:** 40 by default in `settings.json` (`MatchThreshold`), SourceAFIS's recommended value. It means roughly 1 false match in 10,000 comparisons.
 - **ImageSharp left out:** SourceAFIS depends on ImageSharp 2.x, which has known vulnerabilities. ImageSharp is only used to decode encoded images, and the kiosk always gives SourceAFIS raw pixels. So the ImageSharp DLL is excluded from the build (see `KagjanawKiosk.csproj`); any attempt to decode through it fails instead of running vulnerable code.
@@ -108,6 +112,7 @@ Real fingerprint images make the best test data, for example the [FVC2002](http:
 | On screen | What to do |
 |---|---|
 | *Kiosk not accepted by the HRIS* | The token was reissued, the device was deactivated, or the PC's IP address changed. Fix it in Admin → Biometric Devices, then press Ctrl+Shift+S. |
+| *This kiosk token is not accepted from this computer's address* | The message shows the address the HRIS sees. Enter that address on the device in Admin → Biometric Devices, or clear the address to accept the kiosk from anywhere. |
 | *Offline: punches are saved and sent later* | Check the network and the HRIS address. Punches wait in `punch-queue.db`. |
 | *This PC's clock is N min off* | Fix the Windows date and time; punches are stamped with the PC's clock. |
 | *The DigitalPersona One Touch runtime (DPFPApi.dll) is not installed* | Install the One Touch for Windows SDK or RTE (64-bit), then start the kiosk again. |

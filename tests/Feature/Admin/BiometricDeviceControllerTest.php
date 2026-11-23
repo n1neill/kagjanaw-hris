@@ -74,6 +74,28 @@ describe('settings', function () {
         $this->assertDatabaseCount('biometric_devices', 0);
     });
 
+    it('requires an address only for devices the HRIS reads from', function (string $driver, bool $isSaved) {
+        $admin = User::factory()->systemAdministrator()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.devices.store'), [
+            'name' => 'Clock',
+            'driver' => $driver,
+            'ip_address' => '',
+            'port' => '443',
+        ]);
+
+        if ($isSaved) {
+            $response->assertSessionHasNoErrors();
+            expect(BiometricDevice::sole()->ip_address)->toBeNull();
+        } else {
+            $response->assertSessionHasErrors(['ip_address' => 'The IP address field is required.']);
+            $this->assertDatabaseCount('biometric_devices', 0);
+        }
+    })->with([
+        'kiosk' => ['digitalpersona', true],
+        'mock device' => ['mock', false],
+    ]);
+
     it('deactivates a device when the active box is unchecked', function () {
         $admin = User::factory()->systemAdministrator()->create();
         $device = BiometricDevice::factory()->create();

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Permission;
+use App\Services\Attendance\BiometricDriverManager;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -35,7 +36,12 @@ class BiometricDeviceRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'driver' => ['required', Rule::in(array_keys(config('attendance.drivers')))],
-            'ip_address' => ['required', 'ip'],
+            // A kiosk without an address is accepted from any address; devices the HRIS reads need one.
+            'ip_address' => [
+                Rule::requiredIf(fn (): bool => ! BiometricDriverManager::receivesPushedPunches($this->string('driver')->toString())),
+                'nullable',
+                'ip',
+            ],
             'port' => ['required', 'integer', 'between:1,65535'],
             'location' => ['nullable', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
