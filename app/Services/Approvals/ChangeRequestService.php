@@ -232,7 +232,10 @@ class ChangeRequestService
 
         foreach ($change->files ?? [] as $key => $file) {
             if ($disk->exists($file['path'])) {
-                $files[$key] = new UploadedFile($disk->path($file['path']), $file['name'], $file['mime'], test: true);
+                $temporaryPath = tempnam(sys_get_temp_dir(), 'hris-change-');
+                file_put_contents($temporaryPath, $disk->get($file['path']));
+
+                $files[$key] = new UploadedFile($temporaryPath, $file['name'], $file['mime'], test: true);
             }
         }
 

@@ -56,7 +56,7 @@ function newEmployeeInput(): array
 }
 
 beforeEach(function () {
-    Storage::fake('local');
+    Storage::fake('uploads');
 });
 
 describe('submitting', function () {
@@ -210,7 +210,7 @@ describe('approving', function () {
         $change = ChangeRequest::sole();
         $pendingPath = $change->files['file']['path'];
         expect($employee->documents()->count())->toBe(0);
-        Storage::disk('local')->assertExists($pendingPath);
+        Storage::disk('uploads')->assertExists($pendingPath);
         $this->actingAs($hrOfficer)->get(route('approvals.file', [$change, 'file']))->assertDownload('appointment.pdf');
 
         $this->actingAs($hrOfficer)->post(route('approvals.approve', $change));
@@ -218,8 +218,8 @@ describe('approving', function () {
         $document = $employee->documents()->sole();
         expect($document->original_name)->toBe('appointment.pdf')
             ->and($document->uploaded_by)->toBe($delegate->id);
-        Storage::disk('local')->assertExists($document->path);
-        Storage::disk('local')->assertMissing($pendingPath);
+        Storage::disk('uploads')->assertExists($document->path);
+        Storage::disk('uploads')->assertMissing($pendingPath);
     });
 
     it('leaves the change pending with the reason when it no longer fits the records', function () {
@@ -316,7 +316,7 @@ describe('rejecting and withdrawing', function () {
 
         $response->assertRedirect(route('approvals.index'));
         expect($change->fresh()->status)->toBe(ChangeRequestStatus::Cancelled);
-        Storage::disk('local')->assertMissing($path);
+        Storage::disk('uploads')->assertMissing($path);
     });
 });
 

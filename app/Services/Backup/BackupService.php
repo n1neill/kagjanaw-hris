@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\Local\LocalFilesystemAdapter;
 use Spatie\Permission\PermissionRegistrar;
 use Throwable;
 use ZipArchive;
@@ -188,6 +189,7 @@ class BackupService
         $partialPath = $archivePath.'.part';
         $sqlPath = tempnam(sys_get_temp_dir(), 'hris-backup-');
         $filesDisk = $this->filesDisk();
+        $temporaryCopies = [];
 
         File::ensureDirectoryExists(dirname($archivePath));
 
@@ -204,7 +206,7 @@ class BackupService
             $files = $filesDisk->allFiles();
 
             foreach ($files as $file) {
-                $zip->addFile($filesDisk->path($file), self::FILES_PREFIX.$file);
+                $zip->addFile($this->localCopyOf($filesDisk, $file, $temporaryCopies), self::FILES_PREFIX.$file);
             }
 
             $zip->addFromString(self::MANIFEST, json_encode([
@@ -225,12 +227,32 @@ class BackupService
         } finally {
             @unlink($sqlPath);
             @unlink($partialPath);
+            array_map('unlink', array_filter($temporaryCopies, 'file_exists'));
         }
 
         $backup = $this->read($name) ?? throw new BackupException(__('The backup file could not be read back.'));
         $this->audit->record(AuditEvent::BackupCreated, $name, actor: $user, newValues: ['trigger' => $trigger->label(), 'size' => $backup->readableSize()]);
 
         return $backup;
+    }
+
+    /**
+     * A path the zip can read: the file itself on a local disk, otherwise a
+     * temporary copy (removed once the archive is written).
+     *
+     * @param  list<string>  $temporaryCopies
+     */
+    private function localCopyOf(FilesystemAdapter $disk, string $file, array &$temporaryCopies): string
+    {
+        if ($disk->getAdapter() instanceof LocalFilesystemAdapter) {
+            return $disk->path($file);
+        }
+
+        $copy = tempnam(sys_get_temp_dir(), 'hris-file-');
+        $temporaryCopies[] = $copy;
+        file_put_contents($copy, $disk->readStream($file));
+
+        return $copy;
     }
 
     private function restoreArchive(Backup $backup): void

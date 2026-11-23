@@ -30,7 +30,7 @@ class ChangeRequest extends Model
     /**
      * Where files uploaded with a pending change are kept until it is decided.
      */
-    public const DISK = 'local';
+    public const DISK = 'uploads';
 
     /**
      * @return array<string, string>

@@ -30,7 +30,7 @@ class EmployeeDocument extends Model
         return $this->title.' of employee '.$this->employee?->employee_number;
     }
 
-    public const DISK = 'local';
+    public const DISK = 'uploads';
 
     /**
      * @return array<string, string>

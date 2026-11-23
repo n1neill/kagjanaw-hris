@@ -260,7 +260,7 @@ function routeAccessMatrix(): array
  */
 function routeAuthorizationFixtures(): array
 {
-    Storage::fake('local');
+    Storage::fake('uploads');
     Storage::fake(config('backup.disk'));
 
     $office = Department::factory()->create();

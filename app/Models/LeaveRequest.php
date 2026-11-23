@@ -43,7 +43,7 @@ class LeaveRequest extends Model
         return 'Leave application #'.$this->getKey().' of employee '.$this->employee?->employee_number;
     }
 
-    public const ATTACHMENT_DISK = 'local';
+    public const ATTACHMENT_DISK = 'uploads';
 
     /**
      * @return array<string, string>

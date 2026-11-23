@@ -82,7 +82,7 @@ describe('filing', function () {
     });
 
     it('stores the attachment privately', function () {
-        Storage::fake('local');
+        Storage::fake('uploads');
         ['employee' => $employee] = leaveOffice();
 
         $this->actingAs($employee->user)->post(route('leave.requests.store'), [
@@ -95,7 +95,7 @@ describe('filing', function () {
         ])->assertSessionHasNoErrors();
 
         $request = LeaveRequest::sole();
-        Storage::disk('local')->assertExists($request->attachment_path);
+        Storage::disk('uploads')->assertExists($request->attachment_path);
         expect($request->attachment_path)->toStartWith("leave-requests/{$employee->id}/");
     });
 

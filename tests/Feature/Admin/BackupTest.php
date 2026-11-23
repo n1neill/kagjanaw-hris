@@ -65,7 +65,7 @@ function fakeDumper(array &$restored, string $dumped = "-- current\n", ?Closure 
 
 beforeEach(function () {
     Storage::fake('backups');
-    Storage::fake('local');
+    Storage::fake('uploads');
 
     // A fresh name per test: on Windows (OneDrive, antivirus) a zip deleted
     // by the previous test can briefly block a new file of the same name.
@@ -77,7 +77,7 @@ describe('creating backups', function () {
         $restored = [];
         fakeDumper($restored);
         $admin = User::factory()->systemAdministrator()->create(['name' => 'Ana Admin']);
-        Storage::disk('local')->put('employees/7/appointment.pdf', 'PDF');
+        Storage::disk('uploads')->put('employees/7/appointment.pdf', 'PDF');
 
         $response = $this->actingAs($admin)->post(route('admin.backups.store'));
 
@@ -120,15 +120,15 @@ describe('restoring', function () {
         $restored = [];
         fakeDumper($restored);
         $admin = User::factory()->systemAdministrator()->create();
-        Storage::disk('local')->put('employees/1/current.pdf', 'current');
+        Storage::disk('uploads')->put('employees/1/current.pdf', 'current');
         makeBackupArchive(Storage::disk('backups')->path($this->backupName), ['employees/1/from-backup.pdf' => 'restored']);
 
         $response = $this->actingAs($admin)->post(route('admin.backups.restore', $this->backupName), ['password' => 'password']);
 
         $response->assertRedirect(route('admin.backups.index'))->assertSessionHas('status');
         expect($restored)->toBe(["-- backup\n"])
-            ->and(Storage::disk('local')->get('employees/1/from-backup.pdf'))->toBe('restored')
-            ->and(Storage::disk('local')->exists('employees/1/current.pdf'))->toBeFalse();
+            ->and(Storage::disk('uploads')->get('employees/1/from-backup.pdf'))->toBe('restored')
+            ->and(Storage::disk('uploads')->exists('employees/1/current.pdf'))->toBeFalse();
 
         $safety = collect(Storage::disk('backups')->files())->first(fn (string $file): bool => str_contains($file, 'before-restore'));
         expect($safety)->not->toBeNull();
@@ -145,15 +145,15 @@ describe('restoring', function () {
             }
         });
         $admin = User::factory()->systemAdministrator()->create();
-        Storage::disk('local')->put('employees/1/current.pdf', 'current');
+        Storage::disk('uploads')->put('employees/1/current.pdf', 'current');
         makeBackupArchive(Storage::disk('backups')->path($this->backupName), ['employees/1/from-backup.pdf' => 'restored']);
 
         $response = $this->actingAs($admin)->post(route('admin.backups.restore', $this->backupName), ['password' => 'password']);
 
         $response->assertSessionHas('error', 'The restore failed. Nothing was changed.');
         expect($restored)->toBe(["-- backup\n", "-- current\n"])
-            ->and(Storage::disk('local')->get('employees/1/current.pdf'))->toBe('current')
-            ->and(Storage::disk('local')->exists('employees/1/from-backup.pdf'))->toBeFalse();
+            ->and(Storage::disk('uploads')->get('employees/1/current.pdf'))->toBe('current')
+            ->and(Storage::disk('uploads')->exists('employees/1/from-backup.pdf'))->toBeFalse();
     });
 
     it('requires the administrator\'s password', function () {
