@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 test('reset password link screen can be rendered', function () {
     $response = $this->get('/forgot-password');
@@ -57,4 +58,19 @@ test('password can be reset with valid token', function () {
 
         return true;
     });
+});
+
+test('a mail server failure shows an error instead of crashing and lets the user retry', function () {
+    $user = User::factory()->create();
+
+    Notification::shouldReceive('send')
+        ->once()
+        ->andThrow(new TransportException('Connection could not be established'));
+
+    $this->from('/forgot-password')
+        ->post('/forgot-password', ['email' => $user->email])
+        ->assertRedirect('/forgot-password')
+        ->assertSessionHasErrors('email');
+
+    $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
 });
