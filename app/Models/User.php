@@ -70,6 +70,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether signing in also needs a code emailed to the account's address.
+     * Accounts without an email address sign in with their password alone.
+     */
+    public function requiresTwoFactor(): bool
+    {
+        return config('auth.two_factor.enabled') && filled($this->email);
+    }
+
+    /**
      * The employee record linked to this account, if the user is an employee.
      *
      * @return HasOne<Employee, $this>

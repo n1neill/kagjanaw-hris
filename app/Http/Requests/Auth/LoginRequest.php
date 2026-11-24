@@ -3,7 +3,9 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Auth\SessionGuard;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -35,31 +37,33 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Check the username and password without signing in, and return the
+     * active account they belong to. Signing in happens afterwards, once any
+     * emailed code has also been entered.
      *
      * @throws ValidationException
      */
-    public function authenticate(): void
+    public function validateCredentials(): User
     {
         $this->ensureIsNotRateLimited();
 
-        $isInactive = false;
+        $credentials = $this->only('username', 'password');
 
-        $authenticated = Auth::attemptWhen(
-            $this->only('username', 'password'),
-            function (User $user) use (&$isInactive): bool {
-                $isInactive = ! $user->is_active;
+        /** @var SessionGuard $guard */
+        $guard = Auth::guard('web');
 
-                return ! $isInactive;
-            },
-            $this->boolean('remember'),
-        );
+        $hasValidCredentials = $guard->validate($credentials);
 
-        if (! $authenticated) {
+        /** @var User|null $user */
+        $user = $guard->getLastAttempted();
+
+        if (! $hasValidCredentials || ! $user->is_active) {
             RateLimiter::hit($this->throttleKey());
 
+            event(new Failed('web', $user, $credentials));
+
             throw ValidationException::withMessages([
-                'username' => $isInactive
+                'username' => $hasValidCredentials
                     ? __('Your account has been deactivated. Please contact the System Administrator.')
                     : trans('auth.failed'),
             ]);
@@ -67,7 +71,11 @@ class LoginRequest extends FormRequest
 
         RateLimiter::clear($this->throttleKey());
 
-        Auth::user()->forceFill(['last_login_at' => now()])->save();
+        if (config('hashing.rehash_on_login', true)) {
+            $guard->getProvider()->rehashPasswordIfRequired($user, $credentials);
+        }
+
+        return $user;
     }
 
     /**

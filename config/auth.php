@@ -114,4 +114,25 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Sign-In
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a user whose account has an email address must also enter
+    | a code emailed to that address after their password. Accounts without
+    | an email address sign in with their password alone. Turn this on only
+    | once the application can send email, or those users cannot sign in.
+    |
+    | The code lifetime is in minutes; after the maximum number of wrong
+    | codes the user must sign in with their password again.
+    |
+    */
+
+    'two_factor' => [
+        'enabled' => (bool) env('TWO_FACTOR_ENABLED', false),
+        'code_lifetime' => 10,
+        'max_attempts' => 5,
+    ],
+
 ];
