@@ -16,6 +16,7 @@ use App\Models\LeaveType;
 use App\Models\User;
 use App\Notifications\LeaveRequestNotification;
 use App\Services\Attendance\AttendanceProcessor;
+use App\Services\EmployeeFileNames;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -41,6 +42,7 @@ class LeaveRequestService
         private LeaveLedger $ledger,
         private LeaveBalanceService $balances,
         private AttendanceProcessor $attendance,
+        private EmployeeFileNames $fileNames,
     ) {}
 
     /**
@@ -56,7 +58,7 @@ class LeaveRequestService
         ?UploadedFile $attachment,
         User $filedBy,
     ): LeaveRequest {
-        $attachmentPath = $attachment?->store("leave-requests/{$employee->id}", LeaveRequest::ATTACHMENT_DISK);
+        $attachmentPath = $attachment !== null ? $this->storeAttachment($employee, $attachment) : null;
 
         try {
             $request = DB::transaction(function () use ($employee, $type, $from, $to, $portion, $details, $attachment, $attachmentPath, $filedBy): LeaveRequest {
@@ -281,6 +283,23 @@ class LeaveRequestService
         }
 
         return $request;
+    }
+
+    /**
+     * Save the attachment under its own name in the employee's folder under
+     * "leave-requests/" (see EmployeeFileNames).
+     */
+    private function storeAttachment(Employee $employee, UploadedFile $attachment): string
+    {
+        $folder = $this->fileNames->folder('leave-requests', $employee);
+        $fileName = $this->fileNames->availableFileName(LeaveRequest::ATTACHMENT_DISK, $folder, $attachment->getClientOriginalName());
+        $path = $attachment->storeAs($folder, $fileName, LeaveRequest::ATTACHMENT_DISK);
+
+        if ($path === false) {
+            throw ValidationException::withMessages(['attachment' => __('The attachment could not be saved. Try again.')]);
+        }
+
+        return $path;
     }
 
     /**

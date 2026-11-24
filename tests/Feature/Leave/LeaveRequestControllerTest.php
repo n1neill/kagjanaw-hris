@@ -81,7 +81,7 @@ describe('filing', function () {
         ]);
     });
 
-    it('stores the attachment privately', function () {
+    it('stores the attachment privately under its own name in a folder named after the employee', function () {
         Storage::fake('uploads');
         ['employee' => $employee] = leaveOffice();
 
@@ -96,7 +96,7 @@ describe('filing', function () {
 
         $request = LeaveRequest::sole();
         Storage::disk('uploads')->assertExists($request->attachment_path);
-        expect($request->attachment_path)->toStartWith("leave-requests/{$employee->id}/");
+        expect($request->attachment_path)->toBe("leave-requests/{$employee->sortable_name} ({$employee->employee_number})/medical-certificate.pdf");
     });
 
     it('does not let a system account without an employee record apply', function () {

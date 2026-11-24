@@ -8,17 +8,26 @@ use App\Models\EmployeeDocument;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * Stores and removes 201-file documents on the private disk.
- * Files are saved under employees/{employee_id}/ with a random name.
+ * Stores and removes 201-file documents on the private disk, in the
+ * employee's folder under "employees/" (see EmployeeFileNames).
  */
 class EmployeeDocumentService
 {
+    public function __construct(private EmployeeFileNames $fileNames) {}
+
     public function store(Employee $employee, UploadedFile $file, DocumentType $type, ?string $title, User $uploader): EmployeeDocument
     {
-        $path = $file->store("employees/{$employee->id}", EmployeeDocument::DISK);
+        $folder = $this->fileNames->folder('employees', $employee);
+        $fileName = $this->fileNames->availableFileName(EmployeeDocument::DISK, $folder, $file->getClientOriginalName());
+        $path = $file->storeAs($folder, $fileName, EmployeeDocument::DISK);
+
+        if ($path === false) {
+            throw ValidationException::withMessages(['file' => __('The file could not be saved. Try again.')]);
+        }
 
         try {
             return $employee->documents()->create([

@@ -25,9 +25,15 @@ function storedDocument(Employee $employee, string $contents = '%PDF-1.4 appoint
 }
 
 describe('store', function () {
-    it('stores the upload privately under the employee folder', function () {
+    it('stores the upload privately under its own name in a folder named after the employee', function () {
         $hrOfficer = User::factory()->hrOfficer()->create();
-        $employee = Employee::factory()->create();
+        $employee = Employee::factory()->create([
+            'first_name' => 'Juan',
+            'middle_name' => 'Andres',
+            'last_name' => 'Dela Cruz',
+            'name_extension' => null,
+            'employee_number' => '2024-0001',
+        ]);
 
         $response = $this->actingAs($hrOfficer)->post(route('employees.documents.store', $employee), [
             'document_type' => DocumentType::Appointment->value,
@@ -40,9 +46,38 @@ describe('store', function () {
         $document = $employee->documents()->sole();
         expect($document->document_type)->toBe(DocumentType::Appointment)
             ->and($document->original_name)->toBe('appointment.pdf')
-            ->and($document->path)->toStartWith("employees/{$employee->id}/")
+            ->and($document->path)->toBe('employees/Dela Cruz, Juan A. (2024-0001)/appointment.pdf')
             ->and($document->uploaded_by)->toBe($hrOfficer->id);
         Storage::disk(EmployeeDocument::DISK)->assertExists($document->path);
+    });
+
+    it('numbers a file whose name is already in the employee folder instead of replacing it', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $employee = Employee::factory()->create();
+
+        foreach ([1, 2] as $upload) {
+            $this->actingAs($hrOfficer)->post(route('employees.documents.store', $employee), [
+                'document_type' => DocumentType::Other->value,
+                'file' => UploadedFile::fake()->createWithContent('scan.pdf', "%PDF-1.4 upload {$upload}"),
+            ]);
+        }
+
+        $paths = $employee->documents()->orderBy('id')->pluck('path')->map(fn (string $path): string => basename($path))->all();
+        expect($paths)->toBe(['scan.pdf', 'scan (2).pdf']);
+    });
+
+    it('removes characters from the file name that would break the path', function () {
+        $hrOfficer = User::factory()->hrOfficer()->create();
+        $employee = Employee::factory()->create();
+
+        $this->actingAs($hrOfficer)->post(route('employees.documents.store', $employee), [
+            'document_type' => DocumentType::Other->value,
+            'file' => UploadedFile::fake()->create('..\\Birth: "Cert"?.pdf', 100, 'application/pdf'),
+        ]);
+
+        $path = $employee->documents()->sole()->path;
+        expect(basename($path))->toBe('Birth Cert.pdf')
+            ->and(dirname($path))->toBe('employees/'.$employee->sortable_name.' ('.$employee->employee_number.')');
     });
 
     it('titles the document after its type when no title is given', function () {
