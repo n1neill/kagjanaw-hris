@@ -32,6 +32,23 @@ class AppServiceProvider extends ServiceProvider
             'TEMP',
             'TMP',
         ]));
+
+        $this->configureUploadsDisk();
+    }
+
+    /**
+     * Point the "uploads" disk at the disk named in filesystems.uploads_disk.
+     * This runs after Laravel Cloud has registered its bucket disks, which
+     * the config file cannot see.
+     */
+    private function configureUploadsDisk(): void
+    {
+        $diskName = config('filesystems.uploads_disk');
+        $disk = config("filesystems.disks.{$diskName}");
+
+        if ($diskName !== 'uploads' && is_array($disk)) {
+            config(['filesystems.disks.uploads' => $disk]);
+        }
     }
 
     /**

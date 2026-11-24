@@ -10,6 +10,24 @@ test('artisan serve passes the Windows temp folder to its workers so uploads wor
     expect(ServeCommand::$passthroughVariables)->toContain('TEMP', 'TMP');
 });
 
+it('stores uploads on the disk Laravel Cloud registers for the attached bucket', function () {
+    $bucketDisk = ['driver' => 's3', 'bucket' => 'hris-private', 'region' => 'auto', 'endpoint' => 'https://bucket.example'];
+    config(['filesystems.disks.private-bucket' => $bucketDisk, 'filesystems.uploads_disk' => 'private-bucket']);
+
+    (new AppServiceProvider($this->app))->register();
+
+    expect(config('filesystems.disks.uploads'))->toBe($bucketDisk);
+});
+
+it('keeps uploads on the local disk when the named disk does not exist', function () {
+    $localUploads = config('filesystems.disks.uploads');
+    config(['filesystems.uploads_disk' => 'missing']);
+
+    (new AppServiceProvider($this->app))->register();
+
+    expect(config('filesystems.disks.uploads'))->toBe($localUploads);
+});
+
 it('generates https links once HTTPS is forced', function () {
     config(['app.force_https' => true]);
 

@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Private Uploads Disk
+    |--------------------------------------------------------------------------
+    |
+    | The disk the "uploads" disk stands for. It follows the default disk, so
+    | on Laravel Cloud the private bucket attached as the default disk holds
+    | the uploads. Cloud registers that bucket's disk itself at boot, under
+    | the name chosen in the dashboard; it does not set the AWS_* variables.
+    |
+    */
+
+    'uploads_disk' => env('UPLOADS_DISK', env('FILESYSTEM_DISK', 'local')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -40,29 +54,15 @@ return [
         ],
 
         // Private uploads (201-file documents, leave attachments, pending change files).
-        // Set UPLOADS_DISK=s3 on hosts without a persistent disk, e.g. Laravel Cloud.
-        'uploads' => env('UPLOADS_DISK', 'local') === 's3'
-            ? [
-                'driver' => 's3',
-                'key' => env('AWS_ACCESS_KEY_ID'),
-                'secret' => env('AWS_SECRET_ACCESS_KEY'),
-                'region' => env('AWS_DEFAULT_REGION'),
-                'bucket' => env('AWS_BUCKET'),
-                'url' => env('AWS_URL'),
-                'endpoint' => env('AWS_ENDPOINT'),
-                'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-                'visibility' => 'private',
-                'throw' => false,
-                'report' => false,
-            ]
-            : [
-                'driver' => 'local',
-                'root' => storage_path('app/private'),
-                // 201 files are served only through authorized controllers, never by URL.
-                'serve' => false,
-                'throw' => false,
-                'report' => false,
-            ],
+        // Replaced at boot by the disk named in 'uploads_disk' below.
+        'uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            // 201 files are served only through authorized controllers, never by URL.
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
 
         // Database and file backups (zip archives); downloaded only by the System Administrator.
         'backups' => [
