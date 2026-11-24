@@ -132,7 +132,10 @@ class BackupService
         }
 
         $name = $this->newName(BackupTrigger::Uploaded);
-        $this->disk()->putFileAs('', $file, $name);
+
+        if ($this->disk()->putFileAs('', $file, $name) === false) {
+            throw new BackupException(__('The uploaded backup could not be saved.'));
+        }
 
         $backup = $this->read($name) ?? throw new BackupException(__('The uploaded backup could not be saved.'));
         $this->audit->record(AuditEvent::BackupUploaded, $name, actor: $user, newValues: ['created_at' => $backup->createdAt->toDateTimeString(), 'created_by' => $backup->createdBy]);
@@ -185,25 +188,22 @@ class BackupService
     private function write(BackupTrigger $trigger, ?User $user): Backup
     {
         $name = $this->newName($trigger);
-        $archivePath = $this->disk()->path($name);
-        $partialPath = $archivePath.'.part';
+        $archivePath = tempnam(sys_get_temp_dir(), 'hris-archive-');
         $sqlPath = tempnam(sys_get_temp_dir(), 'hris-backup-');
         $filesDisk = $this->filesDisk();
         $temporaryCopies = [];
-
-        File::ensureDirectoryExists(dirname($archivePath));
 
         try {
             $this->dumper->dump($sqlPath);
 
             $zip = new ZipArchive;
 
-            if ($zip->open($partialPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new BackupException(__('The backup file could not be created. Check that storage/app/backups is writable.'));
+            if ($zip->open($archivePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new BackupException(__('The backup file could not be created. Check the free disk space.'));
             }
 
             $zip->addFile($sqlPath, self::DATABASE);
-            $files = $filesDisk->allFiles();
+            $files = $this->backedUpFiles($filesDisk);
 
             foreach ($files as $file) {
                 $zip->addFile($this->localCopyOf($filesDisk, $file, $temporaryCopies), self::FILES_PREFIX.$file);
@@ -223,10 +223,10 @@ class BackupService
                 throw new BackupException(__('The backup file could not be written. Check the free disk space.'));
             }
 
-            rename($partialPath, $archivePath);
+            $this->store($name, $archivePath);
         } finally {
             @unlink($sqlPath);
-            @unlink($partialPath);
+            @unlink($archivePath);
             array_map('unlink', array_filter($temporaryCopies, 'file_exists'));
         }
 
@@ -244,7 +244,7 @@ class BackupService
      */
     private function localCopyOf(FilesystemAdapter $disk, string $file, array &$temporaryCopies): string
     {
-        if ($disk->getAdapter() instanceof LocalFilesystemAdapter) {
+        if ($this->isLocal($disk)) {
             return $disk->path($file);
         }
 
@@ -255,24 +255,73 @@ class BackupService
         return $copy;
     }
 
-    private function restoreArchive(Backup $backup): void
+    /**
+     * Save a finished archive to the backups disk.
+     */
+    private function store(string $name, string $archivePath): void
     {
-        $zip = $this->open($backup->path);
-        $sqlPath = tempnam(sys_get_temp_dir(), 'hris-restore-');
+        $stream = fopen($archivePath, 'rb');
 
         try {
-            $in = $zip->getStream(self::DATABASE);
-            $out = fopen($sqlPath, 'wb');
-            stream_copy_to_stream($in, $out);
-            fclose($in);
-            fclose($out);
-
-            $this->dumper->restore($sqlPath);
-            $this->restoreFiles($zip);
+            $isStored = $this->disk()->writeStream($name, $stream);
         } finally {
-            $zip->close();
-            @unlink($sqlPath);
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
+
+        if (! $isStored) {
+            throw new BackupException(__('The backup file could not be saved to the backup storage.'));
+        }
+    }
+
+    /**
+     * Run the callback with a temporary local copy of the archive, which zip
+     * needs and a bucket cannot give. The copy is removed afterwards.
+     *
+     * @template TResult
+     *
+     * @param  callable(string): TResult  $callback
+     * @return TResult
+     */
+    private function withLocalArchive(string $name, callable $callback): mixed
+    {
+        $stream = $this->disk()->readStream($name) ?? throw new BackupException(__('The backup file could not be opened.'));
+        $path = tempnam(sys_get_temp_dir(), 'hris-download-');
+
+        try {
+            file_put_contents($path, $stream);
+
+            return $callback($path);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+
+            @unlink($path);
+        }
+    }
+
+    private function restoreArchive(Backup $backup): void
+    {
+        $this->withLocalArchive($backup->name, function (string $archivePath): void {
+            $zip = $this->open($archivePath);
+            $sqlPath = tempnam(sys_get_temp_dir(), 'hris-restore-');
+
+            try {
+                $in = $zip->getStream(self::DATABASE);
+                $out = fopen($sqlPath, 'wb');
+                stream_copy_to_stream($in, $out);
+                fclose($in);
+                fclose($out);
+
+                $this->dumper->restore($sqlPath);
+                $this->restoreFiles($zip);
+            } finally {
+                $zip->close();
+                @unlink($sqlPath);
+            }
+        });
     }
 
     /**
@@ -283,7 +332,9 @@ class BackupService
         $filesDisk = $this->filesDisk();
 
         foreach ($filesDisk->directories() as $directory) {
-            $filesDisk->deleteDirectory($directory);
+            if ($directory !== config('backup.bucket_folder')) {
+                $filesDisk->deleteDirectory($directory);
+            }
         }
 
         $filesDisk->delete($filesDisk->files());
@@ -313,9 +364,13 @@ class BackupService
      */
     private function assertRestorable(Backup $backup): void
     {
-        $zip = $this->open($backup->path);
-        $hasDatabase = $zip->locateName(self::DATABASE) !== false;
-        $zip->close();
+        $hasDatabase = $this->withLocalArchive($backup->name, function (string $archivePath): bool {
+            $zip = $this->open($archivePath);
+            $hasDatabase = $zip->locateName(self::DATABASE) !== false;
+            $zip->close();
+
+            return $hasDatabase;
+        });
 
         if (! $hasDatabase) {
             throw new BackupException(__('This backup has no database in it.'));
@@ -329,10 +384,22 @@ class BackupService
         }
     }
 
+    /**
+     * A backup described by its manifest. Manifests are cached, so listing
+     * the backups does not copy every archive each time.
+     */
     private function read(string $name): ?Backup
     {
-        $path = $this->disk()->path($name);
-        $manifest = $this->manifestOf($path);
+        $size = (int) $this->disk()->size($name);
+
+        try {
+            $manifest = Cache::rememberForever(
+                "backup-manifest:{$name}:{$size}",
+                fn (): ?array => $this->withLocalArchive($name, $this->manifestOf(...)),
+            );
+        } catch (BackupException) {
+            return null;
+        }
 
         if ($manifest === null) {
             return null;
@@ -340,8 +407,7 @@ class BackupService
 
         return new Backup(
             name: $name,
-            path: $path,
-            size: (int) filesize($path),
+            size: $size,
             createdAt: CarbonImmutable::parse($manifest['created_at'])->setTimezone(config('app.timezone')),
             createdBy: $manifest['created_by'] ?? null,
             trigger: BackupTrigger::tryFrom((string) ($manifest['trigger'] ?? '')),
@@ -412,11 +478,33 @@ class BackupService
             && ! str_starts_with($path, '/')
             && ! str_contains($path, '\\')
             && ! str_contains($path, ':')
-            && ! in_array('..', explode('/', $path), true);
+            && ! in_array('..', explode('/', $path), true)
+            && ! str_starts_with($path, config('backup.bucket_folder').'/');
     }
 
     private function filesDisk(): FilesystemAdapter
     {
         return Storage::disk(config('backup.files_disk'));
+    }
+
+    /**
+     * Every uploaded file, without the backups themselves when they share the
+     * uploads bucket.
+     *
+     * @return list<string>
+     */
+    private function backedUpFiles(FilesystemAdapter $filesDisk): array
+    {
+        $backupsFolder = config('backup.bucket_folder').'/';
+
+        return array_values(array_filter(
+            $filesDisk->allFiles(),
+            fn (string $file): bool => ! str_starts_with($file, $backupsFolder),
+        ));
+    }
+
+    private function isLocal(FilesystemAdapter $disk): bool
+    {
+        return $disk->getAdapter() instanceof LocalFilesystemAdapter;
     }
 }

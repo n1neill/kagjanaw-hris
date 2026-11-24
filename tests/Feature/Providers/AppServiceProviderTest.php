@@ -16,16 +16,19 @@ it('stores uploads on the disk Laravel Cloud registers for the attached bucket',
 
     (new AppServiceProvider($this->app))->register();
 
-    expect(config('filesystems.disks.uploads'))->toBe($bucketDisk);
+    expect(config('filesystems.disks.uploads'))->toBe($bucketDisk)
+        ->and(config('filesystems.disks.backups'))->toBe([...$bucketDisk, 'root' => 'backups']);
 });
 
-it('keeps uploads on the local disk when the named disk does not exist', function () {
+it('keeps uploads and backups on the local disk when the named disk does not exist', function () {
     $localUploads = config('filesystems.disks.uploads');
+    $localBackups = config('filesystems.disks.backups');
     config(['filesystems.uploads_disk' => 'missing']);
 
     (new AppServiceProvider($this->app))->register();
 
-    expect(config('filesystems.disks.uploads'))->toBe($localUploads);
+    expect(config('filesystems.disks.uploads'))->toBe($localUploads)
+        ->and(config('filesystems.disks.backups'))->toBe($localBackups);
 });
 
 it('generates https links once HTTPS is forced', function () {

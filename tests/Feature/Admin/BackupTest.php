@@ -241,6 +241,55 @@ describe('uploading, downloading and deleting', function () {
     });
 });
 
+describe('in the uploads bucket, as on Laravel Cloud', function () {
+    beforeEach(function () {
+        $uploads = Storage::fake('uploads');
+        Storage::set('backups', Storage::build(['driver' => 'local', 'root' => $uploads->path(config('backup.bucket_folder'))]));
+    });
+
+    it('keeps backups in the bucket folder without backing up earlier backups', function () {
+        $restored = [];
+        fakeDumper($restored);
+        $admin = User::factory()->systemAdministrator()->create(['name' => 'Ana Admin']);
+        Storage::disk('uploads')->put('employees/7/appointment.pdf', 'PDF');
+        Storage::disk('backups')->put('earlier.zip', 'an earlier backup');
+
+        $this->actingAs($admin)->post(route('admin.backups.store'))->assertSessionHas('status');
+
+        $name = collect(Storage::disk('backups')->files())->first(fn (string $file): bool => str_contains($file, 'manual'));
+        $archivePath = tempnam(sys_get_temp_dir(), 'archive');
+        file_put_contents($archivePath, Storage::disk('backups')->get($name));
+        $zip = new ZipArchive;
+        $zip->open($archivePath);
+        expect(Storage::disk('uploads')->exists("backups/{$name}"))->toBeTrue()
+            ->and($zip->getFromName('files/employees/7/appointment.pdf'))->toBe('PDF')
+            ->and($zip->locateName('files/backups/earlier.zip'))->toBeFalse();
+        $zip->close();
+
+        $this->actingAs($admin)->get(route('admin.backups.index'))->assertOk()->assertSee($name)->assertSee('Ana Admin');
+    });
+
+    it('restores from the bucket without clearing the backups folder', function () {
+        $restored = [];
+        fakeDumper($restored);
+        $admin = User::factory()->systemAdministrator()->create();
+        Storage::disk('uploads')->put('employees/1/current.pdf', 'current');
+        $archivePath = tempnam(sys_get_temp_dir(), 'archive');
+        makeBackupArchive($archivePath, ['employees/1/from-backup.pdf' => 'restored', 'backups/planted.zip' => 'planted']);
+        Storage::disk('backups')->put($this->backupName, file_get_contents($archivePath));
+
+        $response = $this->actingAs($admin)->post(route('admin.backups.restore', $this->backupName), ['password' => 'password']);
+
+        $response->assertSessionHas('status');
+        expect($restored)->toBe(["-- backup\n"])
+            ->and(Storage::disk('uploads')->get('employees/1/from-backup.pdf'))->toBe('restored')
+            ->and(Storage::disk('uploads')->exists('employees/1/current.pdf'))->toBeFalse()
+            ->and(Storage::disk('backups')->exists($this->backupName))->toBeTrue()
+            ->and(Storage::disk('backups')->exists('planted.zip'))->toBeFalse()
+            ->and(collect(Storage::disk('backups')->files())->contains(fn (string $file): bool => str_contains($file, 'before-restore')))->toBeTrue();
+    });
+});
+
 it('is only available to the System Administrator', function (Role $role) {
     $user = User::factory()->withRole($role)->create();
     makeBackupArchive(Storage::disk('backups')->path($this->backupName));

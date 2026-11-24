@@ -10,7 +10,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 /**
- * Restores a backup from storage/app/backups, replacing the database and the
+ * Restores a backup from the backup storage, replacing the database and the
  * uploaded files. A safety backup of the current state is taken first.
  */
 #[Signature('backup:restore {name? : The backup file name; lists the backups when left out} {--force : Do not ask for confirmation}')]
@@ -36,7 +36,7 @@ class RestoreBackup extends Command
         $backup = $backups->find($name);
 
         if ($backup === null) {
-            $this->error("Backup {$name} was not found in storage/app/backups.");
+            $this->error("Backup {$name} was not found in the backup storage.");
 
             return self::FAILURE;
         }

@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  * the time set in System Settings; old backups are then pruned.
  */
 #[Signature('backup:create {--scheduled : Mark the backup as the daily backup}')]
-#[Description('Back up the database and uploaded files to storage/app/backups')]
+#[Description('Back up the database and uploaded files to the backup storage')]
 class CreateBackup extends Command
 {
     /**

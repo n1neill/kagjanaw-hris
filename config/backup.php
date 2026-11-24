@@ -13,11 +13,17 @@ return [
     | storage regularly: a backup on the same server does not survive a
     | disk failure.
     |
+    | When the uploads disk is a bucket (Laravel Cloud, whose servers have no
+    | lasting disk), backups are kept in the bucket folder below instead.
+    | That folder is never itself backed up or cleared by a restore.
+    |
     */
 
     'disk' => 'backups',
 
     'files_disk' => 'uploads',
+
+    'bucket_folder' => 'backups',
 
     /*
     |--------------------------------------------------------------------------

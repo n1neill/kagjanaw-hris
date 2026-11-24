@@ -15,7 +15,6 @@ final readonly class Backup
      */
     public function __construct(
         public string $name,
-        public string $path,
         public int $size,
         public CarbonImmutable $createdAt,
         public ?string $createdBy,

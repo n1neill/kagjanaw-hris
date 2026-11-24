@@ -39,15 +39,25 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Point the "uploads" disk at the disk named in filesystems.uploads_disk.
      * This runs after Laravel Cloud has registered its bucket disks, which
-     * the config file cannot see.
+     * the config file cannot see. When that disk is a bucket, backups move
+     * into a folder of it too, since the server's own disk does not last.
      */
     private function configureUploadsDisk(): void
     {
         $diskName = config('filesystems.uploads_disk');
         $disk = config("filesystems.disks.{$diskName}");
 
-        if ($diskName !== 'uploads' && is_array($disk)) {
-            config(['filesystems.disks.uploads' => $disk]);
+        if ($diskName === 'uploads' || ! is_array($disk)) {
+            return;
+        }
+
+        config(['filesystems.disks.uploads' => $disk]);
+
+        if ($disk['driver'] === 's3') {
+            config(['filesystems.disks.backups' => [
+                ...$disk,
+                'root' => trim(($disk['root'] ?? '').'/'.config('backup.bucket_folder'), '/'),
+            ]]);
         }
     }
 
