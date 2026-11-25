@@ -136,7 +136,7 @@ public sealed class HrisClient : IDisposable
         }
         catch (HttpRequestException exception)
         {
-            throw new HrisApiException($"The HRIS at {_http.BaseAddress?.GetLeftPart(UriPartial.Authority)} could not be reached.", inner: exception);
+            throw new HrisApiException($"The HRIS at {_http.BaseAddress?.GetLeftPart(UriPartial.Authority)} could not be reached. {UnreachableReason(exception)}", inner: exception);
         }
         catch (TaskCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
@@ -170,6 +170,15 @@ public sealed class HrisClient : IDisposable
             throw new HrisApiException("The HRIS sent an answer the kiosk does not understand. Is the address correct?", response.StatusCode, exception);
         }
     }
+
+    /// <summary>Why the connection failed, in words HR can act on.</summary>
+    private static string UnreachableReason(HttpRequestException exception) => exception.HttpRequestError switch
+    {
+        HttpRequestError.NameResolutionError => "The address was not found: check its spelling and that this PC is on the internet.",
+        HttpRequestError.SecureConnectionError => "A secure (https) connection could not be made: check this PC's date and time, or whether the network blocks the site.",
+        HttpRequestError.ConnectionError => "The connection was refused or dropped: check the address, the network and any firewall or proxy.",
+        _ => (exception.InnerException ?? exception).Message,
+    };
 
     /// <summary>The first validation error, else Laravel's message, else the status.</summary>
     private static async Task<string> ErrorMessageAsync(HttpResponseMessage response, CancellationToken cancellationToken)

@@ -40,7 +40,7 @@ internal sealed class SetupForm : Form
         Font = KioskTheme.Font(10);
 
         _url.Text = settings.HrisBaseUrl;
-        _token.PlaceholderText = _hasToken ? "Leave blank to keep the current token" : "Paste the token from the HRIS";
+        _token.PlaceholderText = _hasToken ? "Leave blank to keep the current token (same HRIS address only)" : "Paste the token from the HRIS";
         _scanner.Items.AddRange(["Folder of test images (no reader)", "DigitalPersona U.are.U reader"]);
         _scanner.SelectedIndex = settings.Scanner == ScannerKind.DigitalPersona ? 1 : 0;
         _inbox.Text = settings.ScanInboxFolder;
@@ -120,7 +120,14 @@ internal sealed class SetupForm : Form
 
         if (token.Length == 0 && _hasToken)
         {
-            token = KioskSettings.LoadToken(_paths) ?? "";
+            token = _settings.ReusableToken(url, KioskSettings.LoadToken(_paths)) ?? "";
+
+            if (token.Length == 0)
+            {
+                ShowMessage("The HRIS address changed. Paste the kiosk token issued by this HRIS (Admin → Biometric Devices → this kiosk → Issue Kiosk Token).", isError: true);
+
+                return;
+            }
         }
 
         var candidate = new KioskSettings

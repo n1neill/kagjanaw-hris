@@ -45,6 +45,16 @@ public sealed class KioskSettings
         && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
         && !string.IsNullOrWhiteSpace(token);
 
+    /// <summary>
+    /// The saved token when the settings screen may keep it for this address:
+    /// a token belongs to one HRIS, so changing the address needs a new token.
+    /// </summary>
+    public string? ReusableToken(string hrisBaseUrl, string? savedToken) =>
+        string.Equals(hrisBaseUrl.Trim().TrimEnd('/'), HrisBaseUrl.Trim().TrimEnd('/'), StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(savedToken)
+            ? savedToken
+            : null;
+
     public static KioskSettings Load(KioskPaths paths)
     {
         KioskSettings settings;

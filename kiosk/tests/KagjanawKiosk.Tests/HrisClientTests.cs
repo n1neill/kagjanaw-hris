@@ -110,6 +110,17 @@ public class HrisClientTests
     }
 
     [Fact]
+    public async Task Explains_why_the_hris_could_not_be_reached()
+    {
+        var handler = new StubHttpHandler((_, _) => throw new HttpRequestException(HttpRequestError.NameResolutionError, "No such host is known."));
+        using var client = new HrisClient("https://hris.example", "token", handler);
+
+        var exception = await Assert.ThrowsAsync<HrisApiException>(() => client.HeartbeatAsync());
+
+        Assert.Equal("The HRIS at https://hris.example could not be reached. The address was not found: check its spelling and that this PC is on the internet.", exception.Message);
+    }
+
+    [Fact]
     public async Task Explains_a_non_json_answer()
     {
         var handler = new StubHttpHandler((_, _) => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>Welcome</html>") });
